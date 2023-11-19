@@ -1,8 +1,8 @@
 import { PanelPlugin } from '@grafana/data'
-import { defaultFormatTemplate, TreePanel } from 'components/TreePanel'
+import { defaultFormatTemplate, ChatbotPanel } from 'components/ChatbotPanel'
 import { TreeOptions } from 'types'
 
-export const plugin = new PanelPlugin<TreeOptions>(TreePanel).setPanelOptions((builder) => {
+export const plugin = new PanelPlugin<TreeOptions>(ChatbotPanel).setPanelOptions((builder) => {
   return builder
     .addSelect({
       path: 'field',

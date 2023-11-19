@@ -73,8 +73,9 @@ export const DsoChatBot = () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        mode: 'no-cors',
       },
-      body: JSON.stringify({ messages: [], functions: [] }),
+      body: JSON.stringify({ messages: messages, functions: [] }),
     }
     const response = await fetch(url, options)
     console.log('response:::::::::', response)

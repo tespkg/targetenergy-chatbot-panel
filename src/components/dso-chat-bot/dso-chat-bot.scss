@@ -174,3 +174,9 @@ $input-vertical-margin: 8px;
     }
   } 
 }
+
+.panel-container:has(.dsoChartBot) {
+  background-color: #eaeaea;
+  border: solid 1px #000000;
+  border-radius: 5px;
+}

@@ -1,0 +1,16 @@
+version: '3.0'
+
+services:
+  grafana:
+    container_name: 'targetenergy-tree-panel'
+    build:
+      context: ./.config
+      args:
+        grafana_version: ${GRAFANA_VERSION:-9.2.5}
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ./dist:/var/lib/grafana/plugins/targetenergy-tree-panel
+      - ./provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_INSTALL_PLUGINS=grafana-clickhouse-datasource

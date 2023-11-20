@@ -3,7 +3,7 @@ import { PanelProps } from '@grafana/data'
 import { useStyles2 } from '@grafana/ui'
 import * as React from 'react'
 import { TreeOptions } from 'types'
-import { DsoChatBot } from 'components/dso-chat-bot/DsoChatbot'
+import { ChatBot } from 'components/chat-bot/ChatBot'
 import './style.css'
 
 // let renderCount = 0
@@ -36,7 +36,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
         `
       )}
     >
-      <DsoChatBot />
+      <ChatBot />
     </div>
   )
 }

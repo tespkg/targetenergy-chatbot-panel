@@ -7,7 +7,7 @@ $input-container-max-height: 144px;
 $input-container-min-height: 72px;
 $input-vertical-margin: 8px;
 
-.dsoChartBot {
+.ChartBot {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -175,7 +175,7 @@ $input-vertical-margin: 8px;
   } 
 }
 
-.panel-container:has(.dsoChartBot) {
+.panel-container:has(.ChartBot) {
   background-color: #eaeaea;
   border: solid 1px #000000;
   border-radius: 5px;

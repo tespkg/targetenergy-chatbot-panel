@@ -8,7 +8,7 @@ import { BOT_SYSTEM_MESSAGE } from 'api/chatbot/system-message'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 
-import './dso-chat-bot.scss'
+import './chat-bot.scss'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -18,7 +18,7 @@ interface ChatBotMessage {
   includeInChatPanel: boolean
 }
 
-export const DsoChatBot = () => {
+export const ChatBot = () => {
   /** States and Refs */
   const [text, setText] = useState('')
   const [chatContent, setChatContent] = useState<undefined | ChatBotMessage[]>(undefined)
@@ -147,11 +147,11 @@ export const DsoChatBot = () => {
 
   /** Renderer */
   return (
-    <div className={classNames('dsoChartBot')}>
+    <div className={classNames('ChartBot')}>
       {
-        <div className="dsoChartBot-header">
-          <span className="dsoChartBot-header-text">Talk to New Oil Management</span>
-          <div className="dsoChartBot-header-actions">
+        <div className="ChartBot-header">
+          <span className="ChartBot-header-text">Talk to New Oil Management</span>
+          <div className="ChartBot-header-actions">
             <Button
               title="Clear"
               displayTitle={false}
@@ -163,35 +163,35 @@ export const DsoChatBot = () => {
           </div>
         </div>
       }
-      <div className={classNames('dsoChartBot-chatPanel')} ref={chatContentRef}>
+      <div className={classNames('ChartBot-chatPanel')} ref={chatContentRef}>
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
             .map(({ message, id, role }) => (
               <div
                 key={id}
-                className={classNames('dsoChartBot-chatPanel-messageContainer', {
+                className={classNames('ChartBot-chatPanel-messageContainer', {
                   user: role === CHATBOT_ROLE.USER,
                   assistant: role === CHATBOT_ROLE.ASSISTANT,
                 })}
               >
                 <div
-                  className={classNames('dsoChartBot-chatPanel-messageContainer-avatar', {
+                  className={classNames('ChartBot-chatPanel-messageContainer-avatar', {
                     user: role === CHATBOT_ROLE.USER,
                     assistant: role === CHATBOT_ROLE.ASSISTANT,
                   })}
-                  title={role === CHATBOT_ROLE.ASSISTANT ? 'DSO bot' : 'You'}
+                  title={role === CHATBOT_ROLE.ASSISTANT ? 'Bot' : 'You'}
                 >
                   {role === CHATBOT_ROLE.ASSISTANT ? (
                     <img
-                      className="dsoChartBot-chatPanel-messageContainer-avatar-image"
+                      className="ChartBot-chatPanel-messageContainer-avatar-image"
                       // @ts-ignore
                       src={AssistantAvatar}
                       alt="Bot"
                     />
                   ) : (
                     <img
-                      className="dsoChartBot-chatPanel-messageContainer-avatar-image"
+                      className="ChartBot-chatPanel-messageContainer-avatar-image"
                       // @ts-ignore
                       src={UserAvatar}
                       alt="User"
@@ -199,13 +199,13 @@ export const DsoChatBot = () => {
                   )}
                 </div>
                 <div
-                  className={classNames('dsoChartBot-chatPanel-messageContainer-message', {
+                  className={classNames('ChartBot-chatPanel-messageContainer-message', {
                     user: role === CHATBOT_ROLE.USER,
                     assistant: role === CHATBOT_ROLE.ASSISTANT,
                   })}
                 >
                   <span
-                    className={classNames('dsoChartBot-chatPanel-messageContainer-message-messageText', {
+                    className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {
                       user: role === CHATBOT_ROLE.USER,
                       assistant: role === CHATBOT_ROLE.ASSISTANT,
                     })}
@@ -216,7 +216,7 @@ export const DsoChatBot = () => {
             ))}
       </div>
 
-      <div className="dsoChartBot-inputContainer">
+      <div className="ChartBot-inputContainer">
         <Input
           label="Search"
           placeholder="Search"

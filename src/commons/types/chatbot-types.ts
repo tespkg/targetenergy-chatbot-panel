@@ -1,12 +1,12 @@
-export interface ChatCommandContext {
+export interface BotFunctionExecutionContext {
   addIntent(intent: string): void
 }
 
-export interface ChatCommandArgs {
-  context?: ChatCommandContext
+export interface BotFunctionArgs {
+  context?: BotFunctionExecutionContext
 }
 
-export const NullChatCommandContext: ChatCommandContext = {
+export const NullBotFunctionContext: BotFunctionExecutionContext = {
   addIntent(intent: string) {
     // do nothing
   },

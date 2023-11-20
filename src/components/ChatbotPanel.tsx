@@ -1,18 +1,22 @@
-import {css, cx} from '@emotion/css'
-import {locationService} from '@grafana/runtime'
-import {PanelProps} from '@grafana/data'
-import {Alert, useStyles2} from '@grafana/ui'
+import { css, cx } from '@emotion/css'
+import { locationService } from '@grafana/runtime'
+import { PanelProps } from '@grafana/data'
+import { Alert, useStyles2 } from '@grafana/ui'
 import * as React from 'react'
-import {useEffect} from 'react'
-import {TreeOptions} from 'types'
-import {ChatMessagePanel} from 'components/chat-bot/ChatMessagePanel'
+import { useEffect } from 'react'
+import { TreeOptions } from 'types'
+import { ChatMessagePanel } from 'components/chat-bot/ChatMessagePanel'
 import * as Handlebars from 'handlebars'
 import './style.css'
-import {setGrafanaVariable} from "../commons/utils/grafana-variable-utils";
+import { setGrafanaVariable } from '../commons/utils/grafana-variable-utils'
+import { AssetNodes } from '../commons/utils/asset-nodes'
+import { TreeNodeData } from '../commons/types/TreeNodeData'
+import { MatchSearch } from '../commons/enums/MatchSearch'
 
 // let renderCount = 0
 
 interface Props extends PanelProps<TreeOptions> {}
+type NodeSelection = { [key: string]: string[] }
 
 const getStyles = () => {
   return {
@@ -32,13 +36,13 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   const styles = useStyles2(getStyles)
 
   const { field, variableName, firstFourLevelsSortingVariableName, treeFiltersVariableName, defaultExpansionLevel } =
-      options
+    options
 
   const rows = data.series
-      .map((d) => d.fields.find((f) => f.name === field))
-      .map((f) => f?.values)
-      .at(-1)
-      ?.toArray()
+    .map((d) => d.fields.find((f) => f.name === field))
+    .map((f) => f?.values)
+    .at(-1)
+    ?.toArray()
 
   let formatTemplate = defaultFormatTemplate
   if (options.formatQuery) {
@@ -72,25 +76,17 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   let tree: TreeNodeData[] = []
   let dataError: React.ReactNode | undefined
   try {
-    tree = transformData(
-        rows ?? [],
-        defaultExpansionLevel,
-        selected,
-        false,
-        '',
-        {},
-        mounted.current
-    )
+    tree = transformData(rows ?? [], defaultExpansionLevel, selected, false, '', {}, mounted.current)
   } catch (e) {
     dataError = (
-        <Alert title={`Invalid data format in "${options.field}" column`}>
-          Accepted data format are comma separated strings. Possible format of the strings:
-          <ul>
-            <li>id,id,id,...</li>
-            <li>id:name,id:name,id:name,...</li>
-            <li>id:name:type,id:name:type,id:name:type,...</li>
-          </ul>
-        </Alert>
+      <Alert title={`Invalid data format in "${options.field}" column`}>
+        Accepted data format are comma separated strings. Possible format of the strings:
+        <ul>
+          <li>id,id,id,...</li>
+          <li>id:name,id:name,id:name,...</li>
+          <li>id:name:type,id:name:type,id:name:type,...</li>
+        </ul>
+      </Alert>
     )
   }
 
@@ -102,9 +98,9 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
     } catch (e: any) {
       if (e.message) {
         error = (
-            <Alert title="Incorrect format query">
-              <pre>{e.message}</pre>
-            </Alert>
+          <Alert title="Incorrect format query">
+            <pre>{e.message}</pre>
+          </Alert>
         )
       }
       fmt = defaultFormatTemplate
@@ -166,8 +162,15 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   console.log('data', data)
   console.log('tree', tree)
 
-  console.table(data)
-  console.table(tree)
+  const assetNodes = new AssetNodes(tree)
+  console.log('asset nodes', assetNodes)
+  console.log(
+    'asset nodes markdown',
+    assetNodes.toMarkdown({
+      includeIds: true,
+      includeSelected: true,
+    })
+  )
 
   return (
     <div
@@ -180,7 +183,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
         `
       )}
     >
-      <ChatMessagePanel />
+      <ChatMessagePanel nodes={assetNodes} />
     </div>
   )
 }
@@ -207,56 +210,35 @@ function parseSelected(query: string): { [type: string]: string[] } {
   }, {} as { [type: string]: string[] })
 }
 
-export enum MatchSearch {
-  match,
-  notMatch,
-  childMatch,
-}
-
-
-export type TreeNodeData = {
-  id: string
-  name: string
-  type: string
-  parent?: TreeNodeData
-  children?: TreeNodeData[]
-  // ui state
-  showChildren?: boolean
-  selected?: boolean
-  matchSearch?: MatchSearch
-}
-
-type NodeSelection = { [key: string]: string[] }
-
 function transformData(
-    rows: string[],
-    defaultExpansionLevel: number,
-    selected: NodeSelection,
-    showSelected: boolean,
-    debouncedSearchText: string,
-    showNodes: NodeSelection,
-    firstRenderCompleted: boolean
+  rows: string[],
+  defaultExpansionLevel: number,
+  selected: NodeSelection,
+  showSelected: boolean,
+  debouncedSearchText: string,
+  showNodes: NodeSelection,
+  firstRenderCompleted: boolean
 ): TreeNodeData[] {
   // splits each row into items
   const table = rows.map((row) =>
-      row.split(',').map((column) => {
-        const parts = column.split(':')
-        // default we suppose id,id,id,... format
-        const item: TreeNodeData = {
-          id: parts[0],
-          name: parts[0],
-          type: parts[0],
-        }
-        // let's check if we have id:name,id:name,id:name,... format
-        if (parts.length > 1) {
-          item.name = parts[1]
-        }
-        // let's check if we have id:name:type,id:name:type,id:name:type,... format
-        if (parts.length > 2) {
-          item.type = parts[2]
-        }
-        return item
-      })
+    row.split(',').map((column) => {
+      const parts = column.split(':')
+      // default we suppose id,id,id,... format
+      const item: TreeNodeData = {
+        id: parts[0],
+        name: parts[0],
+        type: parts[0],
+      }
+      // let's check if we have id:name,id:name,id:name,... format
+      if (parts.length > 1) {
+        item.name = parts[1]
+      }
+      // let's check if we have id:name:type,id:name:type,id:name:type,... format
+      if (parts.length > 2) {
+        item.type = parts[2]
+      }
+      return item
+    })
   )
   const rootItems: TreeNodeData[] = []
   let items: TreeNodeData[] = rootItems

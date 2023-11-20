@@ -5,25 +5,29 @@ interface MarkdownOptions {
   includeSelected?: boolean
 }
 
+export type FilterCriteria = {
+  id?: string
+  name?: string
+  type?: string
+  selected?: boolean
+}
+
 export class AssetNodes {
   MAX_NODE_LEVEL = 9
   nodes: TreeNodeData[] = []
 
   constructor(rawNodes: TreeNodeData[]) {
     for (let node of rawNodes) {
-      this.nodes.push(this.filterNode(node, 1))
+      this.filterNode(node, 1)
     }
+    this.nodes = rawNodes
   }
 
-  filterNode = (node: TreeNodeData, depth: number): TreeNodeData => {
-    console.log('depth', depth)
+  filterNode = (node: TreeNodeData, depth: number) => {
     if (depth === this.MAX_NODE_LEVEL) {
-      return { ...node, children: [] }
+      node.children = []
     } else {
-      return {
-        ...node,
-        children: node.children?.map((child) => this.filterNode(child, depth + 1)) ?? [],
-      }
+      node.children?.forEach((child) => this.filterNode(child, depth + 1))
     }
   }
 
@@ -46,7 +50,7 @@ export class AssetNodes {
       data.push(`selected`)
     }
 
-    let markdown = `${'  '.repeat(depth)}- ${data.join(' - ')}\n}`
+    let markdown = `${'  '.repeat(depth)}- ${data.join(' - ')}\n`
     if (node.children && node.children.length > 0) {
       node.children.forEach((child) => {
         markdown += this.nodeToMarkdown(child, options, depth + 1)
@@ -56,14 +60,43 @@ export class AssetNodes {
     return markdown
   }
 
-  getAssetNodes = (tree: TreeNodeData[]): TreeNodeData[] => {
-    const assetNodes = []
-    const nodeTypes = ['']
-    for (let node of tree) {
-      if (node.type && !nodeTypes.includes(node.type)) {
-        assetNodes.push(node)
+  findNodeById = (id: string): TreeNodeData | undefined => {
+    const matchingNodes = this.findMatchingNodes({ id })
+    return matchingNodes.length > 0 ? matchingNodes[0] : undefined
+  }
+
+  findMatchingNodes = (filter: FilterCriteria): TreeNodeData[] => {
+    let matchingNodes: TreeNodeData[] = []
+
+    for (let node of this.nodes) {
+      matchingNodes = matchingNodes.concat(this.findMatchingNodesRecursive(node, filter))
+    }
+
+    return matchingNodes
+  }
+
+  private findMatchingNodesRecursive = (node: TreeNodeData, filter: FilterCriteria): TreeNodeData[] => {
+    let matchingNodes: TreeNodeData[] = []
+
+    let isMatch = true
+    for (const key in filter) {
+      // @ts-ignore
+      if (filter[key] !== node[key]) {
+        isMatch = false
+        break
       }
     }
-    return assetNodes
+
+    if (isMatch) {
+      matchingNodes.push(node)
+    }
+
+    if (node.children) {
+      node.children.forEach((child) => {
+        matchingNodes = matchingNodes.concat(this.findMatchingNodesRecursive(child, filter))
+      })
+    }
+
+    return matchingNodes
   }
 }

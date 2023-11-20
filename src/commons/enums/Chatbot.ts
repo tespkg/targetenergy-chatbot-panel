@@ -2,9 +2,9 @@ export enum CHATBOT_ROLE {
   USER = 'user',
   ASSISTANT = 'assistant',
   SYSTEM = 'system',
+  FUNCTION = 'function',
 }
 
 export enum CHATBOT_FUNCTIONS {
-  GET_USER_NAME = 'get_user_name',
-  TOGGLE_ASSET_NODES = 'toggle_asset_nodes',
+  TOGGLE_ASSET_NODE_SELECTION = 'toggle_asset_node_selection',
 }

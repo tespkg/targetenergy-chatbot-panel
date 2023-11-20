@@ -3,7 +3,7 @@ import { locationService } from '@grafana/runtime'
 import { PanelProps } from '@grafana/data'
 import { Alert, useStyles2 } from '@grafana/ui'
 import * as React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { TreeOptions } from 'types'
 import { ChatMessagePanel } from 'components/chat-bot/ChatMessagePanel'
 import * as Handlebars from 'handlebars'
@@ -108,25 +108,28 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
     return [Handlebars.compile(fmt), error]
   }, [formatTemplate])
 
-  const handleSelectNode = (node: TreeNodeData) => {
-    // exclusive selection: all parent & children needs to be deselected
-    const thisNode = node
-    thisNode.selected = !node.selected
-    if (thisNode.selected) {
-      // unselect all parent
-      while (node?.parent) {
-        node = node.parent
-        if (node?.selected) {
-          node.selected = false
+  const handleSelectNodes = (nodes: TreeNodeData[]) => {
+    nodes.forEach((node) => {
+      console.log('Selecting Node', node)
+      // exclusive selection: all parent & children needs to be deselected
+      const thisNode = node
+      thisNode.selected = !node.selected
+      if (thisNode.selected) {
+        // unselect all parent
+        while (node?.parent) {
+          node = node.parent
+          if (node?.selected) {
+            node.selected = false
+          }
         }
+        // unselect all children
+        const walk = (node: TreeNodeData) => {
+          node.selected = false
+          node.children?.forEach(walk)
+        }
+        thisNode.children?.forEach(walk)
       }
-      // unselect all children
-      const walk = (node: TreeNodeData) => {
-        node.selected = false
-        node.children?.forEach(walk)
-      }
-      thisNode.children?.forEach(walk)
-    }
+    })
 
     // walk all selected nodes and update query
     const selected: TreeNodeData[] = []
@@ -147,6 +150,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
       }
       entities[type].push({ id: node.id, name: node.name, type: node.type })
     })
+
     let query = formatTpl(entities)
     if (query === '') {
       query = options.defaultValue
@@ -163,14 +167,19 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   console.log('tree', tree)
 
   const assetNodes = new AssetNodes(tree)
-  console.log('asset nodes', assetNodes)
-  console.log(
-    'asset nodes markdown',
-    assetNodes.toMarkdown({
-      includeIds: true,
-      includeSelected: true,
-    })
-  )
+
+  // const assetNodesRef = useRef<AssetNodes>()
+  // useLayoutEffect(() => {
+  //   assetNodesRef.current = new AssetNodes(tree)
+  //   console.log('asset nodes', assetNodesRef.current)
+  //   console.log(
+  //     'asset nodes markdown',
+  //     assetNodesRef.current.toMarkdown({
+  //       includeIds: true,
+  //       includeSelected: true,
+  //     })
+  //   )
+  // }, [tree])
 
   return (
     <div
@@ -183,7 +192,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
         `
       )}
     >
-      <ChatMessagePanel nodes={assetNodes} />
+      <ChatMessagePanel nodes={assetNodes} onToggleNodes={handleSelectNodes} />
     </div>
   )
 }

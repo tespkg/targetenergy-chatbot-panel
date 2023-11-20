@@ -4,7 +4,7 @@ import TrashBin from 'img/icons/trashbin.svg'
 import UserAvatar from 'img/icons/user_avatar.svg'
 import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
 import { CHATBOT_FUNCTIONS, CHATBOT_ROLE } from 'commons/enums/Chatbot'
-import { BOT_SYSTEM_MESSAGE } from 'api/chatbot/system-message'
+import { createSystemMessage } from 'api/chatbot/system-message'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 import Markdown from 'markdown-to-jsx'
@@ -16,6 +16,7 @@ import { BotGenerateRequest, BotGenerateResponse } from '../../commons/types/bot
 import { BotFunctionExecutionContext } from '../../commons/types/chatbot-types'
 import { AssetNodes } from '../../commons/utils/asset-nodes'
 import { createChatBotFunctionDefinitions } from '../../commons/utils/chatbot-function-utils'
+import { TreeNodeData } from '../../commons/types/TreeNodeData'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -27,9 +28,10 @@ interface ChatBotMessage {
 
 interface Props {
   nodes: AssetNodes
+  onToggleNodes: (node: TreeNodeData[]) => void
 }
 
-export const ChatMessagePanel = ({ nodes }: Props) => {
+export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
   /** States and Refs */
   const [text, setText] = useState('')
   const [chatContent, setChatContent] = useState<undefined | ChatBotMessage[]>(undefined)
@@ -59,7 +61,7 @@ export const ChatMessagePanel = ({ nodes }: Props) => {
   )
 
   const handleBotResponse = useCallback(
-    (botResponse: BotGenerateResponse) => {
+    async (botResponse: BotGenerateResponse, nextRequest: (text: string, role?: CHATBOT_ROLE) => Promise<void>) => {
       console.log('Handling bot response', botResponse)
 
       if (botResponse.text) {
@@ -113,30 +115,48 @@ export const ChatMessagePanel = ({ nodes }: Props) => {
 
         if (name) {
           switch (name) {
-            case CHATBOT_FUNCTIONS.GET_USER_NAME: {
-              addMessageToChatContent("I'm Hossein", CHATBOT_ROLE.ASSISTANT, false, true)
-              break
+            case CHATBOT_FUNCTIONS.TOGGLE_ASSET_NODE_SELECTION: {
+              const { node_ids } = args
+              const nodeIds = node_ids as string[]
+
+              const toggleNodes = []
+              for (const nodeId of nodeIds) {
+                const node = nodes.findNodeById(nodeId)
+                if (node) {
+                  toggleNodes.push(node)
+                }
+              }
+              if (toggleNodes.length > 0) {
+                onToggleNodes(toggleNodes)
+              }
             }
           }
         }
       }
     },
-    [addMessageToChatContent]
+    [addMessageToChatContent, nodes, onToggleNodes]
   )
 
   const requestChatbotCompletion = useCallback(
     async (text: string, role: CHATBOT_ROLE = CHATBOT_ROLE.USER) => {
-      const prompt = `Current status of asset tree:
-${nodes.toMarkdown({
-  includeSelected: true,
-  includeIds: true,
-})}
+      //       const prompt = `Current status of asset tree:
+      // ${nodesRef.current!.toMarkdown({
+      //   includeSelected: true,
+      //   includeIds: true,
+      // })}
+      //
+      // ${text}`
 
-${text}`
+      const prompt = text
 
-      // const prompt = text
+      const systemMessage = createSystemMessage(nodes)
 
       const newContent = [
+        {
+          message: systemMessage,
+          role: CHATBOT_ROLE.ASSISTANT,
+          includeInContextHistory: true,
+        },
         ...(chatContent || []),
         {
           message: prompt,
@@ -190,19 +210,19 @@ ${text}`
               const messageText = line.replace('data: ', '').trim()
               if (messageText !== '') {
                 const message = JSON.parse(messageText) as BotGenerateResponse
-                handleBotResponse(message)
+                await handleBotResponse(message, requestChatbotCompletion)
                 messages.push(message)
               }
             }
           }
         }
 
-        const messageContent = messages.map((m) => m.text).join('')
-        console.log('Generate Response :::', messageContent)
+        const textMessages = messages.map((m) => m.text).join('')
+        console.log('Generate Response :::', messages, textMessages)
         // addMessageToChatContent(messageContent, CHATBOT_ROLE.ASSISTANT, true, true)
       } catch (err) {}
     },
-    [chatContent, handleBotResponse]
+    [chatContent, handleBotResponse, nodes]
   )
 
   const handleNewUserMessage = useCallback(async () => {
@@ -215,7 +235,6 @@ ${text}`
   //
   const initializeChatContext = useCallback(() => {
     setChatContent(undefined)
-    addMessageToChatContent(BOT_SYSTEM_MESSAGE, CHATBOT_ROLE.SYSTEM, true, false)
     addMessageToChatContent(`How can I help you?`, CHATBOT_ROLE.ASSISTANT, false, true)
   }, [addMessageToChatContent])
   //

@@ -1,6 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
 import TrashBin from 'img/icons/trashbin.svg'
+import RecordIcon from 'img/icons/record.svg'
+import StopIcon from 'img/icons/stop-circle.svg'
+import SendMessage from 'img/icons/send-message.svg'
+
 import UserAvatar from 'img/icons/user_avatar.svg'
 import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
 import { CHATBOT_FUNCTIONS, CHATBOT_ROLE } from 'commons/enums/Chatbot'
@@ -9,14 +13,15 @@ import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 import Markdown from 'markdown-to-jsx'
 import { Global, css } from '@emotion/react'
-
-import './chat-bot.scss'
 import { last, uniqueId } from 'lodash'
 import { BotGenerateRequest, BotGenerateResponse } from '../../commons/types/bot-types'
 import { BotFunctionExecutionContext } from '../../commons/types/chatbot-types'
 import { AssetNodes } from '../../commons/utils/asset-nodes'
 import { createChatBotFunctionDefinitions } from '../../commons/utils/chatbot-function-utils'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
+import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
+
+import './chat-bot.scss'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -32,6 +37,16 @@ interface Props {
 }
 
 export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
+  /** Hooks */
+  const {
+    audioUrl: recordedVoiceUrl,
+    recordingStatus,
+    isPermissionDenied,
+    startRecording,
+    stopRecording,
+    resetRecording,
+  } = useVoiceRecorder()
+
   /** States and Refs */
   const [text, setText] = useState('')
   const [chatContent, setChatContent] = useState<undefined | ChatBotMessage[]>(undefined)
@@ -269,7 +284,6 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
             <Button
               title="Clear"
               displayTitle={false}
-              // @ts-ignore
               imageSource={TrashBin}
               imageSize={16}
               onClick={initializeChatContext}
@@ -297,19 +311,9 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
                   title={role === CHATBOT_ROLE.ASSISTANT ? 'Bot' : 'You'}
                 >
                   {role === CHATBOT_ROLE.ASSISTANT ? (
-                    <img
-                      className="ChartBot-chatPanel-messageContainer-avatar-image"
-                      // @ts-ignore
-                      src={AssistantAvatar}
-                      alt="Bot"
-                    />
+                    <img className="ChartBot-chatPanel-messageContainer-avatar-image" src={AssistantAvatar} alt="Bot" />
                   ) : (
-                    <img
-                      className="ChartBot-chatPanel-messageContainer-avatar-image"
-                      // @ts-ignore
-                      src={UserAvatar}
-                      alt="User"
-                    />
+                    <img className="ChartBot-chatPanel-messageContainer-avatar-image" src={UserAvatar} alt="User" />
                   )}
                 </div>
                 <div
@@ -346,25 +350,67 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
       </div>
 
       <div className="ChartBot-inputContainer">
-        <Input
-          label="Search"
-          placeholder="Search"
-          value={text}
-          title="wildcard supported"
-          onChange={(e) => {
-            const value = e.currentTarget.value
-            setText(value)
-          }}
-          onKeyDown={(event) => {
-            if (!event.shiftKey && event.key === 'Enter') {
-              event.preventDefault()
-              handleNewUserMessage()
-            }
-          }}
-          style={{
-            marginBottom: '8px',
-          }}
-          className={classNames('searchInput')}
+        {recordedVoiceUrl ? (
+          <audio
+            className="ChartBot-inputContainer-voicePlaceHolder"
+            src={recordedVoiceUrl}
+            controls
+            controlsList="nodownload"
+          />
+        ) : (
+          <Input
+            label="Search"
+            placeholder="Search"
+            value={text}
+            title="wildcard supported"
+            onChange={(e) => {
+              const value = e.currentTarget.value
+              setText(value)
+            }}
+            onKeyDown={(event) => {
+              if (!event.shiftKey && event.key === 'Enter') {
+                event.preventDefault()
+                handleNewUserMessage()
+              }
+            }}
+            style={{
+              marginBottom: '8px',
+            }}
+            className={classNames('searchInput')}
+          />
+        )}
+        {!recordedVoiceUrl && (
+          <Button
+            className="ChartBot-inputContainer-buttonContainer record"
+            title={isPermissionDenied ? 'Permission Denied' : recordingStatus === 'inactive' ? 'Record' : 'Stop'}
+            displayTitle={false}
+            disabled={isPermissionDenied}
+            imageSource={recordingStatus === 'inactive' ? RecordIcon : StopIcon}
+            imageSize={16}
+            onClick={() => {
+              recordingStatus === 'inactive' ? startRecording() : stopRecording()
+            }}
+          />
+        )}
+        {recordedVoiceUrl && (
+          <Button
+            className="ChartBot-inputContainer-buttonContainer send"
+            title={'Send'}
+            displayTitle={false}
+            imageSource={SendMessage}
+            imageSize={16}
+            onClick={() => {
+              // send message here
+            }}
+          />
+        )}
+        <Button
+          className="ChartBot-inputContainer-buttonContainer reset"
+          title={'Reset'}
+          displayTitle={false}
+          imageSource={TrashBin}
+          imageSize={16}
+          onClick={resetRecording}
         />
       </div>
     </div>

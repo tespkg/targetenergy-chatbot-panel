@@ -3,7 +3,7 @@ import { locationService } from '@grafana/runtime'
 import { PanelProps } from '@grafana/data'
 import { Alert, useStyles2 } from '@grafana/ui'
 import * as React from 'react'
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { TreeOptions } from 'types'
 import { ChatMessagePanel } from 'components/chat-bot/ChatMessagePanel'
 import * as Handlebars from 'handlebars'
@@ -35,8 +35,13 @@ const getSearchParam = (variableName: string) => locationService.getSearch().get
 export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables }) => {
   const styles = useStyles2(getStyles)
 
-  const { field, variableName, firstFourLevelsSortingVariableName, treeFiltersVariableName, defaultExpansionLevel } =
-    options
+  const {
+    field,
+    variableName,
+    // firstFourLevelsSortingVariableName,
+    // treeFiltersVariableName,
+    defaultExpansionLevel,
+  } = options
 
   const rows = data.series
     .map((d) => d.fields.find((f) => f.name === field))
@@ -74,6 +79,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   const selected = parseSelected(queryVar === options.defaultValue ? '' : queryVar)
 
   let tree: TreeNodeData[] = []
+  // @ts-ignore
   let dataError: React.ReactNode | undefined
   try {
     tree = transformData(rows ?? [], defaultExpansionLevel, selected, false, '', {}, mounted.current)
@@ -90,7 +96,10 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
     )
   }
 
-  const [formatTpl, formatTplError] = React.useMemo(() => {
+  const [
+    formatTpl,
+    // formatTplError
+  ] = React.useMemo(() => {
     let error: React.ReactNode
     let fmt = formatTemplate
     try {

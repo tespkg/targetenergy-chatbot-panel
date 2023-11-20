@@ -7,6 +7,7 @@ import {CHATBOT_FUNCTIONS, CHATBOT_ROLE} from 'commons/enums/Chatbot'
 import {BOT_SYSTEM_MESSAGE} from 'api/chatbot/system-message'
 import {Input} from '@grafana/ui'
 import {Button} from 'components/button/Button'
+import Markdown from 'markdown-to-jsx'
 
 import './chat-bot.scss'
 import {last, uniqueId} from "lodash";
@@ -22,7 +23,7 @@ interface ChatBotMessage {
 }
 
 
-export const ChatBot = () => {
+export const ChatMessagePanel = () => {
     /** States and Refs */
     const [text, setText] = useState('')
     const [chatContent, setChatContent] = useState<undefined | ChatBotMessage[]>(undefined)
@@ -291,13 +292,19 @@ export const ChatBot = () => {
                                         assistant: role === CHATBOT_ROLE.ASSISTANT,
                                     })}
                                 >
-                  <span
-                      className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {
-                          user: role === CHATBOT_ROLE.USER,
-                          assistant: role === CHATBOT_ROLE.ASSISTANT,
-                      })}
-                      dangerouslySetInnerHTML={{__html: message}}
-                  ></span>
+                                  {/*<span*/}
+                                  {/*    className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {*/}
+                                  {/*        user: role === CHATBOT_ROLE.USER,*/}
+                                  {/*        assistant: role === CHATBOT_ROLE.ASSISTANT,*/}
+                                  {/*    })}*/}
+                                  {/*    dangerouslySetInnerHTML={{__html: message}}*/}
+                                  {/*></span>*/}
+                                    <Markdown className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {
+                                        user: role === CHATBOT_ROLE.USER,
+                                        assistant: role === CHATBOT_ROLE.ASSISTANT,
+                                    })}>
+                                        {message}
+                                    </Markdown>
                                 </div>
                             </div>
                         ))}

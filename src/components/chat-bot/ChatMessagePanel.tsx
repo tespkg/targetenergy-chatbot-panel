@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
 import TrashBin from 'img/icons/trashbin.svg'
 import RecordIcon from 'img/icons/record.svg'
@@ -7,7 +7,7 @@ import SendMessage from 'img/icons/send-message.svg'
 
 import UserAvatar from 'img/icons/user_avatar.svg'
 import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
-import { CHATBOT_FUNCTIONS, CHATBOT_ROLE } from 'commons/enums/Chatbot'
+import { CHATBOT_FUNCTIONS, CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
 import { createSystemMessage } from 'api/chatbot/system-message'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
@@ -26,6 +26,8 @@ import './chat-bot.scss'
 interface ChatBotMessage {
   role: CHATBOT_ROLE
   message: string
+  audio?: Blob
+  type: SUPPORTED_MESSAGE_TYPE
   id: string
   includeInContextHistory: boolean
   includeInChatPanel: boolean
@@ -40,6 +42,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
+    audioBlob: recordedVoiceBlob,
     recordingStatus,
     isPermissionDenied,
     startRecording,
@@ -66,6 +69,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
               role: role,
               includeInContextHistory: includeInContextHistory,
               includeInChatPanel: includeInChatPanel,
+              type: SUPPORTED_MESSAGE_TYPE.TEXT,
             },
           ]
         })
@@ -74,9 +78,35 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
     },
     []
   )
+  const addVoiceToChatContent = useCallback((audio: Blob) => {
+    if (audio) {
+      setChatContent((prev) => {
+        return [
+          ...(prev || []),
+          {
+            id: uniqueId('audio_message_'),
+            message: '',
+            audio: audio,
+            role: CHATBOT_ROLE.USER,
+            includeInContextHistory: true,
+            includeInChatPanel: true,
+            type: SUPPORTED_MESSAGE_TYPE.AUDIO,
+          },
+          {
+            id: uniqueId('text_message_'),
+            message: 'Trying to convert the voice to text...',
+            role: CHATBOT_ROLE.ASSISTANT,
+            includeInContextHistory: false,
+            includeInChatPanel: true,
+            type: SUPPORTED_MESSAGE_TYPE.TEXT,
+          },
+        ]
+      })
+    }
+  }, [])
 
   const handleBotResponse = useCallback(
-    async (botResponse: BotGenerateResponse, nextRequest: (text: string, role?: CHATBOT_ROLE) => Promise<void>) => {
+    async (botResponse: BotGenerateResponse) => {
       console.log('Handling bot response', botResponse)
 
       if (botResponse.text) {
@@ -90,14 +120,33 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
               return [
                 ...prev,
                 {
-                  id: uniqueId(),
+                  id: uniqueId('text_message'),
                   role: CHATBOT_ROLE.ASSISTANT,
                   message: botResponse.text,
                   includeInContextHistory: true,
                   includeInChatPanel: true,
+                  type: SUPPORTED_MESSAGE_TYPE.TEXT,
                 } as ChatBotMessage,
               ]
             }
+          } else {
+            return prev
+          }
+        })
+      } else if (botResponse.audio_transcription) {
+        setChatContent((prev) => {
+          if (prev) {
+            return [
+              ...prev,
+              {
+                id: uniqueId('text_message'),
+                role: CHATBOT_ROLE.USER,
+                message: botResponse.audio_transcription,
+                includeInContextHistory: true,
+                includeInChatPanel: true,
+                type: SUPPORTED_MESSAGE_TYPE.TEXT,
+              } as ChatBotMessage,
+            ]
           } else {
             return prev
           }
@@ -107,11 +156,12 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
           return [
             ...(prev ?? []),
             {
-              id: uniqueId(),
+              id: uniqueId('text_message'),
               role: CHATBOT_ROLE.ASSISTANT,
               message: JSON.stringify(botResponse),
               includeInContextHistory: true,
               includeInChatPanel: false,
+              type: SUPPORTED_MESSAGE_TYPE.TEXT,
             } as ChatBotMessage,
           ]
         })
@@ -153,54 +203,59 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
   )
 
   const requestChatbotCompletion = useCallback(
-    async (text: string, role: CHATBOT_ROLE = CHATBOT_ROLE.USER) => {
-      //       const prompt = `Current status of asset tree:
-      // ${nodesRef.current!.toMarkdown({
-      //   includeSelected: true,
-      //   includeIds: true,
-      // })}
-      //
-      // ${text}`
-
-      const prompt = text
+    async (message: string | Blob, role: CHATBOT_ROLE = CHATBOT_ROLE.USER, isAudio: boolean) => {
+      const prompt = message
 
       const systemMessage = createSystemMessage(nodes)
 
       const newContent = [
         {
+          id: uniqueId(),
           message: systemMessage,
           role: CHATBOT_ROLE.ASSISTANT,
           includeInContextHistory: true,
-        },
+          includeInChatPanel: false,
+          type: SUPPORTED_MESSAGE_TYPE.TEXT,
+        } as ChatBotMessage,
         ...(chatContent || []),
-        {
-          message: prompt,
+      ]
+      if (!isAudio) {
+        newContent.push({
+          id: uniqueId(),
+          message: prompt as string,
           role: role,
           includeInContextHistory: true,
-        },
-      ]
+          includeInChatPanel: false,
+          type: SUPPORTED_MESSAGE_TYPE.TEXT,
+        })
+      }
       const messages = newContent
         .filter(({ includeInContextHistory }) => includeInContextHistory)
         .map(({ message, role }) => ({
           role: role.toString(),
           content: message,
         }))
-
       const request: BotGenerateRequest = {
         messages: messages,
         functions: createChatBotFunctionDefinitions({}),
       }
+      let options: RequestInit = {
+        method: 'POST',
+      }
+      if (isAudio) {
+        const formData = new FormData()
+        formData.append('audio', message as Blob, 'voice_recording.webm')
+        formData.append('request', JSON.stringify(request))
+        options.body = formData
+      } else {
+        options.body = JSON.stringify(request)
+        options.headers = {
+          'Content-Type': 'application/json',
+        }
+      }
 
       // const url = `https://dso.dev.meeraspace.com/chatbot-api/v1/generate`
       const url = `http://localhost:8000/api/v1/generate`
-
-      let options: RequestInit = {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      }
 
       try {
         const response = await fetch(url, options)
@@ -225,7 +280,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
               const messageText = line.replace('data: ', '').trim()
               if (messageText !== '') {
                 const message = JSON.parse(messageText) as BotGenerateResponse
-                await handleBotResponse(message, requestChatbotCompletion)
+                await handleBotResponse(message)
                 messages.push(message)
               }
             }
@@ -242,8 +297,16 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
 
   const handleNewUserMessage = useCallback(async () => {
     addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
-    await requestChatbotCompletion(text)
+    await requestChatbotCompletion(text, CHATBOT_ROLE.USER, false)
   }, [addMessageToChatContent, requestChatbotCompletion, text])
+  //
+  const handleNewUserVoiceMessage = useCallback(
+    async (voice: Blob) => {
+      addVoiceToChatContent(voice)
+      await requestChatbotCompletion(voice, CHATBOT_ROLE.USER, true)
+    },
+    [addVoiceToChatContent, requestChatbotCompletion]
+  )
 
   /** Callbacks */
 
@@ -295,7 +358,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
-            .map(({ message, id, role }) => (
+            .map(({ message, type, audio, id, role }) => (
               <div
                 key={id}
                 className={classNames('ChartBot-chatPanel-messageContainer', {
@@ -320,30 +383,35 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
                   className={classNames('ChartBot-chatPanel-messageContainer-message', {
                     user: role === CHATBOT_ROLE.USER,
                     assistant: role === CHATBOT_ROLE.ASSISTANT,
+                    audio: type === SUPPORTED_MESSAGE_TYPE.AUDIO,
                   })}
                 >
-                  <Global
-                    styles={css`
-                      strong {
-                        font-weight: 700 !important;
-                      }
-                    `}
-                  />
-                  {/*<span*/}
-                  {/*    className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {*/}
-                  {/*        user: role === CHATBOT_ROLE.USER,*/}
-                  {/*        assistant: role === CHATBOT_ROLE.ASSISTANT,*/}
-                  {/*    })}*/}
-                  {/*    dangerouslySetInnerHTML={{__html: message}}*/}
-                  {/*></span>*/}
-                  <Markdown
-                    className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {
-                      user: role === CHATBOT_ROLE.USER,
-                      assistant: role === CHATBOT_ROLE.ASSISTANT,
-                    })}
-                  >
-                    {message}
-                  </Markdown>
+                  {type === SUPPORTED_MESSAGE_TYPE.AUDIO && audio ? (
+                    <audio
+                      className="ChartBot-chatPanel-messageContainer-message-messageVoice"
+                      src={URL.createObjectURL(audio)}
+                      controls
+                      controlsList="nodownload"
+                    />
+                  ) : (
+                    <Fragment>
+                      <Global
+                        styles={css`
+                          strong {
+                            font-weight: 700 !important;
+                          }
+                        `}
+                      />
+                      <Markdown
+                        className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {
+                          user: role === CHATBOT_ROLE.USER,
+                          assistant: role === CHATBOT_ROLE.ASSISTANT,
+                        })}
+                      >
+                        {message}
+                      </Markdown>
+                    </Fragment>
+                  )}
                 </div>
               </div>
             ))}
@@ -400,7 +468,10 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
             imageSource={SendMessage}
             imageSize={16}
             onClick={() => {
-              // send message here
+              if (recordedVoiceBlob) {
+                handleNewUserVoiceMessage(recordedVoiceBlob)
+                resetRecording()
+              }
             }}
           />
         )}

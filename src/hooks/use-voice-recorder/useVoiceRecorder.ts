@@ -12,6 +12,7 @@ export const useVoiceRecorder = () => {
   const [recordingStatus, setRecordingStatus] = useState<RecorderStatus>('inactive')
   const [audioChunks, setAudioChunks] = useState<any[]>([])
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
 
   /** Callbacks */
   const onMediaStreamAvailable = useCallback((media: MediaRecorder) => {
@@ -74,11 +75,11 @@ export const useVoiceRecorder = () => {
       // Creates a blob file from the audio chunks data
       console.log('audioChunks: ', audioChunks)
 
-      const audioBlob = new Blob(audioChunks, { type: mimeType })
+      const _audioBlob = new Blob(audioChunks, { type: mimeType })
       // Creates a playable URL from the blob file.
-      const audioUrl = URL.createObjectURL(audioBlob)
-      console.log('audioUrl: ', audioUrl)
-      setAudioUrl(audioUrl)
+      const _audioUrl = URL.createObjectURL(_audioBlob)
+      setAudioUrl(_audioUrl)
+      setAudioBlob(_audioBlob)
     }
   }, [audioChunks])
   //
@@ -87,11 +88,13 @@ export const useVoiceRecorder = () => {
     setRecordingStatus('inactive')
     setAudioChunks([])
     setAudioUrl(null)
+    setAudioBlob(null)
   }, [])
 
   /** Return */
   return {
     audioUrl,
+    audioBlob,
     recordingStatus,
     isPermissionDenied,
     stopRecording,

@@ -178,6 +178,9 @@ $input-vertical-margin: 8px;
       &-message.user {
         background-color: #1e90ff;
       }
+      &-message.user.audio {
+        background-color: unset;
+      }
     }
 
     &-messageContainer.user {

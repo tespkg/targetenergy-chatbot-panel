@@ -14,8 +14,10 @@
     "e2e:update": "yarn cypress install && yarn grafana-e2e run --update-screenshots",
     "server": "docker-compose up --build",
     "sign": "npx --yes @grafana/sign-plugin",
-    "copy": "docker cp ./dist portfolio-grafana-grafana-1:/var/lib/grafana-plugins/chatbot-panel",
-    "pack": "npm-run-all build copy"
+    "copy-to-container": "docker cp ./dist portfolio-grafana-grafana-1:/var/lib/grafana-plugins/chatbot-panel",
+    "restart-container": "docker restart portfolio-grafana-grafana-1",
+    "local-deploy": "npm-run-all build copy-to-container restart-container",
+    "watch-dist": "nodemon --watch ./dist --exec \"yarn run copy-to-container && yarn run restart-container\""
   },
   "author": "Target Energy Solutions",
   "license": "Apache-2.0",
@@ -51,6 +53,8 @@
     "identity-obj-proxy": "3.0.0",
     "jest": "^29.3.1",
     "jest-environment-jsdom": "^29.3.1",
+    "nodemon": "^3.0.1",
+    "npm-run-all": "^4.1.5",
     "prettier": "^2.5.0",
     "replace-in-file-webpack-plugin": "^1.0.6",
     "sass": "1.56.1",

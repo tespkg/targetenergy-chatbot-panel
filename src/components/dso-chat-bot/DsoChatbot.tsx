@@ -73,12 +73,46 @@ export const DsoChatBot = () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        mode: 'no-cors',
       },
       body: JSON.stringify({ messages: messages, functions: [] }),
     }
-    const response = await fetch(url, options)
-    console.log('response:::::::::', response)
+
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) {
+        console.log('Request to the generate endpoint failed')
+        return
+      }
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder('utf-8')
+      let resultText = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) {
+          break
+        }
+        // Massage and parse the chunk of data
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\\n')
+        const parsedLines = lines
+          .map((line) => line.replace(/^data: /, '').trim()) // Remove the "data: " prefix
+          .filter((line) => line !== '' && line !== '[DONE]') // Remove empty lines and "[DONE]"
+          .map((line) => JSON.parse(line)) // Parse the JSON string
+
+        for (const parsedLine of parsedLines) {
+          const { choices } = parsedLine
+          const { delta } = choices[0]
+          const { content } = delta
+          // Update the UI with the new content
+          if (content) {
+            resultText += content
+          }
+        }
+      }
+
+      console.log('Generate response:', resultText)
+    } catch (err) {}
   }, [addMessageToChatContent, chatContent, text])
 
   /** Callbacks */

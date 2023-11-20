@@ -74,6 +74,16 @@ $input-vertical-margin: 8px;
     border-radius: 0 0 10px 10px;
     background-color: #fff;
 
+    &-voicePlaceHolder {
+      height: 36px;
+      width: calc(100% - 10px);
+      padding: 0 5px;
+    }
+
+    &-buttonContainer {
+      margin-left: 5px;
+    }
+
     .md-text-field-container {
       padding-left: 5px;
       border: solid 1px #669;

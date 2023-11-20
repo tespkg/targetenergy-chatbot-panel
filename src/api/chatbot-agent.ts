@@ -1,0 +1,262 @@
+import {
+  BotFunctionDefinition,
+  BotGenerateRequest,
+  BotGenerateResponse,
+  BotMessage,
+  ChatCompletionMessageToolCall,
+} from './bot-types'
+import { agentCallbacks, Callbacks, DEFAULT_AGENT_NAME, NullCallbacks } from './callbacks'
+
+export interface ChatFunctionContext {}
+const NullContext: ChatFunctionContext = {}
+
+export type ChatFunction = {
+  name: string
+  description: (context: ChatFunctionContext) => string
+  parameters?: (context: ChatFunctionContext) => any
+  isAgent?: boolean
+  run: (
+    context: ChatFunctionContext,
+    abortSignal?: AbortSignal,
+    callback?: Callbacks
+  ) => Promise<string | BotGenerateResponse>
+}
+
+export class ChatFunctionSet {
+  functions: ChatFunction[] = []
+  abortSignal?: AbortSignal
+  callbacks?: Callbacks
+
+  constructor(functions: ChatFunction[] = [], abortSignal?: AbortSignal, callbacks?: Callbacks) {
+    this.functions = functions
+    this.abortSignal = abortSignal
+    this.callbacks = callbacks
+  }
+
+  get(name: string) {
+    const func = this.functions.find((f) => f.name === name)
+    if (!func) {
+      throw new Error(`Unknown function: ${name}`)
+    }
+    const abortSignal = this.abortSignal
+    let callbacks = this.callbacks
+    if (func.isAgent) {
+      callbacks = agentCallbacks(func.name, callbacks)
+    }
+    return (context: ChatFunctionContext) => {
+      return func.run(context, abortSignal, callbacks)
+    }
+  }
+
+  metadata(context: ChatFunctionContext) {
+    return this.functions.map((f) => ({
+      name: f.name,
+      description: f.description(context),
+      parameters: f.parameters ? f.parameters(context) : null,
+    }))
+  }
+
+  toolMetadata(context: ChatFunctionContext): BotFunctionDefinition[] {
+    return this.functions.map((f) => ({
+      name: f.name,
+      description: f.description(context),
+      parameters: f.parameters
+        ? f.parameters(context)
+        : {
+            type: 'object',
+            properties: {},
+          },
+    }))
+  }
+}
+
+export interface ChatAgentOptions {
+  context?: ChatFunctionContext
+  maxTurns?: number
+  systemMessage?: string
+  callbacks?: Callbacks
+  abortSignal?: AbortSignal
+}
+
+export async function runChatAgent(
+  messages: BotMessage[],
+  functionSet: ChatFunctionSet,
+  options: ChatAgentOptions = {}
+): Promise<BotMessage> {
+  const { maxTurns = 5, abortSignal, systemMessage, context = NullContext } = options
+  const callbacks = agentCallbacks(DEFAULT_AGENT_NAME, options.callbacks ?? NullCallbacks)!
+
+  if (systemMessage) {
+    messages.unshift({
+      role: 'system',
+      content: systemMessage,
+    })
+  }
+
+  let turns = 0
+  while (turns < maxTurns) {
+    turns++
+
+    if (abortSignal?.aborted) {
+      throw new Error('the agent was aborted')
+    }
+
+    const generateRequest: BotGenerateRequest = {
+      messages: messages,
+      functions: functionSet.toolMetadata(context),
+    }
+
+    callbacks.onWorking?.({
+      type: 'working',
+      message: `Turn ${turns}: calling reasoning engine from large language model`,
+      params: generateRequest,
+      turn: turns,
+    })
+
+    console.log('======================= Sending request to backend =======================')
+
+    let options: RequestInit = {
+      method: 'POST',
+      body: JSON.stringify(generateRequest),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      // signal: abortSignal,
+    }
+
+    // const url = `https://dso.dev.meeraspace.com/chatbot-api/v1/generate`
+    const url = `http://localhost:8000/api/v1/generate`
+
+    // TODO: maybe need retry
+    console.log('options', options)
+    const response = await fetch(url, options)
+    if (!response.ok) {
+      throw new Error('request to the generate endpoint failed')
+    }
+    if (abortSignal?.aborted) {
+      throw new Error('the agent was aborted')
+    }
+
+    let assistantMessage: BotMessage = { role: 'assistant', content: '' }
+    let toolCalls: ChatCompletionMessageToolCall[] = []
+
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder('utf-8')
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        break
+      }
+      // parse data chunks to BotResponses
+      const chunk = decoder.decode(value, { stream: true })
+      const lines = chunk.split('\n\n')
+      for (const line of lines) {
+        if (line.startsWith('data:')) {
+          const messageText = line.replace('data: ', '').trim()
+          if (!messageText) {
+            continue
+          }
+          const message = JSON.parse(messageText) as BotGenerateResponse
+          // console.log('Received chunk: ', message)
+          if (message.text) {
+            assistantMessage.content += message.text
+            callbacks.onDelta?.({
+              type: 'delta',
+              turn: turns,
+              message: message.text,
+            })
+          } else if (message.function_call) {
+            toolCalls.push({
+              type: 'function',
+              id: message.function_call.id,
+              function: {
+                name: message.function_call.name,
+                arguments: JSON.stringify(message.function_call.arguments),
+              },
+            })
+          }
+        }
+      }
+    }
+    if (toolCalls.length > 0) {
+      assistantMessage.tool_calls = toolCalls
+    }
+
+    callbacks.onSuccess?.({
+      type: 'success',
+      message: 'Completed llm call',
+      turn: turns,
+      params: generateRequest,
+      result: assistantMessage,
+    })
+
+    messages.push(assistantMessage)
+
+    if (!toolCalls.length) {
+      return assistantMessage
+    }
+
+    for (const toolCall of toolCalls) {
+      if (!functionSet) {
+        throw new Error('tool call but no functions provided')
+      }
+
+      const funcName = toolCall.function.name
+      const func = functionSet.get(funcName)
+      const funcArgs = JSON.parse(toolCall.function.arguments)
+
+      callbacks.onWorking?.({
+        type: 'working',
+        agent: funcName,
+        turn: turns,
+        message: `Calling function ${funcName}`,
+        params: funcArgs,
+      })
+
+      let funcResult: any
+      try {
+        funcResult = await func(funcArgs)
+        callbacks.onSuccess?.({
+          type: 'success',
+          message: `Finished calling function ${funcName}`,
+          agent: funcName,
+          params: funcArgs,
+          result: funcResult,
+          turn: turns,
+        })
+      } catch (e: any) {
+        callbacks.onError?.({
+          type: 'error',
+          message: '',
+          error: e,
+          turn: turns,
+          func: funcName,
+          params: funcArgs,
+        })
+        // TODO: add a switch to throw instead of continue
+        messages.push({
+          role: 'tool',
+          tool_call_id: toolCall.id,
+          content: `Error calling function ${toolCall?.function?.name}: ${e.message}`,
+        })
+        continue
+      }
+
+      // I think the backend does not properly support this for the moment
+      const toolMessage: BotMessage = {
+        role: 'tool',
+        tool_call_id: toolCall.id,
+        content: funcResult.result ?? funcResult,
+      }
+
+      // const toolMessage: BotMessage = {
+      //   role: 'assistant',
+      //   content: funcResult.result ?? funcResult,
+      // }
+
+      messages.push(toolMessage)
+    }
+  }
+
+  throw new Error(`Reached max conversation turns of ${maxTurns}`)
+}

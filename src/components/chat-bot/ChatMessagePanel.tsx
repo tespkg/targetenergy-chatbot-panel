@@ -12,9 +12,8 @@ import { createSystemMessage } from 'api/chatbot/system-message'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 import Markdown from 'markdown-to-jsx'
-import { Global, css } from '@emotion/react'
 import { last, uniqueId } from 'lodash'
-import { BotGenerateRequest, BotGenerateResponse } from '../../commons/types/bot-types'
+import { BotGenerateRequest, BotGenerateResponse, BotMessage } from '../../api/bot-types'
 import { BotFunctionExecutionContext } from '../../commons/types/chatbot-types'
 import { AssetNodes } from '../../commons/utils/asset-nodes'
 import { createChatBotFunctionDefinitions } from '../../commons/utils/chatbot-function-utils'
@@ -22,6 +21,23 @@ import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
 
 import './chat-bot.scss'
+import { ChatFunction, ChatFunctionSet, runChatAgent } from '../../api/chatbot-agent'
+
+const closeWindow: ChatFunction = {
+  name: 'close-window',
+  description: (ctx) => 'close window',
+  run: async (args) => {
+    return `closed window`
+  },
+}
+
+const turnUpHeating: ChatFunction = {
+  name: 'turn-up-heating',
+  description: (ctx) => 'turn up heating',
+  run: async (args) => {
+    return `turned up heating`
+  },
+}
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -299,6 +315,29 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
     addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
     await requestChatbotCompletion(text, CHATBOT_ROLE.USER, false)
   }, [addMessageToChatContent, requestChatbotCompletion, text])
+  // const handleNewUserMessage = useCallback(async () => {
+  //   const functionSet = new ChatFunctionSet([closeWindow, turnUpHeating])
+  //
+  //   const res = await runChatAgent(
+  //       [
+  //         {
+  //           role: 'user',
+  //           content: `Close the window and turn up heating`,
+  //         },
+  //       ],
+  //       functionSet,
+  //       {
+  //         callbacks: {
+  //           onSuccess: (eventData) => console.log(eventData),
+  //           onDelta: (eventData) => console.log(eventData),
+  //           onError: (eventData) => console.log(eventData),
+  //           onWorking: (eventData) => console.log(eventData),
+  //         },
+  //       }
+  //   )
+  //   console.log(res)
+  // }, [])
+
   //
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {

@@ -189,7 +189,11 @@ $input-vertical-margin: 8px;
   } 
 
 
-  ul {
+  ul, ol {
+    padding: revert !important;
+  }
+  strong {
+    font-weight: revert !important;
     padding: revert !important;
   }
 }

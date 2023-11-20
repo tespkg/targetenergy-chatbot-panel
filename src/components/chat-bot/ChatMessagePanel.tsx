@@ -395,13 +395,6 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
                     />
                   ) : (
                     <Fragment>
-                      <Global
-                        styles={css`
-                          strong {
-                            font-weight: 700 !important;
-                          }
-                        `}
-                      />
                       <Markdown
                         className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {
                           user: role === CHATBOT_ROLE.USER,

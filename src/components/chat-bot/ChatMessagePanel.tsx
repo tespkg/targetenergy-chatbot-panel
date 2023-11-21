@@ -30,6 +30,7 @@ import './chat-bot.scss'
 import { Dashboard } from '../../commons/types/dashboard-manager'
 import { getTemplateSrv } from '@grafana/runtime'
 import { TimeRange } from '@grafana/data'
+import { jsonToCSV } from '../../agents/panel-manager-agent'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -45,9 +46,10 @@ interface Props {
   nodes: AssetTree
   onToggleNodes: (node: TreeNodeData[]) => void
   timeRange: TimeRange
+  dashboard: Dashboard
 }
 
-export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => {
+export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange, dashboard }: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
@@ -210,6 +212,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
         context: {
           assetTree: nodes,
           toggleAssetNodes: onToggleNodes,
+          dashboard: dashboard,
         },
         callbacks: {
           onSuccess: (eventData) => {
@@ -234,7 +237,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
         },
       })
     },
-    [addChatChunkReceived, nodes, onToggleNodes]
+    [addChatChunkReceived, dashboard, nodes, onToggleNodes]
   )
 
   const handleNewUserMessage = useCallback(async () => {
@@ -260,17 +263,12 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
           break
         }
         case 'json_model': {
-          const url = '/api/dashboards/uid/production-gross-grouped'
-          const response = await fetch(url)
-          const jsonResponse = await response.json()
-          console.log('Dashboard json model:', jsonResponse)
-          const dashboard = new Dashboard(jsonResponse, timeRange)
           console.log('Parsed dashboard:', dashboard)
-
-          // const panel = dashboard.findPanel('Oil Production')
-          const panel = dashboard.findPanel('Cumulative Production')
+          const panel = dashboard.findPanel('1P Proven - Oil')
           console.log('Parsed panel:', panel)
-          await panel?.fetchData()
+          const data = await panel?.fetchData()
+          const csv = jsonToCSV(data)
+          console.log('Parsed data:', csv)
           break
         }
         case 'global_variables': {
@@ -286,7 +284,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
     addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
     const content = await generate(getBotMessages(text, CHATBOT_ROLE.USER))
     console.log('Final generate result ::: ', content)
-  }, [addMessageToChatContent, generate, getBotMessages, text])
+  }, [addMessageToChatContent, dashboard, generate, getBotMessages, text])
 
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {

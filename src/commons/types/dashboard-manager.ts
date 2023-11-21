@@ -11,6 +11,8 @@ export class Dashboard {
   constructor(jsonModel: any, timeRange: TimeRange) {
     const { dashboard: dashboardModel } = jsonModel
 
+    console.log('Raw Dashboard', dashboardModel)
+
     this.id = dashboardModel.id
     this.title = dashboardModel.title
     this.uid = dashboardModel.uid
@@ -18,7 +20,9 @@ export class Dashboard {
     this.timeRange = timeRange
 
     if (dashboardModel.panels && Array.isArray(dashboardModel.panels)) {
-      this.panelGroups = dashboardModel.panels.map((panel: any) => this.createPanelGroup(panel))
+      this.panelGroups = dashboardModel.panels
+        .filter((panel: any) => panel.type === 'row')
+        .map((panel: any) => this.createPanelGroup(panel))
     }
   }
 
@@ -160,17 +164,6 @@ class Panel {
         range: this.timeRange,
         from: `${this.timeRange.from.unix() * 1000}`,
         to: `${this.timeRange.to.unix() * 1000}`,
-        // range: {
-        //   from: '1949-09-13T19:40:17.675Z',
-        //   to: '2056-03-27T20:16:09.327Z',
-        //   raw: {
-        //     from: '1949-09-13T19:40:17.675Z',
-        //     to: '2056-03-27T20:16:09.327Z',
-        //   },
-        // },
-        // from: '-640585182325',
-        // to: '2721413769327',
-        // ...this.timeRange,
       }),
       headers: {
         'Content-Type': 'application/json',
@@ -179,6 +172,7 @@ class Panel {
 
     const json = await response.json()
     console.log('Fetched data ::: ', json)
+    return json
   }
 
   getSqlQuery = (rawSql: string) => {

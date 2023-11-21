@@ -177,6 +177,9 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
       case 'root.asset_tree':
         agentTitle = 'Chatbot Asset-Tree'
         break
+      case 'root.panel_manager':
+        agentTitle = 'Chatbot Panel-Manager'
+        break
 
       default:
         break

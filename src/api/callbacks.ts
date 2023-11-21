@@ -1,4 +1,4 @@
-export const DEFAULT_AGENT_NAME = 'root'
+export const ROOT_AGENT_NAME = 'root'
 
 export type EventType = 'delta' | 'working' | 'error' | 'success'
 

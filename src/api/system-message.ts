@@ -1,6 +1,6 @@
-import { AssetNodes } from '../../commons/utils/asset-nodes'
+import { AssetTree } from '../commons/utils/asset-tree'
 
-export function createSystemMessage(assetNodes: AssetNodes) {
+export function createSystemMessage(assetNodes: AssetTree) {
   return `You are helpful chatbot designed to help users interact with the Portfolio Manager Dashboard.
 
 ## INSTRUCTIONS
@@ -27,10 +27,11 @@ empowers decision-makers to optimize their asset management strategy effectively
 
 - Application has a asset tree which controls the shown assets and data in the dashboard.
 - User can toggle the asset tree nodes to control the shown assets and data in the dashboard.
-
-## CURRENT APP STATE
-
-The current available asset nodes (as a tree) with their respective ids and where they are selected or not are:
-${assetNodes.toMarkdown({ includeIds: true, includeSelected: true })}
 `
 }
+
+//
+// ## CURRENT APP STATE
+//
+// The current available asset nodes (as a tree) with their respective ids and where they are selected or not are:
+//     ${assetNodes.toMarkdown({ includeIds: true, includeSelected: true })}

@@ -5,9 +5,19 @@ import {
   BotMessage,
   ChatCompletionMessageToolCall,
 } from './bot-types'
-import { agentCallbacks, Callbacks, DEFAULT_AGENT_NAME, NullCallbacks } from './callbacks'
+import { agentCallbacks, Callbacks, NullCallbacks } from './callbacks'
+import { AssetTree } from '../commons/utils/asset-tree'
+import { TreeNodeData } from '../commons/types/TreeNodeData'
+import { generate } from './chatbot-api'
 
-export interface ChatFunctionContext {}
+export interface ChatFunctionContext {
+  assetTree?: AssetTree
+  messages?: BotMessage[]
+
+  // TODO: should wrap them in a proper class maybe
+  toggleAssetNodes?: (node: TreeNodeData[]) => void
+  agentOptions?: ChatAgentOptions
+}
 const NullContext: ChatFunctionContext = {}
 
 export type ChatFunction = {
@@ -17,9 +27,10 @@ export type ChatFunction = {
   isAgent?: boolean
   run: (
     context: ChatFunctionContext,
+    args: any,
     abortSignal?: AbortSignal,
-    callback?: Callbacks
-  ) => Promise<string | BotGenerateResponse>
+    callbacks?: Callbacks
+  ) => Promise<string | BotMessage>
 }
 
 export class ChatFunctionSet {
@@ -43,8 +54,8 @@ export class ChatFunctionSet {
     if (func.isAgent) {
       callbacks = agentCallbacks(func.name, callbacks)
     }
-    return (context: ChatFunctionContext) => {
-      return func.run(context, abortSignal, callbacks)
+    return (context: ChatFunctionContext, args: any) => {
+      return func.run(context, args, abortSignal, callbacks)
     }
   }
 
@@ -84,7 +95,7 @@ export async function runChatAgent(
   options: ChatAgentOptions = {}
 ): Promise<BotMessage> {
   const { maxTurns = 5, abortSignal, systemMessage, context = NullContext } = options
-  const callbacks = agentCallbacks(DEFAULT_AGENT_NAME, options.callbacks ?? NullCallbacks)!
+  const callbacks = options.callbacks ?? NullCallbacks
 
   if (systemMessage) {
     messages.unshift({
@@ -115,27 +126,8 @@ export async function runChatAgent(
 
     console.log('======================= Sending request to backend =======================')
 
-    let options: RequestInit = {
-      method: 'POST',
-      body: JSON.stringify(generateRequest),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // signal: abortSignal,
-    }
-
-    // const url = `https://dso.dev.meeraspace.com/chatbot-api/v1/generate`
-    const url = `http://localhost:8000/api/v1/generate`
-
     // TODO: maybe need retry
-    console.log('options', options)
-    const response = await fetch(url, options)
-    if (!response.ok) {
-      throw new Error('request to the generate endpoint failed')
-    }
-    if (abortSignal?.aborted) {
-      throw new Error('the agent was aborted')
-    }
+    const response = await generate(generateRequest, abortSignal)
 
     let assistantMessage: BotMessage = { role: 'assistant', content: '' }
     let toolCalls: ChatCompletionMessageToolCall[] = []
@@ -205,6 +197,12 @@ export async function runChatAgent(
       const func = functionSet.get(funcName)
       const funcArgs = JSON.parse(toolCall.function.arguments)
 
+      const functionCtx: ChatFunctionContext = {
+        ...(context || {}),
+        messages,
+        agentOptions: options,
+      }
+
       callbacks.onWorking?.({
         type: 'working',
         agent: funcName,
@@ -215,7 +213,7 @@ export async function runChatAgent(
 
       let funcResult: any
       try {
-        funcResult = await func(funcArgs)
+        funcResult = await func(functionCtx, funcArgs)
         callbacks.onSuccess?.({
           type: 'success',
           message: `Finished calling function ${funcName}`,
@@ -246,7 +244,7 @@ export async function runChatAgent(
       const toolMessage: BotMessage = {
         role: 'tool',
         tool_call_id: toolCall.id,
-        content: funcResult.result ?? funcResult,
+        content: funcResult.content ?? funcResult,
       }
 
       // const toolMessage: BotMessage = {

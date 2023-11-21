@@ -9,7 +9,7 @@ import { ChatMessagePanel } from 'components/chat-bot/ChatMessagePanel'
 import * as Handlebars from 'handlebars'
 import './style.css'
 import { setGrafanaVariable } from '../commons/utils/grafana-variable-utils'
-import { AssetNodes } from '../commons/utils/asset-nodes'
+import { AssetTree } from '../commons/utils/asset-tree'
 import { TreeNodeData } from '../commons/types/TreeNodeData'
 import { MatchSearch } from '../commons/enums/MatchSearch'
 
@@ -175,7 +175,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   console.log('data', data)
   console.log('tree', tree)
 
-  const assetNodes = new AssetNodes(tree)
+  const assetNodes = new AssetTree(tree)
 
   // const assetNodesRef = useRef<AssetNodes>()
   // useLayoutEffect(() => {

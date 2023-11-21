@@ -7,37 +7,19 @@ import SendMessage from 'img/icons/send-message.svg'
 
 import UserAvatar from 'img/icons/user_avatar.svg'
 import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
-import { CHATBOT_FUNCTIONS, CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
-import { createSystemMessage } from 'api/chatbot/system-message'
+import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 import Markdown from 'markdown-to-jsx'
 import { last, uniqueId } from 'lodash'
-import { BotGenerateRequest, BotGenerateResponse, BotMessage } from '../../api/bot-types'
-import { BotFunctionExecutionContext } from '../../commons/types/chatbot-types'
-import { AssetNodes } from '../../commons/utils/asset-nodes'
-import { createChatBotFunctionDefinitions } from '../../commons/utils/chatbot-function-utils'
+import { BotMessage } from '../../api/bot-types'
+import { AssetTree } from '../../commons/utils/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
-
+import { runAgents } from '../../agents/agent-runner'
+import { ROOT_AGENT_NAME } from '../../api/callbacks'
+import { transcribe } from '../../api/chatbot-api'
 import './chat-bot.scss'
-import { ChatFunction, ChatFunctionSet, runChatAgent } from '../../api/chatbot-agent'
-
-const closeWindow: ChatFunction = {
-  name: 'close-window',
-  description: (ctx) => 'close window',
-  run: async (args) => {
-    return `closed window`
-  },
-}
-
-const turnUpHeating: ChatFunction = {
-  name: 'turn-up-heating',
-  description: (ctx) => 'turn up heating',
-  run: async (args) => {
-    return `turned up heating`
-  },
-}
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -50,7 +32,7 @@ interface ChatBotMessage {
 }
 
 interface Props {
-  nodes: AssetNodes
+  nodes: AssetTree
   onToggleNodes: (node: TreeNodeData[]) => void
 }
 
@@ -79,8 +61,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
           return [
             ...(prev || []),
             {
-              // TODO not a good key
-              id: text,
+              id: uniqueId('text_message_'),
               message: text,
               role: role,
               includeInContextHistory: includeInContextHistory,
@@ -121,230 +102,100 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
     }
   }, [])
 
-  const handleBotResponse = useCallback(
-    async (botResponse: BotGenerateResponse) => {
-      console.log('Handling bot response', botResponse)
+  const addChatChunkReceived = useCallback((text: string) => {
+    if (!text) {
+      return
+    }
 
-      if (botResponse.text) {
-        setChatContent((prev) => {
-          if (prev) {
-            const lastMessage = last(prev)!
-            if (lastMessage.role === CHATBOT_ROLE.ASSISTANT) {
-              lastMessage.message = lastMessage.message + botResponse.text
-              return [...prev.slice(0, prev.length - 1), lastMessage]
-            } else {
-              return [
-                ...prev,
-                {
-                  id: uniqueId('text_message'),
-                  role: CHATBOT_ROLE.ASSISTANT,
-                  message: botResponse.text,
-                  includeInContextHistory: true,
-                  includeInChatPanel: true,
-                  type: SUPPORTED_MESSAGE_TYPE.TEXT,
-                } as ChatBotMessage,
-              ]
-            }
-          } else {
-            return prev
-          }
-        })
-      } else if (botResponse.audio_transcription) {
-        setChatContent((prev) => {
-          if (prev) {
-            return [
-              ...prev,
-              {
-                id: uniqueId('text_message'),
-                role: CHATBOT_ROLE.USER,
-                message: botResponse.audio_transcription,
-                includeInContextHistory: true,
-                includeInChatPanel: true,
-                type: SUPPORTED_MESSAGE_TYPE.TEXT,
-              } as ChatBotMessage,
-            ]
-          } else {
-            return prev
-          }
-        })
-      } else if (botResponse.function_call) {
-        setChatContent((prev) => {
+    setChatContent((prev) => {
+      if (prev) {
+        const lastMessage = last(prev)!
+        if (lastMessage.role === CHATBOT_ROLE.ASSISTANT) {
+          lastMessage.message = lastMessage.message + text
+          return [...prev.slice(0, prev.length - 1), lastMessage]
+        } else {
           return [
-            ...(prev ?? []),
+            ...prev,
             {
               id: uniqueId('text_message'),
               role: CHATBOT_ROLE.ASSISTANT,
-              message: JSON.stringify(botResponse),
+              message: text,
               includeInContextHistory: true,
-              includeInChatPanel: false,
+              includeInChatPanel: true,
               type: SUPPORTED_MESSAGE_TYPE.TEXT,
             } as ChatBotMessage,
           ]
-        })
-
-        // @ts-ignore
-        const commandContext: BotFunctionExecutionContext = {
-          addIntent(intent: string) {
-            addMessageToChatContent(intent, CHATBOT_ROLE.ASSISTANT, false, true)
-          },
         }
-
-        const functionCall = botResponse.function_call || {}
-        const name = functionCall.name
-        const args = functionCall.arguments || {}
-        console.log('Executing function', name, args)
-
-        if (name) {
-          switch (name) {
-            case CHATBOT_FUNCTIONS.TOGGLE_ASSET_NODE_SELECTION: {
-              const { node_ids } = args
-              const nodeIds = node_ids as string[]
-
-              const toggleNodes = []
-              for (const nodeId of nodeIds) {
-                const node = nodes.findNodeById(nodeId)
-                if (node) {
-                  toggleNodes.push(node)
-                }
-              }
-              if (toggleNodes.length > 0) {
-                onToggleNodes(toggleNodes)
-              }
-            }
-          }
-        }
+      } else {
+        return prev
       }
-    },
-    [addMessageToChatContent, nodes, onToggleNodes]
-  )
+    })
+  }, [])
 
-  const requestChatbotCompletion = useCallback(
-    async (message: string | Blob, role: CHATBOT_ROLE = CHATBOT_ROLE.USER, isAudio: boolean) => {
-      const prompt = message
-
-      const systemMessage = createSystemMessage(nodes)
-
-      const newContent = [
+  const getBotMessages = useCallback(
+    (text: string, role: string) => {
+      const chatHistory = [
+        ...(chatContent || []),
         {
           id: uniqueId(),
-          message: systemMessage,
-          role: CHATBOT_ROLE.ASSISTANT,
-          includeInContextHistory: true,
-          includeInChatPanel: false,
-          type: SUPPORTED_MESSAGE_TYPE.TEXT,
-        } as ChatBotMessage,
-        ...(chatContent || []),
-      ]
-      if (!isAudio) {
-        newContent.push({
-          id: uniqueId(),
-          message: prompt as string,
+          message: text,
           role: role,
           includeInContextHistory: true,
           includeInChatPanel: false,
           type: SUPPORTED_MESSAGE_TYPE.TEXT,
-        })
-      }
-      const messages = newContent
+        },
+      ]
+      return chatHistory
         .filter(({ includeInContextHistory }) => includeInContextHistory)
         .map(({ message, role }) => ({
           role: role.toString(),
           content: message,
         }))
-      const request: BotGenerateRequest = {
-        messages: messages,
-        functions: createChatBotFunctionDefinitions({}),
-      }
-      let options: RequestInit = {
-        method: 'POST',
-      }
-      if (isAudio) {
-        const formData = new FormData()
-        formData.append('audio', message as Blob, 'voice_recording.webm')
-        formData.append('request', JSON.stringify(request))
-        options.body = formData
-      } else {
-        options.body = JSON.stringify(request)
-        options.headers = {
-          'Content-Type': 'application/json',
-        }
-      }
-
-      // const url = `https://dso.dev.meeraspace.com/chatbot-api/v1/generate`
-      const url = `http://localhost:8000/api/v1/generate`
-
-      try {
-        const response = await fetch(url, options)
-        if (!response.ok) {
-          console.log('Request to the generate endpoint failed')
-          return
-        }
-        const reader = response.body!.getReader()
-        const decoder = new TextDecoder('utf-8')
-        let messages = []
-
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) {
-            break
-          }
-          // parse data chunks to BotResponses
-          const chunk = decoder.decode(value, { stream: true })
-          const lines = chunk.split('\n\n')
-          for (const line of lines) {
-            if (line.startsWith('data:')) {
-              const messageText = line.replace('data: ', '').trim()
-              if (messageText !== '') {
-                const message = JSON.parse(messageText) as BotGenerateResponse
-                await handleBotResponse(message)
-                messages.push(message)
-              }
-            }
-          }
-        }
-
-        const textMessages = messages.map((m) => m.text).join('')
-        console.log('Generate Response :::', messages, textMessages)
-        // addMessageToChatContent(messageContent, CHATBOT_ROLE.ASSISTANT, true, true)
-      } catch (err) {}
     },
-    [chatContent, handleBotResponse, nodes]
+    [chatContent]
+  )
+
+  const generate = useCallback(
+    async (messages: BotMessage[]) => {
+      const abortSignal = new AbortController().signal
+
+      runAgents(messages, {
+        abortSignal,
+        context: {
+          assetTree: nodes,
+          toggleAssetNodes: onToggleNodes,
+        },
+        callbacks: {
+          onSuccess: (eventData) => console.log(eventData),
+          onDelta: (eventData) => {
+            const { message, agent } = eventData
+            if (agent === ROOT_AGENT_NAME) {
+              addChatChunkReceived(message)
+            }
+          },
+          onError: (eventData) => console.log(eventData),
+          onWorking: (eventData) => console.log(eventData),
+        },
+      })
+    },
+    [addChatChunkReceived, nodes, onToggleNodes]
   )
 
   const handleNewUserMessage = useCallback(async () => {
     addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
-    await requestChatbotCompletion(text, CHATBOT_ROLE.USER, false)
-  }, [addMessageToChatContent, requestChatbotCompletion, text])
-  // const handleNewUserMessage = useCallback(async () => {
-  //   const functionSet = new ChatFunctionSet([closeWindow, turnUpHeating])
-  //
-  //   const res = await runChatAgent(
-  //       [
-  //         {
-  //           role: 'user',
-  //           content: `Close the window and turn up heating`,
-  //         },
-  //       ],
-  //       functionSet,
-  //       {
-  //         callbacks: {
-  //           onSuccess: (eventData) => console.log(eventData),
-  //           onDelta: (eventData) => console.log(eventData),
-  //           onError: (eventData) => console.log(eventData),
-  //           onWorking: (eventData) => console.log(eventData),
-  //         },
-  //       }
-  //   )
-  //   console.log(res)
-  // }, [])
+    const content = await generate(getBotMessages(text, CHATBOT_ROLE.USER))
+    console.log('Final generate result ::: ', content)
+  }, [addMessageToChatContent, generate, getBotMessages, text])
 
-  //
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {
       addVoiceToChatContent(voice)
-      await requestChatbotCompletion(voice, CHATBOT_ROLE.USER, true)
+      const transcription = await transcribe(voice)
+      addMessageToChatContent(transcription, CHATBOT_ROLE.USER, true, true)
+      const content = await generate(getBotMessages(transcription, CHATBOT_ROLE.USER))
+      console.log('Final generate result ::: ', content)
     },
-    [addVoiceToChatContent, requestChatbotCompletion]
+    [addMessageToChatContent, addVoiceToChatContent, generate, getBotMessages]
   )
 
   /** Callbacks */

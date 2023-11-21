@@ -12,7 +12,7 @@ export type FilterCriteria = {
   selected?: boolean
 }
 
-export class AssetNodes {
+export class AssetTree {
   MAX_NODE_LEVEL = 9
   nodes: TreeNodeData[] = []
 

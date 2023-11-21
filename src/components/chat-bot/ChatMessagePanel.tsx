@@ -3,6 +3,7 @@ import classNames from 'classnames'
 import TrashBin from 'img/icons/trashbin.svg'
 import RecordIcon from 'img/icons/record.svg'
 import StopIcon from 'img/icons/stop-circle.svg'
+import LoadingIcon from 'img/icons/animated-loading.svg'
 import SendMessage from 'img/icons/send-message.svg'
 
 import UserAvatar from 'img/icons/user_avatar.svg'
@@ -17,7 +18,13 @@ import { AssetTree } from '../../commons/utils/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
 import { runAgents } from '../../agents/agent-runner'
-import { ROOT_AGENT_NAME } from '../../api/callbacks'
+import {
+  DeltaEventData,
+  ErrorEventData,
+  ROOT_AGENT_NAME,
+  SuccessEventData,
+  WorkingEventData,
+} from '../../api/callbacks'
 import { transcribe } from '../../api/chatbot-api'
 import './chat-bot.scss'
 import { Dashboard } from '../../commons/types/dashboard-manager'
@@ -57,6 +64,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
   const [chatContent, setChatContent] = useState<undefined | ChatBotMessage[]>(undefined)
   const chatContentRef = useRef(null)
   const textInputRef = useRef(null)
+  const [chatbotStatus, setChatbotStatus] = useState<string | null>(null)
 
   const addMessageToChatContent = useCallback(
     (text: string, role: CHATBOT_ROLE, includeInContextHistory: boolean, includeInChatPanel: boolean) => {
@@ -159,6 +167,33 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
     [chatContent]
   )
 
+  const updateChatbotStatus = (eventData: SuccessEventData | DeltaEventData | ErrorEventData | WorkingEventData) => {
+    const { type, agent } = eventData
+    let agentTitle = agent
+    switch (agent) {
+      case 'root':
+        agentTitle = 'Chatbot'
+        break
+      case 'root.asset_tree':
+        agentTitle = 'Chatbot Asset-Tree'
+        break
+
+      default:
+        break
+    }
+    switch (type) {
+      case 'success':
+      case 'error':
+        setChatbotStatus(null)
+        break
+      case 'working':
+        setChatbotStatus(`Talking to ${agentTitle}`)
+        break
+      case 'delta':
+        setChatbotStatus(`Listening to ${agentTitle}`)
+        break
+    }
+  }
   const generate = useCallback(
     (messages: BotMessage[]) => {
       const abortSignal = new AbortController().signal
@@ -170,15 +205,25 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
           toggleAssetNodes: onToggleNodes,
         },
         callbacks: {
-          onSuccess: (eventData) => console.log(eventData),
+          onSuccess: (eventData) => {
+            console.log(eventData)
+            updateChatbotStatus(eventData)
+          },
           onDelta: (eventData) => {
             const { message, agent } = eventData
             if (agent === ROOT_AGENT_NAME) {
               addChatChunkReceived(message)
             }
+            updateChatbotStatus(eventData)
           },
-          onError: (eventData) => console.log(eventData),
-          onWorking: (eventData) => console.log(eventData),
+          onError: (eventData) => {
+            console.log(eventData)
+            updateChatbotStatus(eventData)
+          },
+          onWorking: (eventData) => {
+            console.log(eventData)
+            updateChatbotStatus(eventData)
+          },
         },
       })
     },
@@ -278,48 +323,46 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
 
   /** Renderer */
   return (
-    <div className={classNames('ChartBot')}>
-      {
-        <div className="ChartBot-header">
-          <span className="ChartBot-header-text">Talk to New Oil Management</span>
-          <div className="ChartBot-header-actions">
-            <Button
-              title="Clear"
-              displayTitle={false}
-              imageSource={TrashBin}
-              imageSize={16}
-              onClick={initializeChatContext}
-            />
-          </div>
+    <div className={classNames('ChatBot')}>
+      <div className="ChatBot-header">
+        <span className="ChatBot-header-text">Talk to New Oil Management</span>
+        <div className="ChatBot-header-actions">
+          <Button
+            title="Clear"
+            displayTitle={false}
+            imageSource={TrashBin}
+            imageSize={16}
+            onClick={initializeChatContext}
+          />
         </div>
-      }
-      <div className={classNames('ChartBot-chatPanel')} ref={chatContentRef}>
+      </div>
+      <div className={classNames('ChatBot-chatPanel')} ref={chatContentRef}>
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
             .map(({ message, type, audio, id, role }) => (
               <div
                 key={id}
-                className={classNames('ChartBot-chatPanel-messageContainer', {
+                className={classNames('ChatBot-chatPanel-messageContainer', {
                   user: role === CHATBOT_ROLE.USER,
                   assistant: role === CHATBOT_ROLE.ASSISTANT,
                 })}
               >
                 <div
-                  className={classNames('ChartBot-chatPanel-messageContainer-avatar', {
+                  className={classNames('ChatBot-chatPanel-messageContainer-avatar', {
                     user: role === CHATBOT_ROLE.USER,
                     assistant: role === CHATBOT_ROLE.ASSISTANT,
                   })}
                   title={role === CHATBOT_ROLE.ASSISTANT ? 'Bot' : 'You'}
                 >
                   {role === CHATBOT_ROLE.ASSISTANT ? (
-                    <img className="ChartBot-chatPanel-messageContainer-avatar-image" src={AssistantAvatar} alt="Bot" />
+                    <img className="ChatBot-chatPanel-messageContainer-avatar-image" src={AssistantAvatar} alt="Bot" />
                   ) : (
-                    <img className="ChartBot-chatPanel-messageContainer-avatar-image" src={UserAvatar} alt="User" />
+                    <img className="ChatBot-chatPanel-messageContainer-avatar-image" src={UserAvatar} alt="User" />
                   )}
                 </div>
                 <div
-                  className={classNames('ChartBot-chatPanel-messageContainer-message', {
+                  className={classNames('ChatBot-chatPanel-messageContainer-message', {
                     user: role === CHATBOT_ROLE.USER,
                     assistant: role === CHATBOT_ROLE.ASSISTANT,
                     audio: type === SUPPORTED_MESSAGE_TYPE.AUDIO,
@@ -327,7 +370,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
                 >
                   {type === SUPPORTED_MESSAGE_TYPE.AUDIO && audio ? (
                     <audio
-                      className="ChartBot-chatPanel-messageContainer-message-messageVoice"
+                      className="ChatBot-chatPanel-messageContainer-message-messageVoice"
                       src={URL.createObjectURL(audio)}
                       controls
                       controlsList="nodownload"
@@ -335,7 +378,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
                   ) : (
                     <Fragment>
                       <Markdown
-                        className={classNames('ChartBot-chatPanel-messageContainer-message-messageText', {
+                        className={classNames('ChatBot-chatPanel-messageContainer-message-messageText', {
                           user: role === CHATBOT_ROLE.USER,
                           assistant: role === CHATBOT_ROLE.ASSISTANT,
                         })}
@@ -348,17 +391,23 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
               </div>
             ))}
       </div>
-
-      <div className="ChartBot-inputContainer">
+      {chatbotStatus !== null && (
+        <div className="ChatBot-statusContainer">
+          <span className="ChatBot-statusContainer-statusText">{chatbotStatus}</span>
+          <img className="ChatBot-statusContainer-loadingIcon" src={LoadingIcon} alt="" />
+        </div>
+      )}
+      <div className="ChatBot-inputContainer">
         {recordedVoiceUrl ? (
           <audio
-            className="ChartBot-inputContainer-voicePlaceHolder"
+            className="ChatBot-inputContainer-voicePlaceHolder"
             src={recordedVoiceUrl}
             controls
             controlsList="nodownload"
           />
         ) : (
           <Input
+            className={classNames('searchInput')}
             label="Search"
             placeholder="Search"
             value={text}
@@ -376,12 +425,12 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
             style={{
               marginBottom: '8px',
             }}
-            className={classNames('searchInput')}
+            autoFocus
           />
         )}
         {!recordedVoiceUrl && (
           <Button
-            className="ChartBot-inputContainer-buttonContainer record"
+            className="ChatBot-inputContainer-buttonContainer record"
             title={isPermissionDenied ? 'Permission Denied' : recordingStatus === 'inactive' ? 'Record' : 'Stop'}
             displayTitle={false}
             disabled={isPermissionDenied}
@@ -394,7 +443,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
         )}
         {recordedVoiceUrl && (
           <Button
-            className="ChartBot-inputContainer-buttonContainer send"
+            className="ChatBot-inputContainer-buttonContainer send"
             title={'Send'}
             displayTitle={false}
             imageSource={SendMessage}
@@ -407,14 +456,16 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
             }}
           />
         )}
-        <Button
-          className="ChartBot-inputContainer-buttonContainer reset"
-          title={'Reset'}
-          displayTitle={false}
-          imageSource={TrashBin}
-          imageSize={16}
-          onClick={resetRecording}
-        />
+        {recordedVoiceUrl && (
+          <Button
+            className="ChatBot-inputContainer-buttonContainer reset"
+            title={'Reset'}
+            displayTitle={false}
+            imageSource={TrashBin}
+            imageSize={16}
+            onClick={resetRecording}
+          />
+        )}
       </div>
     </div>
   )

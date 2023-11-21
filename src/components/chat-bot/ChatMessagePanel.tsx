@@ -330,7 +330,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange, dashboard }:
   return (
     <div className={classNames('ChatBot')}>
       <div className="ChatBot-header">
-        <span className="ChatBot-header-text">Talk to New Oil Management</span>
+        <span className="ChatBot-header-text">Talk to Portfolio Management</span>
         <div className="ChatBot-header-actions">
           <Button
             title="Clear"

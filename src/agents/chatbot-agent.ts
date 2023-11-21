@@ -8,7 +8,7 @@ import {
 import { agentCallbacks, Callbacks, NullCallbacks } from './callbacks'
 import { AssetTree } from '../commons/utils/asset-tree'
 import { TreeNodeData } from '../commons/types/TreeNodeData'
-import { generate } from './chatbot-api'
+import { generate } from '../api/chatbot-api'
 import { Dashboard } from '../commons/types/dashboard-manager'
 
 export interface ChatFunctionContext {
@@ -20,10 +20,12 @@ export interface ChatFunctionContext {
   toggleAssetNodes?: (node: TreeNodeData[]) => void
   agentOptions?: ChatAgentOptions
 }
+
 const NullContext: ChatFunctionContext = {}
 
 export type ChatFunction = {
   name: string
+  title: string
   description: (context: ChatFunctionContext) => string
   parameters?: (context: ChatFunctionContext) => any
   isAgent?: boolean
@@ -56,17 +58,13 @@ export class ChatFunctionSet {
     if (func.isAgent) {
       callbacks = agentCallbacks(func.name, callbacks)
     }
-    return (context: ChatFunctionContext, args: any) => {
-      return func.run(context, args, abortSignal, callbacks)
+    return {
+      run: (context: ChatFunctionContext, args: any) => {
+        return func.run(context, args, abortSignal, callbacks)
+      },
+      isAgent: func.isAgent,
+      title: func.title,
     }
-  }
-
-  metadata(context: ChatFunctionContext) {
-    return this.functions.map((f) => ({
-      name: f.name,
-      description: f.description(context),
-      parameters: f.parameters ? f.parameters(context) : null,
-    }))
   }
 
   toolMetadata(context: ChatFunctionContext): BotFunctionDefinition[] {
@@ -92,6 +90,7 @@ export interface ChatAgentOptions {
 }
 
 export async function runChatAgent(
+  title: string,
   messages: BotMessage[],
   functionSet: ChatFunctionSet,
   options: ChatAgentOptions = {}
@@ -106,9 +105,9 @@ export async function runChatAgent(
     })
   }
 
-  let turns = 0
-  while (turns < maxTurns) {
-    turns++
+  let turn = 0
+  while (turn < maxTurns) {
+    turn++
 
     if (abortSignal?.aborted) {
       throw new Error('the agent was aborted')
@@ -121,14 +120,13 @@ export async function runChatAgent(
 
     callbacks.onWorking?.({
       type: 'working',
-      message: `Turn ${turns}: calling reasoning engine from large language model`,
+      message: `Talking to ${title} agent. Turn: ${turn}`,
       params: generateRequest,
-      turn: turns,
+      turn: turn,
     })
 
     console.log('======================= Sending request to backend =======================')
-
-    // TODO: maybe need retry
+    console.log('request body', generateRequest)
     const response = await generate(generateRequest, abortSignal)
 
     let assistantMessage: BotMessage = { role: 'assistant', content: '' }
@@ -156,7 +154,7 @@ export async function runChatAgent(
             assistantMessage.content += message.text
             callbacks.onDelta?.({
               type: 'delta',
-              turn: turns,
+              turn: turn,
               message: message.text,
             })
           } else if (message.function_call) {
@@ -178,8 +176,8 @@ export async function runChatAgent(
 
     callbacks.onSuccess?.({
       type: 'success',
-      message: 'Completed llm call',
-      turn: turns,
+      message: 'Completed LLM call',
+      turn: turn,
       params: generateRequest,
       result: assistantMessage,
     })
@@ -207,29 +205,28 @@ export async function runChatAgent(
 
       callbacks.onWorking?.({
         type: 'working',
-        agent: funcName,
-        turn: turns,
-        message: `Calling function ${funcName}`,
+        turn: turn,
+        message: func.isAgent ? `Talking to agent ${func.title}` : `Calling function ${func.title}`,
         params: funcArgs,
       })
 
       let funcResult: any
       try {
-        funcResult = await func(functionCtx, funcArgs)
+        funcResult = await func.run(functionCtx, funcArgs)
         callbacks.onSuccess?.({
           type: 'success',
-          message: `Finished calling function ${funcName}`,
+          message: func.isAgent ? `Finished talking to agent ${func.title}` : `Finished calling function ${func.title}`,
           agent: funcName,
           params: funcArgs,
           result: funcResult,
-          turn: turns,
+          turn: turn,
         })
       } catch (e: any) {
         callbacks.onError?.({
           type: 'error',
-          message: '',
+          message: func.isAgent ? `Error talking to agent ${func.title}` : `Error calling function ${func.title}`,
           error: e,
-          turn: turns,
+          turn: turn,
           func: funcName,
           params: funcArgs,
         })

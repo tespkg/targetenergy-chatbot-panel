@@ -1,4 +1,4 @@
-import { BotFunctionDefinition } from '../../api/bot-types'
+import { BotFunctionDefinition } from '../../agents/bot-types'
 import { CHATBOT_FUNCTIONS } from '../enums/Chatbot'
 
 interface Params {}

@@ -13,7 +13,7 @@ import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 import Markdown from 'markdown-to-jsx'
 import { last, uniqueId } from 'lodash'
-import { BotMessage } from '../../api/bot-types'
+import { BotMessage } from '../../agents/bot-types'
 import { AssetTree } from '../../commons/utils/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
@@ -24,13 +24,11 @@ import {
   ROOT_AGENT_NAME,
   SuccessEventData,
   WorkingEventData,
-} from '../../api/callbacks'
+} from '../../agents/callbacks'
 import { transcribe } from '../../api/chatbot-api'
-import './chat-bot.scss'
 import { Dashboard } from '../../commons/types/dashboard-manager'
 import { getTemplateSrv } from '@grafana/runtime'
-import { TimeRange } from '@grafana/data'
-import { jsonToCSV } from '../../agents/panel-manager-agent'
+import './chat-bot.scss'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -45,11 +43,10 @@ interface ChatBotMessage {
 interface Props {
   nodes: AssetTree
   onToggleNodes: (node: TreeNodeData[]) => void
-  timeRange: TimeRange
   dashboard: Dashboard
 }
 
-export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange, dashboard }: Props) => {
+export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard }: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
@@ -171,22 +168,22 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange, dashboard }:
   )
 
   const updateChatbotStatus = (eventData: SuccessEventData | DeltaEventData | ErrorEventData | WorkingEventData) => {
-    const { type, agent } = eventData
-    let agentTitle = agent
-    switch (agent) {
-      case 'root':
-        agentTitle = 'Chatbot'
-        break
-      case 'root.asset_tree':
-        agentTitle = 'Chatbot Asset-Tree'
-        break
-      case 'root.panel_manager':
-        agentTitle = 'Chatbot Panel-Manager'
-        break
-
-      default:
-        break
-    }
+    const { type, message } = eventData
+    // let agentTitle = agent
+    // switch (agent) {
+    //   case 'root':
+    //     agentTitle = 'Chatbot'
+    //     break
+    //   case 'root.asset_tree':
+    //     agentTitle = 'Chatbot Asset-Tree'
+    //     break
+    //   case 'root.panel_manager':
+    //     agentTitle = 'Chatbot Panel-Manager'
+    //     break
+    //
+    //   default:
+    //     break
+    // }
     switch (type) {
       case 'success':
       case 'error':
@@ -195,11 +192,11 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange, dashboard }:
         break
       case 'working':
         setChatbotBusy(true)
-        setChatbotStatus(`Talking to ${agentTitle}`)
+        setChatbotStatus(message)
         break
       case 'delta':
         setChatbotBusy(true)
-        setChatbotStatus(`Listening to ${agentTitle}`)
+        setChatbotStatus(message)
         break
     }
   }
@@ -224,7 +221,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange, dashboard }:
             if (agent === ROOT_AGENT_NAME) {
               addChatChunkReceived(message)
             }
-            updateChatbotStatus(eventData)
+            // updateChatbotStatus(eventData)
           },
           onError: (eventData) => {
             console.log(eventData)
@@ -264,16 +261,19 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange, dashboard }:
         }
         case 'json_model': {
           console.log('Parsed dashboard:', dashboard)
-          const panel = dashboard.findPanel('1P Proven - Oil')
+          const panel = dashboard.findPanel('Change in Proven Oil Reserves')
           console.log('Parsed panel:', panel)
-          const data = await panel?.fetchData()
-          const csv = jsonToCSV(data)
-          console.log('Parsed data:', csv)
+          const data = await panel?.csvData()
+          console.log('Parsed data:', data)
           break
         }
         case 'global_variables': {
           const variables = getTemplateSrv().getVariables()
           console.log(variables)
+          break
+        }
+        case 'dashboard_markdown': {
+          console.log('Dashboard Markdown\n', dashboard.toMarkdown(2))
           break
         }
       }

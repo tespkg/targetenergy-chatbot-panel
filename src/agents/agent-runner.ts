@@ -1,8 +1,8 @@
-import { BotMessage } from '../api/bot-types'
-import { ChatAgentOptions, ChatFunctionSet, runChatAgent } from '../api/chatbot-agent'
+import { BotMessage } from './bot-types'
+import { ChatAgentOptions, ChatFunctionSet, runChatAgent } from './chatbot-agent'
 import { createSystemMessage } from '../api/system-message'
 import { assetTreeAgent } from './asset-tree-agent'
-import { agentCallbacks, ROOT_AGENT_NAME, NullCallbacks } from '../api/callbacks'
+import { agentCallbacks, ROOT_AGENT_NAME, NullCallbacks } from './callbacks'
 import { panelManagerAgent } from './panel-manager-agent'
 
 export async function runAgents(messages: BotMessage[], options: ChatAgentOptions = {}) {
@@ -14,7 +14,7 @@ export async function runAgents(messages: BotMessage[], options: ChatAgentOption
 
   const functionSet = new ChatFunctionSet([assetTreeAgent, panelManagerAgent], options.abortSignal, options.callbacks)
 
-  const result = await runChatAgent(messages, functionSet, options)
+  const result = await runChatAgent('Main', messages, functionSet, options)
 
   return result.content
 }

@@ -1,9 +1,10 @@
-import { ChatFunction, ChatFunctionSet, runChatAgent } from '../api/chatbot-agent'
+import { ChatFunction, ChatFunctionSet, runChatAgent } from './chatbot-agent'
 import { subAgentParameters } from './common'
-import { BotMessage } from '../api/bot-types'
+import { BotMessage } from './bot-types'
 
 export const assetTreeAgent: ChatFunction = {
   name: 'asset_tree',
+  title: 'Asset Tree',
   description: (ctx) =>
     'Can answer questions about asset tree including listing the assets and selecting or unselecting them. Assets include companies, continents, counties, regions, blocks, stations, fields and reservoirs',
   isAgent: true,
@@ -19,6 +20,7 @@ export const assetTreeAgent: ChatFunction = {
     ]
 
     return await runChatAgent(
+      'Asset Tree',
       messages,
       new ChatFunctionSet([listAssetsFunction, toggleAssetNodeFunction], abortSignal, callbacks),
       {
@@ -33,6 +35,7 @@ export const assetTreeAgent: ChatFunction = {
 
 const toggleAssetNodeFunction: ChatFunction = {
   name: 'toggle_asset_node_selection',
+  title: 'Toggle Asset Node Selection',
   description: (ctx) => 'Toggles (selects or deselects) the asset nodes in the asset tree',
   parameters: (ctx) => ({
     type: 'object',
@@ -78,6 +81,7 @@ const toggleAssetNodeFunction: ChatFunction = {
 
 const listAssetsFunction: ChatFunction = {
   name: 'list_assets',
+  title: 'List Assets',
   description: (ctx) =>
     'Lists the assets in the asset tree in a markdown format. The ids and selected status can be included in the output',
   isAgent: false,

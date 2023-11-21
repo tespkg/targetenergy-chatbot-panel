@@ -214,12 +214,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
         `
       )}
     >
-      <ChatMessagePanel
-        nodes={assetNodes}
-        onToggleNodes={handleSelectNodes}
-        timeRange={timeRange}
-        dashboard={dashboard}
-      />
+      <ChatMessagePanel nodes={assetNodes} onToggleNodes={handleSelectNodes} dashboard={dashboard} />
     </div>
   )
 }

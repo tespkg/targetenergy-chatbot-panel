@@ -3,6 +3,7 @@ import { ChatAgentOptions, ChatFunctionSet, runChatAgent } from '../api/chatbot-
 import { createSystemMessage } from '../api/system-message'
 import { assetTreeAgent } from './asset-tree-agent'
 import { agentCallbacks, ROOT_AGENT_NAME, NullCallbacks } from '../api/callbacks'
+import { panelManagerAgent } from './panel-manager-agent'
 
 export async function runAgents(messages: BotMessage[], options: ChatAgentOptions = {}) {
   if (!options.systemMessage && options.context?.assetTree) {
@@ -11,7 +12,7 @@ export async function runAgents(messages: BotMessage[], options: ChatAgentOption
 
   options.callbacks = agentCallbacks(ROOT_AGENT_NAME, options.callbacks ?? NullCallbacks)!
 
-  const functionSet = new ChatFunctionSet([assetTreeAgent], options.abortSignal, options.callbacks)
+  const functionSet = new ChatFunctionSet([assetTreeAgent, panelManagerAgent], options.abortSignal, options.callbacks)
 
   const result = await runChatAgent(messages, functionSet, options)
 

@@ -7,6 +7,7 @@ export const assetTreeAgent: ChatFunction = {
   description: (ctx) =>
     'Can answer questions about asset tree including listing the assets and selecting or unselecting them. Assets include companies, continents, counties, regions, blocks, stations, fields and reservoirs',
   isAgent: true,
+  parameters: (ctx) => subAgentParameters,
   run: async (context, args, abortSignal, callbacks) => {
     const { question } = args
 
@@ -28,7 +29,6 @@ export const assetTreeAgent: ChatFunction = {
       }
     )
   },
-  parameters: (ctx) => subAgentParameters,
 }
 
 const toggleAssetNodeFunction: ChatFunction = {

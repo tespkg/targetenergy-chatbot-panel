@@ -20,6 +20,9 @@ import { runAgents } from '../../agents/agent-runner'
 import { ROOT_AGENT_NAME } from '../../api/callbacks'
 import { transcribe } from '../../api/chatbot-api'
 import './chat-bot.scss'
+import { Dashboard } from '../../commons/types/dashboard-manager'
+import { getTemplateSrv } from '@grafana/runtime'
+import { TimeRange } from '@grafana/data'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -34,9 +37,10 @@ interface ChatBotMessage {
 interface Props {
   nodes: AssetTree
   onToggleNodes: (node: TreeNodeData[]) => void
+  timeRange: TimeRange
 }
 
-export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
+export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
@@ -156,10 +160,10 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
   )
 
   const generate = useCallback(
-    async (messages: BotMessage[]) => {
+    (messages: BotMessage[]) => {
       const abortSignal = new AbortController().signal
 
-      runAgents(messages, {
+      return runAgents(messages, {
         abortSignal,
         context: {
           assetTree: nodes,
@@ -182,6 +186,51 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes }: Props) => {
   )
 
   const handleNewUserMessage = useCallback(async () => {
+    if (text.startsWith('/')) {
+      // then it is a command and we are testing
+      const command = text.substring(1)
+      switch (command) {
+        case 'toggle_row': {
+          const rowName = 'BOE Production-Equity Share'
+          // Select rows by a unique attribute or structure, here we use the row's title text
+          const rows = Array.from(document.querySelectorAll('.dashboard-row'))
+          console.log('Queries rows :::', rows)
+
+          // @ts-ignore
+          const targetRow = rows.find((row) => row.innerText.includes(rowName))
+          if (targetRow) {
+            // targetRow.click()
+            // Find the toggle button or element in the row and click it
+            const toggleButton = targetRow.querySelector('.dashboard-row__title') as HTMLButtonElement // Adjust this selector based on the actual structure
+            console.log('toggle button', toggleButton.childNodes[1].textContent, toggleButton.childNodes[2].textContent)
+            toggleButton.click()
+          }
+          break
+        }
+        case 'json_model': {
+          const url = '/api/dashboards/uid/production-gross-grouped'
+          const response = await fetch(url)
+          const jsonResponse = await response.json()
+          console.log('Dashboard json model:', jsonResponse)
+          const dashboard = new Dashboard(jsonResponse, timeRange)
+          console.log('Parsed dashboard:', dashboard)
+
+          // const panel = dashboard.findPanel('Oil Production')
+          const panel = dashboard.findPanel('Cumulative Production')
+          console.log('Parsed panel:', panel)
+          await panel?.fetchData()
+          break
+        }
+        case 'global_variables': {
+          const variables = getTemplateSrv().getVariables()
+          console.log(variables)
+          break
+        }
+      }
+
+      return
+    }
+
     addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
     const content = await generate(getBotMessages(text, CHATBOT_ROLE.USER))
     console.log('Final generate result ::: ', content)

@@ -3,7 +3,7 @@ import { locationService } from '@grafana/runtime'
 import { PanelProps } from '@grafana/data'
 import { Alert, useStyles2 } from '@grafana/ui'
 import * as React from 'react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { TreeOptions } from 'types'
 import { ChatMessagePanel } from 'components/chat-bot/ChatMessagePanel'
 import * as Handlebars from 'handlebars'
@@ -12,6 +12,7 @@ import { setGrafanaVariable } from '../commons/utils/grafana-variable-utils'
 import { AssetTree } from '../commons/utils/asset-tree'
 import { TreeNodeData } from '../commons/types/TreeNodeData'
 import { MatchSearch } from '../commons/enums/MatchSearch'
+import { Dashboard } from '../commons/types/dashboard-manager'
 
 // let renderCount = 0
 
@@ -32,7 +33,15 @@ export const defaultFormatTemplate = `{{~#each .}}{{#if @index}} OR {{/if}}
 
 const getSearchParam = (variableName: string) => locationService.getSearch().get(`var-${variableName}`) ?? ''
 
-export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables }) => {
+export const ChatbotPanel: React.FC<Props> = ({
+  options,
+  data,
+  width,
+  height,
+  replaceVariables,
+  timeRange,
+  timeZone,
+}) => {
   const styles = useStyles2(getStyles)
 
   const {
@@ -201,7 +210,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
         `
       )}
     >
-      <ChatMessagePanel nodes={assetNodes} onToggleNodes={handleSelectNodes} />
+      <ChatMessagePanel nodes={assetNodes} onToggleNodes={handleSelectNodes} timeRange={timeRange} />
     </div>
   )
 }

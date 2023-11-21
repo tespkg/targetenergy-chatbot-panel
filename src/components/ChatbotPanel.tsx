@@ -33,15 +33,7 @@ export const defaultFormatTemplate = `{{~#each .}}{{#if @index}} OR {{/if}}
 
 const getSearchParam = (variableName: string) => locationService.getSearch().get(`var-${variableName}`) ?? ''
 
-export const ChatbotPanel: React.FC<Props> = ({
-  options,
-  data,
-  width,
-  height,
-  replaceVariables,
-  timeRange,
-  timeZone,
-}) => {
+export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables, timeRange }) => {
   const styles = useStyles2(getStyles)
 
   const {
@@ -181,10 +173,22 @@ export const ChatbotPanel: React.FC<Props> = ({
     }
   }
 
-  console.log('data', data)
-  console.log('tree', tree)
-
   const assetNodes = new AssetTree(tree)
+  const [dashboard, setDashboard] = useState<Dashboard>(null!)
+
+  useEffect(() => {
+    const createDashboard = async () => {
+      // TODO: the uid of the dashboard should be passed in ENV variable
+      const url = '/api/dashboards/uid/production-gross-grouped'
+      const response = await fetch(url)
+      const jsonResponse = await response.json()
+      console.log('Dashboard json model:', jsonResponse)
+      return new Dashboard(jsonResponse, timeRange)
+    }
+    createDashboard().then((dashboard) => {
+      setDashboard(dashboard)
+    })
+  }, [timeRange])
 
   // const assetNodesRef = useRef<AssetNodes>()
   // useLayoutEffect(() => {
@@ -210,7 +214,12 @@ export const ChatbotPanel: React.FC<Props> = ({
         `
       )}
     >
-      <ChatMessagePanel nodes={assetNodes} onToggleNodes={handleSelectNodes} timeRange={timeRange} />
+      <ChatMessagePanel
+        nodes={assetNodes}
+        onToggleNodes={handleSelectNodes}
+        timeRange={timeRange}
+        dashboard={dashboard}
+      />
     </div>
   )
 }

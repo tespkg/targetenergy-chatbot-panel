@@ -9,9 +9,11 @@ import { agentCallbacks, Callbacks, NullCallbacks } from './callbacks'
 import { AssetTree } from '../commons/utils/asset-tree'
 import { TreeNodeData } from '../commons/types/TreeNodeData'
 import { generate } from './chatbot-api'
+import { Dashboard } from '../commons/types/dashboard-manager'
 
 export interface ChatFunctionContext {
   assetTree?: AssetTree
+  dashboard?: Dashboard
   messages?: BotMessage[]
 
   // TODO: should wrap them in a proper class maybe

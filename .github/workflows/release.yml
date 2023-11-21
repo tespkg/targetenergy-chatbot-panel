@@ -114,6 +114,8 @@ jobs:
         with:
           draft: true
           generate_release_notes: true
+          name: ${{ steps.metadata.outputs.plugin-version }}
+          tag_name: ${{ steps.metadata.outputs.plugin-version }}
           files: |
             ./${{ steps.metadata.outputs.archive }}
             ./${{ steps.metadata.outputs.archive-checksum }}

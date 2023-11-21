@@ -1,4 +1,4 @@
-import { AssetTree } from '../commons/utils/asset-tree'
+import { AssetTree } from '../commons/types/asset-tree'
 
 export function createSystemMessage(assetNodes: AssetTree) {
   return `You are helpful chatbot designed to help users interact with the Portfolio Manager Dashboard.

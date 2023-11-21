@@ -6,7 +6,7 @@ import {
   ChatCompletionMessageToolCall,
 } from './bot-types'
 import { agentCallbacks, Callbacks, NullCallbacks } from './callbacks'
-import { AssetTree } from '../commons/utils/asset-tree'
+import { AssetTree } from '../commons/types/asset-tree'
 import { TreeNodeData } from '../commons/types/TreeNodeData'
 import { generate } from '../api/chatbot-api'
 import { Dashboard } from '../commons/types/dashboard-manager'

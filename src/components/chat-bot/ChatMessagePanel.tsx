@@ -14,10 +14,14 @@ import { Button } from 'components/button/Button'
 import Markdown from 'markdown-to-jsx'
 import { last, uniqueId } from 'lodash'
 import { BotMessage } from '../../agents/bot-types'
-import { AssetTree } from '../../commons/utils/asset-tree'
+import { AssetTree } from '../../commons/types/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
 import { runAgents } from '../../agents/agent-runner'
+import { transcribe } from '../../api/chatbot-api'
+import { Dashboard } from '../../commons/types/dashboard-manager'
+import { getTemplateSrv } from '@grafana/runtime'
+import './chat-bot.scss'
 import {
   DeltaEventData,
   ErrorEventData,
@@ -25,10 +29,6 @@ import {
   SuccessEventData,
   WorkingEventData,
 } from '../../agents/callbacks'
-import { transcribe } from '../../api/chatbot-api'
-import { Dashboard } from '../../commons/types/dashboard-manager'
-import { getTemplateSrv } from '@grafana/runtime'
-import './chat-bot.scss'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -212,22 +212,22 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard }: Props) => 
           dashboard: dashboard,
         },
         callbacks: {
-          onSuccess: (eventData) => {
+          onSuccess: (eventData: SuccessEventData) => {
             console.log(eventData)
             updateChatbotStatus(eventData)
           },
-          onDelta: (eventData) => {
+          onDelta: (eventData: DeltaEventData) => {
             const { message, agent } = eventData
             if (agent === ROOT_AGENT_NAME) {
               addChatChunkReceived(message)
             }
             // updateChatbotStatus(eventData)
           },
-          onError: (eventData) => {
+          onError: (eventData: ErrorEventData) => {
             console.log(eventData)
             updateChatbotStatus(eventData)
           },
-          onWorking: (eventData) => {
+          onWorking: (eventData: WorkingEventData) => {
             console.log(eventData)
             updateChatbotStatus(eventData)
           },

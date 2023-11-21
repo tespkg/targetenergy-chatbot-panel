@@ -254,7 +254,6 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard }: Props) => 
             // targetRow.click()
             // Find the toggle button or element in the row and click it
             const toggleButton = targetRow.querySelector('.dashboard-row__title') as HTMLButtonElement // Adjust this selector based on the actual structure
-            console.log('toggle button', toggleButton.childNodes[1].textContent, toggleButton.childNodes[2].textContent)
             toggleButton.click()
           }
           break

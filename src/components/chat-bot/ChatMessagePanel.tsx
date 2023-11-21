@@ -65,6 +65,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
   const chatContentRef = useRef(null)
   const textInputRef = useRef(null)
   const [chatbotStatus, setChatbotStatus] = useState<string | null>(null)
+  const [isChatbotBusy, setChatbotBusy] = useState(false)
 
   const addMessageToChatContent = useCallback(
     (text: string, role: CHATBOT_ROLE, includeInContextHistory: boolean, includeInChatPanel: boolean) => {
@@ -187,12 +188,15 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
     switch (type) {
       case 'success':
       case 'error':
+        setChatbotBusy(false)
         setChatbotStatus(null)
         break
       case 'working':
+        setChatbotBusy(true)
         setChatbotStatus(`Talking to ${agentTitle}`)
         break
       case 'delta':
+        setChatbotBusy(true)
         setChatbotStatus(`Listening to ${agentTitle}`)
         break
     }
@@ -419,8 +423,9 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
               const value = e.currentTarget.value
               setText(value)
             }}
+            loading={isChatbotBusy}
             onKeyDown={(event) => {
-              if (!event.shiftKey && event.key === 'Enter') {
+              if (!event.shiftKey && event.key === 'Enter' && !isChatbotBusy) {
                 event.preventDefault()
                 handleNewUserMessage()
               }
@@ -452,7 +457,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, timeRange }: Props) => 
             imageSource={SendMessage}
             imageSize={16}
             onClick={() => {
-              if (recordedVoiceBlob) {
+              if (recordedVoiceBlob && !isChatbotBusy) {
                 handleNewUserVoiceMessage(recordedVoiceBlob)
                 resetRecording()
               }

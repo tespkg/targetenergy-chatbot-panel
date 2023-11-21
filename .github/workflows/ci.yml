@@ -22,10 +22,10 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '16'
-#          cache: 'yarn'
+          cache: 'yarn'
 
-      - name: Install Yarn
-        run: npm install -g yarn
+#      - name: Install Yarn
+#        run: npm install -g yarn
 
       - name: Install dependencies
         run: yarn install --immutable --prefer-offline

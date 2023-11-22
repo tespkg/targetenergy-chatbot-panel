@@ -184,6 +184,24 @@ const fetchPanelData: ChatFunction = {
 
     const data = await subPanel.csvData()
 
-    return data.join('\n\n')
+    const analysisTips: Record<string, string> = {
+      '1P Proven - Oil':
+        'List the reservoir reserve and then indicate which reservoir contributes the most and the least to reserves.',
+      '1P Proven - Associated Gas':
+        'List the reservoir reserve and then indicate which reservoir contributes the most and the least to reserves.',
+      'Change in Proven Oil Reserves':
+        'The provided data are changes in proven reverse vs action on reservoir. You should report the most and least effective actions.',
+      '1P Proven - Oil - Production Profile':
+        'The provided data are the list of oil production for different reservoirs. You should compare the average production of reservoirs.',
+    }
+
+    const response = data.join('\n\n')
+
+    const tip = analysisTips[panel_name] || ''
+    if (tip) {
+      return `${response}\n\nTo analyze these data you should: ${tip}`
+    }
+
+    return response
   },
 }

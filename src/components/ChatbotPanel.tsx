@@ -229,14 +229,6 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
       }
     }
   }, [isOpen])
-  useEffect(() => {
-    // TODO: in the first render we do not have
-    // the right class names to handle minimized
-    // style, so we first set the chatbot to open,
-    // then close it here. styles will be handled by this way
-    onToggleVisibility()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   /** Renderer */
   return (

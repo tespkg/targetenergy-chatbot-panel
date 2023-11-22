@@ -21,6 +21,7 @@ import { runAgents } from '../../agents/agent-runner'
 import { transcribe } from '../../api/chatbot-api'
 import { Dashboard } from '../../commons/types/dashboard-manager'
 import { getTemplateSrv } from '@grafana/runtime'
+import MinimizeIcon from 'img/icons/chevron-down.svg'
 import './chat-bot.scss'
 import {
   DeltaEventData,
@@ -44,9 +45,10 @@ interface Props {
   nodes: AssetTree
   onToggleNodes: (node: TreeNodeData[]) => void
   dashboard: Dashboard
+  onToggleVisibility: () => void
 }
 
-export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard }: Props) => {
+export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisibility }: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
@@ -337,6 +339,13 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard }: Props) => 
             imageSource={TrashBin}
             imageSize={16}
             onClick={initializeChatContext}
+          />
+          <Button
+            title="Minimize"
+            displayTitle={false}
+            imageSource={MinimizeIcon}
+            imageSize={12}
+            onClick={onToggleVisibility}
           />
         </div>
       </div>

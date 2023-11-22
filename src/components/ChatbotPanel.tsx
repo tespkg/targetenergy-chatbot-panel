@@ -1,18 +1,20 @@
+import * as React from 'react'
+import { useEffect, useState } from 'react'
+import { TreeOptions } from 'types'
 import { css, cx } from '@emotion/css'
 import { locationService } from '@grafana/runtime'
 import { PanelProps } from '@grafana/data'
 import { Alert, useStyles2 } from '@grafana/ui'
-import * as React from 'react'
-import { useEffect, useState } from 'react'
-import { TreeOptions } from 'types'
+import { Button } from './button/Button'
 import { ChatMessagePanel } from 'components/chat-bot/ChatMessagePanel'
 import * as Handlebars from 'handlebars'
+import { setGrafanaVariable } from 'commons/utils/grafana-variable-utils'
+import { AssetTree } from 'commons/types/asset-tree'
+import { TreeNodeData } from 'commons/types/TreeNodeData'
+import { MatchSearch } from 'commons/enums/MatchSearch'
+import ChatIcon from 'img/icons/chat.svg'
+import { Dashboard } from 'commons/types/dashboard-manager'
 import './style.css'
-import { setGrafanaVariable } from '../commons/utils/grafana-variable-utils'
-import { AssetTree } from '../commons/types/asset-tree'
-import { TreeNodeData } from '../commons/types/TreeNodeData'
-import { MatchSearch } from '../commons/enums/MatchSearch'
-import { Dashboard } from '../commons/types/dashboard-manager'
 
 // let renderCount = 0
 
@@ -203,18 +205,71 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   //   )
   // }, [tree])
 
+  /** Chatbot minimize button stuff */
+  const [isOpen, setIsOpen] = useState(true)
+  const onToggleVisibility = React.useCallback(() => {
+    const newIsOpenState = !isOpen
+    setIsOpen(newIsOpenState)
+    const node = document.querySelector('.react-grid-item:has(.chatbotPanel)')
+    if (node) {
+      let currentClassNames = node.className
+
+      currentClassNames = currentClassNames.replace('closedChatbotPanelContainer', '')
+      currentClassNames = currentClassNames.replace('openedChatbotPanelContainer', '')
+      node.className = `${currentClassNames} ${
+        newIsOpenState ? 'openedChatbotPanelContainer' : 'closedChatbotPanelContainer'
+      }`
+
+      const firstChildren = node.firstElementChild
+      if (firstChildren) {
+        let currentClassNames = firstChildren.className
+        currentClassNames = currentClassNames.replace('closedChatbotPanel', '')
+        currentClassNames = currentClassNames.replace('openedChatbotPanel', '')
+        firstChildren.className = `${currentClassNames} ${newIsOpenState ? 'openedChatbotPanel' : 'closedChatbotPanel'}`
+      }
+    }
+  }, [isOpen])
+  useEffect(() => {
+    // TODO: in the first render we do not have
+    // the right class names to handle minimized
+    // style, so we first set the chatbot to open,
+    // then close it here. styles will be handled by this way
+    onToggleVisibility()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  /** Renderer */
   return (
     <div
       className={cx(
+        'chatbotPanel',
         styles.wrapper,
-        css`
-          width: ${width}px;
-          height: ${height}px;
-          padding: 4px;
-        `
+        isOpen
+          ? css`
+              width: ${width}px;
+              height: ${height}px;
+              padding: 4px;
+            `
+          : ''
       )}
     >
-      <ChatMessagePanel nodes={assetNodes} onToggleNodes={handleSelectNodes} dashboard={dashboard} />
+      {isOpen ? (
+        <ChatMessagePanel
+          nodes={assetNodes}
+          onToggleNodes={handleSelectNodes}
+          dashboard={dashboard}
+          onToggleVisibility={onToggleVisibility}
+        />
+      ) : (
+        <Button
+          className="chatbotPanel-chatOpenButton"
+          title={'Open Chatbot'}
+          displayTitle={false}
+          imageSource={ChatIcon}
+          imageSize={72}
+          onClick={onToggleVisibility}
+        />
+      )}
     </div>
   )
 }

@@ -30,10 +30,14 @@ export const AudioPlayer = ({ text }: Props) => {
     try {
       const req: TextToSpeechRequest = {
         text: text,
-        stream: true,
+        /**
+         * TODO: We need to handle streams, currently just
+         * switched to false to continue working.
+         * Ideally we should handle the stream
+         * */
+        stream: false,
       }
       const response = await textToSpeech(req)
-      setIsPlaying(true)
 
       if (req.stream) {
         // Process the stream
@@ -45,6 +49,20 @@ export const AudioPlayer = ({ text }: Props) => {
           }
 
           // Convert the chunk to an ArrayBuffer and decode it
+          await audioContext.decodeAudioData(value.buffer, (decodedData) => {
+            // Create a buffer source
+            const source = audioContext.createBufferSource()
+            source.buffer = decodedData
+            source.connect(audioContext.destination)
+            source.start()
+            setSourceNode(source) // Save the source node to stop it later if needed
+          })
+        }
+      } else {
+        const reader = response.body!.getReader()
+        const { value } = await reader.read()
+        // Convert the chunk to an ArrayBuffer and decode it
+        if (value) {
           await audioContext.decodeAudioData(value.buffer, (decodedData) => {
             // Create a buffer source
             const source = audioContext.createBufferSource()
@@ -75,7 +93,14 @@ export const AudioPlayer = ({ text }: Props) => {
     <div>
       <Button
         title={isPlaying ? 'Pause' : 'Play'}
-        onClick={isPlaying ? pauseAudio : playAudio}
+        onClick={
+          isPlaying
+            ? pauseAudio
+            : async () => {
+                setIsPlaying(true)
+                await playAudio()
+              }
+        }
         displayTitle={false}
         frame={false}
         imageSource={isPlaying ? PauseIcon : PlayIcon}

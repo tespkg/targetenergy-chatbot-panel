@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
 import TrashBin from 'img/icons/trashbin.svg'
 import RecordIcon from 'img/icons/record.svg'
@@ -6,12 +6,9 @@ import StopIcon from 'img/icons/stop-circle.svg'
 import LoadingIcon from 'img/icons/animated-loading.svg'
 import SendMessage from 'img/icons/send-message.svg'
 
-import UserAvatar from 'img/icons/user_avatar.svg'
-import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
-import Markdown from 'markdown-to-jsx'
 import { last, uniqueId } from 'lodash'
 import { BotMessage } from '../../agents/bot-types'
 import { AssetTree } from '../../commons/types/asset-tree'
@@ -22,7 +19,6 @@ import { transcribe } from '../../api/chatbot-api'
 import { Dashboard } from '../../commons/types/dashboard-manager'
 import { getTemplateSrv } from '@grafana/runtime'
 import MinimizeIcon from 'img/icons/chevron-down.svg'
-import PlayIcon from 'img/icons/play-icon.svg'
 import './chat-bot.scss'
 import {
   DeltaEventData,
@@ -31,6 +27,8 @@ import {
   SuccessEventData,
   WorkingEventData,
 } from '../../agents/callbacks'
+import { MessageViewer } from './message-viewer/MessageViewer'
+import { MessageViewerViewModel } from './message-viewer/MessageViewerViewModel'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -354,70 +352,15 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
-            .map(({ message, type, audio, id, role }) => (
-              <div
-                key={id}
-                className={classNames('ChatBot-chatPanel-messageContainer', {
-                  user: role === CHATBOT_ROLE.USER,
-                  assistant: role === CHATBOT_ROLE.ASSISTANT,
-                })}
-              >
-                <div
-                  className={classNames('ChatBot-chatPanel-messageContainer-avatar', {
-                    user: role === CHATBOT_ROLE.USER,
-                    assistant: role === CHATBOT_ROLE.ASSISTANT,
-                  })}
-                  title={role === CHATBOT_ROLE.ASSISTANT ? 'Bot' : 'You'}
-                >
-                  {role === CHATBOT_ROLE.ASSISTANT ? (
-                    <img className="ChatBot-chatPanel-messageContainer-avatar-image" src={AssistantAvatar} alt="Bot" />
-                  ) : (
-                    <img className="ChatBot-chatPanel-messageContainer-avatar-image" src={UserAvatar} alt="User" />
-                  )}
-                </div>
-                <div
-                  className={classNames('ChatBot-chatPanel-messageContainer-message', {
-                    user: role === CHATBOT_ROLE.USER,
-                    assistant: role === CHATBOT_ROLE.ASSISTANT,
-                    audio: type === SUPPORTED_MESSAGE_TYPE.AUDIO,
-                  })}
-                >
-                  {type === SUPPORTED_MESSAGE_TYPE.AUDIO && audio ? (
-                    <audio
-                      className="ChatBot-chatPanel-messageContainer-message-messageVoice"
-                      src={URL.createObjectURL(audio)}
-                      controls
-                      controlsList="nodownload"
-                    />
-                  ) : (
-                    <Fragment>
-                      <Markdown
-                        className={classNames('ChatBot-chatPanel-messageContainer-message-messageText', {
-                          user: role === CHATBOT_ROLE.USER,
-                          assistant: role === CHATBOT_ROLE.ASSISTANT,
-                        })}
-                      >
-                        {message}
-                      </Markdown>
-                      {role === CHATBOT_ROLE.ASSISTANT && (
-                        <div className={'ChatBot-chatPanel-messageContainer-message-actionsContainer'}>
-                          <Button
-                            className={'ChatBot-chatPanel-messageContainer-message-actionsContainer-playButton'}
-                            title={'Play'}
-                            displayTitle={false}
-                            frame={false}
-                            imageSource={PlayIcon}
-                            onClick={() => {
-                              console.log('Text to speech player')
-                            }}
-                          />
-                        </div>
-                      )}
-                    </Fragment>
-                  )}
-                </div>
-              </div>
-            ))}
+            .map(({ message, type, audio, id, role }) => {
+              const viewModel = new MessageViewerViewModel()
+              viewModel.message = message
+              viewModel.type = type
+              viewModel.audio = audio
+              viewModel.id = id
+              viewModel.role = role
+              return <MessageViewer key={id} viewModel={viewModel} />
+            })}
       </div>
       {chatbotStatus !== null && (
         <div className="ChatBot-statusContainer">

@@ -1,0 +1,83 @@
+.messageViewer {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  width: 100%;
+  height: fit-content;
+  padding: 2px 5px;
+
+  &-avatar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+
+    &-image {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+  }
+
+  &-avatar.user {
+    margin-left: 12px;
+  }
+
+  &-avatar.assistant {
+    margin-right: 12px;
+  }
+
+  &-message {
+    position: relative;
+    width: fit-content;
+    min-width: 64px;
+    height: fit-content;
+    padding: 5px 12px;
+    border-radius: 18px;
+    overflow-x: auto;
+
+    &-messageText {
+      font-size: 16px;
+      white-space: pre-line;
+    }
+
+    &-messageText.user {
+      color: #fff;
+    }
+
+    &-messageText.assistant {
+      color: #000;
+    }
+
+    &-actionsContainer {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      position: absolute;
+      bottom: 0;
+      right: 0;
+
+      &-playButton {
+      }
+    }
+  }
+
+  &-message.assistant {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding-right: 32px;
+  }
+
+  &-message.user {
+    background-color: #1e90ff;
+  }
+  &-message.user.audio {
+    background-color: unset;
+  }
+}
+
+.messageViewer.user {
+  flex-direction: row-reverse;
+}

@@ -40,27 +40,35 @@ export const useVoiceRecorder = () => {
   //
   const startRecording = useCallback(async () => {
     console.log('Starting recording.')
-    navigator.permissions
-      // @ts-ignore
-      .query({ name: 'microphone' })
-      .then(async (permission) => {
-        if (permission.state !== 'denied') {
-          await navigator.mediaDevices
-            .getUserMedia({
-              audio: true,
-              video: false,
-            })
-            .then((streamData) => {
-              // Create new Media recorder instance using the stream
-              const media = new MediaRecorder(streamData, { mimeType: mimeType })
-              onMediaStreamAvailable(media)
-            })
-          setRecordingStatus('recording')
-        } else {
-          setPermissionDenied(true)
-          console.log('Voice record permission denied. ')
-        }
+
+    try {
+      // Check if navigator.mediaDevices.getUserMedia is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.log('Media Devices API not supported.')
+        return
+      }
+
+      // Try to get user media
+      const streamData = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: false,
       })
+
+      // Check for MediaRecorder support
+      if (!window.MediaRecorder) {
+        console.log('MediaRecorder API not supported.')
+        return
+      }
+
+      // Create new Media recorder instance using the stream
+      const media = new MediaRecorder(streamData, { mimeType: mimeType })
+      onMediaStreamAvailable(media)
+      setRecordingStatus('recording')
+    } catch (error) {
+      // Handle errors (such as user denying permission)
+      console.error('Error accessing media devices:', error)
+      setPermissionDenied(true)
+    }
   }, [onMediaStreamAvailable])
   //
   const stopRecording = useCallback(() => {

@@ -14,11 +14,13 @@ interface Props {
 
 export const StreamingAudioPlayer = ({ text }: Props) => {
   /** States */
-  const [audioContext, setAudioContext] = useState<AudioContext>(null!)
+  const [audioContext, setAudioContext] = useState<AudioContext>()
   const [isPlaying, setIsPlaying] = useState(false)
   const bufferQueueRef = useRef<AudioBuffer[]>([])
   const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set())
   const [isTextToSpeechInProgress, setTextToSpeechInProgress] = useState(false)
+  const playbackTimeRef = useRef(0)
+  const lastBufferStartTimeRef = useRef(0)
 
   // Create audio context on mount
   useEffect(() => {
@@ -32,14 +34,20 @@ export const StreamingAudioPlayer = ({ text }: Props) => {
 
   // Play a single buffer
   const playBuffer = useCallback(
-    (buffer: AudioBuffer) => {
+    (buffer: AudioBuffer, startOffset = 0) => {
+      if (!audioContext) {
+        return
+      }
+
       const source = audioContext.createBufferSource()
       source.buffer = buffer
       source.connect(audioContext.destination)
-      source.start()
+      source.start(0, startOffset)
+      lastBufferStartTimeRef.current = audioContext.currentTime - startOffset
       activeSourcesRef.current.add(source)
       source.onended = () => {
         activeSourcesRef.current.delete(source)
+        playbackTimeRef.current = 0 // Reset playback time when a buffer finishes
         bufferQueueRef.current.shift()
         if (bufferQueueRef.current.length > 0 && isPlaying) {
           playBuffer(bufferQueueRef.current[0])
@@ -122,29 +130,61 @@ export const StreamingAudioPlayer = ({ text }: Props) => {
     }
   }, [audioContext, playBuffer, text])
 
+  const resumeAudio = useCallback(async () => {
+    if (!audioContext) {
+      return
+    }
+
+    console.log('resumeAudio', audioContext.state, bufferQueueRef.current.length)
+    if (audioContext.state === 'suspended' && bufferQueueRef.current.length > 0) {
+      await audioContext.resume()
+      setIsPlaying(true)
+
+      if (bufferQueueRef.current.length > 0) {
+        // Start playing from the next buffer in the queue
+        playBuffer(bufferQueueRef.current[0], playbackTimeRef.current)
+      }
+    } else {
+      await playAudio()
+    }
+  }, [audioContext, playAudio, playBuffer])
+
+  // Function to pause audio
   const pauseAudio = async () => {
+    if (!audioContext) {
+      return
+    }
+
     await audioContext.suspend()
     setIsPlaying(false)
+    // Calculate how much of the current buffer has been played
+    playbackTimeRef.current += audioContext.currentTime - lastBufferStartTimeRef.current
+
+    // Stopping all active sources
     activeSourcesRef.current.forEach((source) => source.stop())
     activeSourcesRef.current.clear()
+  }
+
+  const getButtonImage = () => {
+    if (isPlaying) {
+      return PauseIcon
+    } else if (isTextToSpeechInProgress) {
+      return TextTpSpeechInProgressIcon
+    } else if (bufferQueueRef.current.length === 0) {
+      return TextTpSpeechIcon
+    } else {
+      return PlayIcon
+    }
   }
 
   return (
     <div>
       <Button
         title={isPlaying ? 'Pause' : 'Play'}
-        onClick={isPlaying ? pauseAudio : playAudio}
+        onClick={isPlaying ? pauseAudio : resumeAudio}
         displayTitle={false}
         frame={false}
-        imageSource={
-          isPlaying
-            ? PauseIcon
-            : isTextToSpeechInProgress
-            ? TextTpSpeechInProgressIcon
-            : bufferQueueRef.current.length === 0
-            ? TextTpSpeechIcon
-            : PlayIcon
-        }
+        imageSource={getButtonImage()}
       />
     </div>
   )

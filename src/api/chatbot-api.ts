@@ -1,7 +1,7 @@
 import { BotGenerateRequest } from '../agents/bot-types'
 
-const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`
-// const BASE_URL = 'http://localhost:8000/api/v1'
+// const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`
+const BASE_URL = 'http://localhost:8000/api/v1'
 
 export async function transcribe(voice: Blob) {
   const formData = new FormData()
@@ -38,5 +38,28 @@ export async function generate(request: BotGenerateRequest, abortSignal?: AbortS
     throw new Error('the agent was aborted')
   }
 
+  return response
+}
+
+export interface TextToSpeechRequest {
+  text: string
+  stream?: boolean
+}
+
+export async function textToSpeech(req: TextToSpeechRequest, abortSignal?: AbortSignal) {
+  const url = `${BASE_URL}/text-to-speech`
+  const response = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(req),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  })
+  if (!response.ok) {
+    throw new Error('request to the text-to-speech endpoint failed')
+  }
+  if (abortSignal?.aborted) {
+    throw new Error('the agent was aborted')
+  }
   return response
 }

@@ -14,7 +14,7 @@
     "e2e:update": "yarn cypress install && yarn grafana-e2e run --update-screenshots",
     "server": "docker-compose up --build",
     "sign": "npx --yes @grafana/sign-plugin",
-    "copy-to-container": "docker cp ./dist portfolio-grafana-grafana-1:/var/lib/grafana-plugins/chatbot-panel",
+    "copy-to-container": "docker cp ./dist portfolio-grafana-grafana-1:/var/lib/grafana-plugins/targetenery-chatbot-panel",
     "restart-container": "docker restart portfolio-grafana-grafana-1",
     "local-deploy": "npm-run-all build copy-to-container restart-container",
     "watch-dist": "nodemon --watch ./dist --exec \"yarn run copy-to-container && yarn run restart-container\""

@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import { textToSpeech, TextToSpeechRequest } from '../../api/chatbot-api'
+import { Button } from '../button/Button'
+import PlayIcon from 'img/icons/play-icon.svg'
+import PauseIcon from 'img/icons/pause-icon.svg'
 
 interface Props {
   text: string
@@ -70,7 +73,13 @@ export const AudioPlayer = ({ text }: Props) => {
 
   return (
     <div>
-      <button onClick={isPlaying ? pauseAudio : playAudio}>Play Streamed Audio</button>
+      <Button
+        title={isPlaying ? 'Pause' : 'Play'}
+        onClick={isPlaying ? pauseAudio : playAudio}
+        displayTitle={false}
+        frame={false}
+        imageSource={isPlaying ? PauseIcon : PlayIcon}
+      />
     </div>
   )
 }

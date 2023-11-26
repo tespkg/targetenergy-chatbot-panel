@@ -3,6 +3,8 @@ import { textToSpeech } from '../../api/chatbot-api'
 import { Button } from '../button/Button'
 import PlayIcon from 'img/icons/play-icon.svg'
 import PauseIcon from 'img/icons/pause-icon.svg'
+import TextTpSpeechIcon from 'img/icons/text-to-speech-icon.svg'
+import TextTpSpeechInProgressIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
 
 const AUDIO_BUFFER_SIZE = 512 * 1024
 
@@ -11,10 +13,12 @@ interface Props {
 }
 
 export const StreamingAudioPlayer = ({ text }: Props) => {
+  /** States */
   const [audioContext, setAudioContext] = useState<AudioContext>(null!)
   const [isPlaying, setIsPlaying] = useState(false)
   const bufferQueueRef = useRef<AudioBuffer[]>([])
   const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set())
+  const [isTextToSpeechInProgress, setTextToSpeechInProgress] = useState(false)
 
   // Create audio context on mount
   useEffect(() => {
@@ -63,10 +67,10 @@ export const StreamingAudioPlayer = ({ text }: Props) => {
       return
     }
 
-    setIsPlaying(true)
     await audioContext.resume()
 
     try {
+      setTextToSpeechInProgress(true)
       const response = await textToSpeech({
         text: text,
         stream: true,
@@ -83,6 +87,7 @@ export const StreamingAudioPlayer = ({ text }: Props) => {
 
         if (firstBuffer) {
           firstBuffer = false
+          setIsPlaying(true)
           playBuffer(bufferQueueRef.current[0])
         }
       }
@@ -90,6 +95,8 @@ export const StreamingAudioPlayer = ({ text }: Props) => {
       while (true) {
         const { done, value } = await reader.read()
         if (done) {
+          setTextToSpeechInProgress(false)
+
           if (audioBuffer.length > 0) {
             await handleNewBuffer(audioBuffer)
           }
@@ -129,7 +136,15 @@ export const StreamingAudioPlayer = ({ text }: Props) => {
         onClick={isPlaying ? pauseAudio : playAudio}
         displayTitle={false}
         frame={false}
-        imageSource={isPlaying ? PauseIcon : PlayIcon}
+        imageSource={
+          isPlaying
+            ? PauseIcon
+            : isTextToSpeechInProgress
+            ? TextTpSpeechInProgressIcon
+            : bufferQueueRef.current.length === 0
+            ? TextTpSpeechIcon
+            : PlayIcon
+        }
       />
     </div>
   )

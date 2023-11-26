@@ -22,6 +22,7 @@ import { transcribe } from '../../api/chatbot-api'
 import { Dashboard } from '../../commons/types/dashboard-manager'
 import { getTemplateSrv } from '@grafana/runtime'
 import MinimizeIcon from 'img/icons/chevron-down.svg'
+import PlayIcon from 'img/icons/play-icon.svg'
 import './chat-bot.scss'
 import {
   DeltaEventData,
@@ -398,6 +399,20 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
                       >
                         {message}
                       </Markdown>
+                      {role === CHATBOT_ROLE.ASSISTANT && (
+                        <div className={'ChatBot-chatPanel-messageContainer-message-actionsContainer'}>
+                          <Button
+                            className={'ChatBot-chatPanel-messageContainer-message-actionsContainer-playButton'}
+                            title={'Play'}
+                            displayTitle={false}
+                            frame={false}
+                            imageSource={PlayIcon}
+                            onClick={() => {
+                              console.log('Text to speech player')
+                            }}
+                          />
+                        </div>
+                      )}
                     </Fragment>
                   )}
                 </div>

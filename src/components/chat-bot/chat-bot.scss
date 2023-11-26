@@ -101,6 +101,7 @@ $input-vertical-margin: 8px;
       }
 
       &-message {
+        position: relative;
         width: fit-content;
         min-width: 64px;
         height: fit-content;
@@ -120,10 +121,23 @@ $input-vertical-margin: 8px;
         &-messageText.assistant {
           color: #000;
         }
+
+        &-actionsContainer {
+          display: flex;
+          align-items: center;
+          justify-content: flex-end;
+          position: absolute;
+          bottom: 0;
+          right: 0;
+
+          &-playButton {
+          }
+        }
       }
 
       &-message.assistant {
         background-color: rgba(0, 0, 0, 0.05);
+        padding-right: 32px;
       }
 
       &-message.user {

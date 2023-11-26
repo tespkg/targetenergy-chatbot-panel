@@ -5,10 +5,10 @@ import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
 import { MessageViewerViewModel } from './MessageViewerViewModel'
 import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
 import UserAvatar from 'img/icons/user_avatar.svg'
-import { Button } from 'components/button/Button'
-import PlayIcon from 'img/icons/play-icon.svg'
+import { AudioPlayer } from '../../audio-player/AudioPlayer'
 
 import './message-viewer.scss'
+
 interface Props {
   className?: string
   viewModel: MessageViewerViewModel
@@ -77,16 +77,7 @@ const TextMessageViewer = ({ message, role }: { message: string; role: CHATBOT_R
       </Markdown>
       {role === CHATBOT_ROLE.ASSISTANT && (
         <div className={'messageViewer-message-actionsContainer'}>
-          <Button
-            className={'messageViewer-message-actionsContainer-playButton'}
-            title={'Play'}
-            displayTitle={false}
-            frame={false}
-            imageSource={PlayIcon}
-            onClick={() => {
-              console.log('Text to speech player')
-            }}
-          />
+          <AudioPlayer text={message} />
         </div>
       )}
     </Fragment>

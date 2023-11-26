@@ -78,8 +78,8 @@ const TextMessageViewer = ({ message, role }: { message: string; role: CHATBOT_R
       </Markdown>
       {role === CHATBOT_ROLE.ASSISTANT && (
         <div className={'messageViewer-message-actionsContainer'}>
-          {/*<StreamingAudioPlayer text={message} />*/}
-          <AudioPlayer text={message} />
+          <StreamingAudioPlayer text={message} />
+          {/*<AudioPlayer text={message} />*/}
         </div>
       )}
     </Fragment>

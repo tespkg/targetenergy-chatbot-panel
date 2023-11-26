@@ -302,7 +302,13 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   //
   const initializeChatContext = useCallback(() => {
     setChatContent(undefined)
-    addMessageToChatContent(`How can I help you?`, CHATBOT_ROLE.ASSISTANT, false, true)
+    // addMessageToChatContent(`How can I help you?`, CHATBOT_ROLE.ASSISTANT, false, true)
+    addMessageToChatContent(
+      `HA sentence is a group of words that are joined together to mean something. A sentence is the basic unit of language. It expresses a complete thought. It does this by following the grammatical basic rules of syntax.`,
+      CHATBOT_ROLE.ASSISTANT,
+      false,
+      true
+    )
   }, [addMessageToChatContent])
   //
   useEffect(() => {

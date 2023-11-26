@@ -5,6 +5,7 @@ import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
 import { MessageViewerViewModel } from './MessageViewerViewModel'
 import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
 import UserAvatar from 'img/icons/user_avatar.svg'
+import { StreamingAudioPlayer } from '../../audio-player/StreamingAudioPlayer'
 import { AudioPlayer } from '../../audio-player/AudioPlayer'
 
 import './message-viewer.scss'
@@ -77,6 +78,7 @@ const TextMessageViewer = ({ message, role }: { message: string; role: CHATBOT_R
       </Markdown>
       {role === CHATBOT_ROLE.ASSISTANT && (
         <div className={'messageViewer-message-actionsContainer'}>
+          {/*<StreamingAudioPlayer text={message} />*/}
           <AudioPlayer text={message} />
         </div>
       )}

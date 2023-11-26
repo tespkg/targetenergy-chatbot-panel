@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
-import { textToSpeech, TextToSpeechRequest } from '../../api/chatbot-api'
-import { Button } from '../button/Button'
+import React, { useState, useEffect, useRef } from 'react'
+import { textToSpeech } from '../../api/chatbot-api'
 import PlayIcon from 'img/icons/play-icon.svg'
 import PauseIcon from 'img/icons/pause-icon.svg'
+import { Button } from '../button/Button'
 
 interface Props {
   text: string
@@ -10,8 +10,11 @@ interface Props {
 
 export const AudioPlayer = ({ text }: Props) => {
   const [audioContext, setAudioContext] = useState<AudioContext>(null!)
-  const [sourceNode, setSourceNode] = useState<AudioBufferSourceNode>()
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer>()
   const [isPlaying, setIsPlaying] = useState(false)
+  const [currentPlaybackTime, setCurrentPlaybackTime] = useState(0)
+  const sourceRef = useRef<AudioBufferSourceNode>()
+  const isPausedRef = useRef(false)
 
   useEffect(() => {
     // @ts-ignore
@@ -22,85 +25,65 @@ export const AudioPlayer = ({ text }: Props) => {
     }
   }, [])
 
-  const playAudio = async () => {
-    if (audioContext && audioContext.state === 'suspended') {
-      await audioContext.resume()
+  const fetchAudioBuffer = async (text: string) => {
+    const response = await textToSpeech({
+      text,
+      stream: false,
+    })
+
+    const reader = response.body!.getReader()
+    const { value } = await reader.read()
+    if (value) {
+      const audioBuffer = await audioContext.decodeAudioData(value.buffer)
+      return audioBuffer
     }
 
-    try {
-      const req: TextToSpeechRequest = {
-        text: text,
-        /**
-         * TODO: We need to handle streams, currently just
-         * switched to false to continue working.
-         * Ideally we should handle the stream
-         * */
-        stream: false,
-      }
-      const response = await textToSpeech(req)
+    return undefined
+  }
 
-      if (req.stream) {
-        // Process the stream
-        while (true) {
-          const reader = response.body!.getReader()
-          const { done, value } = await reader.read()
-          if (done) {
-            break
-          }
+  const playAudio = async () => {
+    let buffer = audioBuffer
+    if (!buffer) {
+      buffer = await fetchAudioBuffer(text)
+      setAudioBuffer(buffer)
+    } else {
+    }
+    if (!buffer) {
+      console.log('No audio buffer')
+      return
+    }
 
-          // Convert the chunk to an ArrayBuffer and decode it
-          await audioContext.decodeAudioData(value.buffer, (decodedData) => {
-            // Create a buffer source
-            const source = audioContext.createBufferSource()
-            source.buffer = decodedData
-            source.connect(audioContext.destination)
-            source.start()
-            setSourceNode(source) // Save the source node to stop it later if needed
-          })
-        }
-      } else {
-        const reader = response.body!.getReader()
-        const { value } = await reader.read()
-        // Convert the chunk to an ArrayBuffer and decode it
-        if (value) {
-          await audioContext.decodeAudioData(value.buffer, (decodedData) => {
-            // Create a buffer source
-            const source = audioContext.createBufferSource()
-            source.buffer = decodedData
-            source.connect(audioContext.destination)
-            source.start()
-            setSourceNode(source) // Save the source node to stop it later if needed
-          })
-        }
-      }
-    } catch (error) {
-      console.error('Error playing streamed audio:', error)
-    } finally {
+    setIsPlaying(true)
+    const source = audioContext.createBufferSource()
+    sourceRef.current = source
+    source.buffer = buffer
+    source.connect(audioContext.destination)
+    source.start(0, currentPlaybackTime)
+    source.onended = () => {
       setIsPlaying(false)
-      setSourceNode(undefined)
+      if (isPausedRef.current) {
+        setCurrentPlaybackTime(audioContext.currentTime)
+        isPausedRef.current = false
+      } else {
+        setCurrentPlaybackTime(0)
+        setAudioBuffer(undefined)
+      }
     }
   }
 
   const pauseAudio = () => {
-    if (sourceNode) {
-      sourceNode.stop()
-      // setPlaybackTime(audioContext.currentTime)
+    if (sourceRef.current) {
+      isPausedRef.current = true
+      setCurrentPlaybackTime(audioContext.currentTime)
+      sourceRef.current.stop()
     }
-    setIsPlaying(false)
   }
 
   return (
     <div>
       <Button
         title={isPlaying ? 'Pause' : 'Play'}
-        onClick={
-          isPlaying
-            ? pauseAudio
-            : async () => {
-                setIsPlaying(true)
-                await playAudio()
-              }
-        }
+        onClick={isPlaying ? pauseAudio : playAudio}
         displayTitle={false}
         frame={false}
         imageSource={isPlaying ? PauseIcon : PlayIcon}

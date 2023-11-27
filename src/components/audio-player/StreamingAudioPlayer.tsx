@@ -49,8 +49,10 @@ export const StreamingAudioPlayer = ({ text }: Props) => {
         activeSourcesRef.current.delete(source)
         playbackTimeRef.current = 0 // Reset playback time when a buffer finishes
         bufferQueueRef.current.shift()
-        if (bufferQueueRef.current.length > 0 && isPlaying) {
-          playBuffer(bufferQueueRef.current[0])
+        if (bufferQueueRef.current.length > 0) {
+          if (isPlaying) {
+            playBuffer(bufferQueueRef.current[0])
+          }
         } else {
           setIsPlaying(false)
         }

@@ -37,7 +37,7 @@ export const MessageViewer = ({ className, viewModel }: Props) => {
         {type === SUPPORTED_MESSAGE_TYPE.AUDIO ? (
           <AudioMessageViewer audio={audio} />
         ) : (
-          <TextMessageViewer message={message} role={role} />
+          <TextMessageViewer message={message} role={role} id={id} />
         )}
       </div>
     </div>
@@ -63,7 +63,7 @@ const AvatarViewer = ({ role }: { role: CHATBOT_ROLE }) => {
   )
 }
 //
-const TextMessageViewer = ({ message, role }: { message: string; role: CHATBOT_ROLE }) => {
+const TextMessageViewer = ({ message, role, id }: { message: string; role: CHATBOT_ROLE; id: string }) => {
   /** Renderer */
   return (
     <Fragment>
@@ -77,7 +77,7 @@ const TextMessageViewer = ({ message, role }: { message: string; role: CHATBOT_R
       </Markdown>
       {role === CHATBOT_ROLE.ASSISTANT && (
         <div className={'messageViewer-message-actionsContainer'}>
-          <StreamingAudioPlayer text={message} />
+          <StreamingAudioPlayer text={message} id={id} />
         </div>
       )}
     </Fragment>

@@ -1,193 +1,198 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react'
 import { textToSpeech } from '../../api/chatbot-api'
 import { Button } from '../button/Button'
+import { AudioUtils } from './utils'
+import { get } from 'lodash'
+import { StreamingAudioPlayerEvents } from './events'
 import PlayIcon from 'img/icons/play-icon.svg'
 import PauseIcon from 'img/icons/pause-icon.svg'
 import TextTpSpeechIcon from 'img/icons/text-to-speech-icon.svg'
-import TextTpSpeechInProgressIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
+import { STREAMING_AUDIO_PLAYER } from './constants'
+// import TextTpSpeechInProgressIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
 
-const AUDIO_BUFFER_SIZE = 512 * 1024
+const AUDIO_BUFFER_SIZE_THRESHOLD = 64 * 1024
 
 interface Props {
   text: string
+  id: string
 }
 
-export const StreamingAudioPlayer = ({ text }: Props) => {
+export const StreamingAudioPlayer = ({ text, id }: Props) => {
   /** States */
-  const [audioContext, setAudioContext] = useState<AudioContext>()
-  const [isPlaying, setIsPlaying] = useState(false)
-  const bufferQueueRef = useRef<AudioBuffer[]>([])
-  const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set())
-  const [isTextToSpeechInProgress, setTextToSpeechInProgress] = useState(false)
-  const playbackTimeRef = useRef(0)
-  const lastBufferStartTimeRef = useRef(0)
+  const [isPlaying, setPlaying] = useState(false)
+  const playingState = useRef<boolean>(false)
 
-  // Create audio context on mount
-  useEffect(() => {
+  /** References */
+  const audioContextRef = useRef<AudioContext>(null!)
+  const queuedAudioBuffers = useRef<AudioBuffer[]>([])
+  const currentPlayingBufferIndex = useRef<number>(0)
+  const currentPlayingAudioSource = useRef<AudioBufferSourceNode>(null!)
+
+  /** Callbacks and Functions */
+  const onAudioBufferReceived = () => {
+    // Let's play the audio on first audio buffer
+    if (queuedAudioBuffers.current.length === 1) {
+      StreamingAudioPlayerEvents.publish(STREAMING_AUDIO_PLAYER.PLAY, id)
+    }
+  }
+  //
+  const convertTextToSpeech = (text: string, stream: boolean) => {
+    textToSpeech({
+      text: text,
+      stream: stream,
+    }).then((response) => {
+      console.log('response:::::::::::::', response)
+      let receivedValuesSize = 0
+      let allReceivedValues: Uint8Array[] = []
+      const reader = response.body!.getReader()
+      const read = async () => {
+        const { value, done } = await reader.read()
+        if (done) {
+          if (allReceivedValues.length > 0) {
+            const mergedChunks = AudioUtils.mergeArrayOfUint8Array(allReceivedValues, receivedValuesSize)
+            audioContextRef.current!.decodeAudioData(mergedChunks.buffer).then((decodedAudioBuffer) => {
+              queuedAudioBuffers.current.push(decodedAudioBuffer)
+              onAudioBufferReceived()
+            })
+          }
+          reader.releaseLock()
+          return
+        }
+        // decode chunk to audio stream
+        receivedValuesSize += value.length
+        allReceivedValues.push(value)
+        if (receivedValuesSize > AUDIO_BUFFER_SIZE_THRESHOLD) {
+          // We have enough values to play
+
+          const mergedChunks = AudioUtils.mergeArrayOfUint8Array(allReceivedValues, receivedValuesSize)
+          audioContextRef.current!.decodeAudioData(mergedChunks.buffer).then((decodedAudioBuffer) => {
+            queuedAudioBuffers.current.push(decodedAudioBuffer)
+            onAudioBufferReceived()
+          })
+          allReceivedValues = []
+          receivedValuesSize = 0
+        }
+        await read()
+      }
+      read().then(() => {
+        // Maybe we can delete all previous buffers and creating a completed buffer
+      })
+    })
+  }
+  //
+  const onConvertTextToAudioClick = () => {
+    convertTextToSpeech(text, true)
+  }
+  //
+  const onResumeClick = () => {
+    StreamingAudioPlayerEvents.publish(STREAMING_AUDIO_PLAYER.RESUME, id)
+  }
+  //
+  const onPauseClick = () => {
+    StreamingAudioPlayerEvents.publish(STREAMING_AUDIO_PLAYER.PAUSE, id)
+  }
+  //
+  const createAudioBufferSourceNodeFromAudioBuffer = (audioBuffer: AudioBuffer) => {
+    const source = audioContextRef.current!.createBufferSource()
+    source.buffer = audioBuffer
+    source.connect(audioContextRef.current!.destination)
+    source.onended = () => {
+      if (currentPlayingBufferIndex.current + 1 < queuedAudioBuffers.current.length && playingState.current) {
+        // it is time to play next source
+        console.log('There are more queued audio buffers, lets play next')
+        currentPlayingBufferIndex.current = currentPlayingBufferIndex.current + 1
+        StreamingAudioPlayerEvents.publish(STREAMING_AUDIO_PLAYER.PLAY, id)
+      } else {
+        console.log('All Played. Lets stop source.')
+        playingState.current = false
+        setPlaying(false)
+        currentPlayingBufferIndex.current = 0
+        audioContextRef.current.suspend().then(() => {
+          currentPlayingAudioSource.current.stop(0)
+        })
+      }
+    }
+    return source
+  }
+  //
+  const playBuffer = (audioBuffer: AudioBuffer) => {
+    const source = createAudioBufferSourceNodeFromAudioBuffer(audioBuffer)
+    source.start(0, 0)
+    return { source }
+  }
+  //
+  const resumeEventListener = () => {
+    console.log('On Resume:::::')
+    audioContextRef.current.resume().then(() => {
+      playingState.current = true
+      setPlaying(true)
+      const audioBuffer = get(queuedAudioBuffers.current, currentPlayingBufferIndex.current)
+      const source = createAudioBufferSourceNodeFromAudioBuffer(audioBuffer)
+      currentPlayingAudioSource.current = source
+      source.start(0, 0)
+    })
+  }
+  //
+  const pauseEventListener = () => {
+    // console.log('On Pause:::::')
+    // audioContextRef.current.suspend().then(() => {
+    //   playingState.current = false
+    //   setPlaying(false)
+    //   currentPlayingAudioSource.current.stop(0)
+    // })
+  }
+  //
+  const playEventListener = () => {
+    playingState.current = true
+    setPlaying(true)
+    const audioBuffer = get(queuedAudioBuffers.current, currentPlayingBufferIndex.current)
+    const { source } = playBuffer(audioBuffer)
+    if (source) {
+      currentPlayingAudioSource.current = source
+    }
+  }
+
+  /** Effects */
+
+  useLayoutEffect(() => {
     // @ts-ignore
-    const context = new (window.AudioContext || window.webkitAudioContext)()
-    setAudioContext(context)
+    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+
     return () => {
-      context.close()
+      audioContextRef.current.close().then()
+    }
+  }, [])
+  //
+  useEffect(() => {
+    StreamingAudioPlayerEvents.subscribe(STREAMING_AUDIO_PLAYER.PLAY, id, playEventListener)
+    StreamingAudioPlayerEvents.subscribe(STREAMING_AUDIO_PLAYER.RESUME, id, resumeEventListener)
+    StreamingAudioPlayerEvents.subscribe(STREAMING_AUDIO_PLAYER.PAUSE, id, pauseEventListener)
+    return () => {
+      StreamingAudioPlayerEvents.unsubscribe(STREAMING_AUDIO_PLAYER.PLAY, id, () => {})
+      StreamingAudioPlayerEvents.unsubscribe(STREAMING_AUDIO_PLAYER.RESUME, id, () => {})
+      StreamingAudioPlayerEvents.unsubscribe(STREAMING_AUDIO_PLAYER.PAUSE, id, () => {})
     }
   }, [])
 
-  // Play a single buffer
-  const playBuffer = useCallback(
-    (buffer: AudioBuffer, startOffset = 0) => {
-      if (!audioContext) {
-        return
-      }
-
-      const source = audioContext.createBufferSource()
-      source.buffer = buffer
-      source.connect(audioContext.destination)
-      source.start(0, startOffset)
-      lastBufferStartTimeRef.current = audioContext.currentTime - startOffset
-      activeSourcesRef.current.add(source)
-      source.onended = () => {
-        activeSourcesRef.current.delete(source)
-        playbackTimeRef.current = 0 // Reset playback time when a buffer finishes
-        bufferQueueRef.current.shift()
-        if (bufferQueueRef.current.length > 0) {
-          if (isPlaying) {
-            playBuffer(bufferQueueRef.current[0])
-          }
-        } else {
-          setIsPlaying(false)
-        }
-      }
-    },
-    [audioContext, isPlaying]
-  )
-
-  // Configure the playback loop
-  useEffect(() => {
-    if (!audioContext || bufferQueueRef.current.length === 0 || !isPlaying) {
-      return
-    }
-
-    if (activeSourcesRef.current.size === 0) {
-      playBuffer(bufferQueueRef.current[0])
-    }
-  }, [audioContext, isPlaying, playBuffer])
-
-  const playAudio = useCallback(async () => {
-    if (!audioContext) {
-      return
-    }
-
-    await audioContext.resume()
-
-    try {
-      setTextToSpeechInProgress(true)
-      const response = await textToSpeech({
-        text: text,
-        stream: true,
-      })
-
-      const reader = response.body!.getReader()
-
-      let firstBuffer = true
-      let audioBuffer = new Uint8Array()
-
-      const handleNewBuffer = async (audioBuffer: Uint8Array) => {
-        const decodedData = await audioContext.decodeAudioData(audioBuffer.buffer)
-        bufferQueueRef.current.push(decodedData)
-
-        if (firstBuffer) {
-          firstBuffer = false
-          setIsPlaying(true)
-          playBuffer(bufferQueueRef.current[0])
-        }
-      }
-
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) {
-          setTextToSpeechInProgress(false)
-
-          if (audioBuffer.length > 0) {
-            await handleNewBuffer(audioBuffer)
-          }
-          break
-        }
-
-        // Buffer the received data into a single buffer before decoding
-        let newBuffer = new Uint8Array(audioBuffer.length + value.length)
-        newBuffer.set(audioBuffer)
-        newBuffer.set(value, audioBuffer.length)
-        audioBuffer = newBuffer
-
-        if (audioBuffer.length < AUDIO_BUFFER_SIZE) {
-          continue
-        }
-
-        await handleNewBuffer(audioBuffer)
-        audioBuffer = new Uint8Array()
-      }
-    } catch (error) {
-      console.error('Error converting text to speech:', error)
-      setIsPlaying(false)
-    }
-  }, [audioContext, playBuffer, text])
-
-  const resumeAudio = useCallback(async () => {
-    if (!audioContext) {
-      return
-    }
-
-    console.log('resumeAudio', audioContext.state, bufferQueueRef.current.length)
-    if (audioContext.state === 'suspended' && bufferQueueRef.current.length > 0) {
-      await audioContext.resume()
-      setIsPlaying(true)
-
-      if (bufferQueueRef.current.length > 0) {
-        // Start playing from the next buffer in the queue
-        playBuffer(bufferQueueRef.current[0], playbackTimeRef.current)
-      }
-    } else {
-      await playAudio()
-    }
-  }, [audioContext, playAudio, playBuffer])
-
-  // Function to pause audio
-  const pauseAudio = async () => {
-    if (!audioContext) {
-      return
-    }
-
-    await audioContext.suspend()
-    setIsPlaying(false)
-    // Calculate how much of the current buffer has been played
-    playbackTimeRef.current += audioContext.currentTime - lastBufferStartTimeRef.current
-
-    // Stopping all active sources
-    activeSourcesRef.current.forEach((source) => source.stop())
-    activeSourcesRef.current.clear()
-  }
-
-  const getButtonImage = () => {
-    if (isPlaying) {
-      return PauseIcon
-    } else if (isTextToSpeechInProgress) {
-      return TextTpSpeechInProgressIcon
-    } else if (bufferQueueRef.current.length === 0) {
-      return TextTpSpeechIcon
-    } else {
-      return PlayIcon
-    }
-  }
-
+  /** Renderer */
   return (
     <div>
-      <Button
-        title={isPlaying ? 'Pause' : 'Play'}
-        onClick={isPlaying ? pauseAudio : resumeAudio}
-        displayTitle={false}
-        frame={false}
-        imageSource={getButtonImage()}
-      />
+      {isPlaying && (
+        <Button title={'Pause'} onClick={onPauseClick} displayTitle={false} frame={false} imageSource={PauseIcon} />
+      )}
+      {!isPlaying && queuedAudioBuffers.current.length > 0 && (
+        <Button title={'Resume'} onClick={onResumeClick} displayTitle={false} frame={false} imageSource={PlayIcon} />
+      )}
+
+      {!isPlaying && queuedAudioBuffers.current.length == 0 && (
+        <Button
+          title={'Text to Speech'}
+          onClick={onConvertTextToAudioClick}
+          displayTitle={false}
+          frame={false}
+          imageSource={TextTpSpeechIcon}
+        />
+      )}
     </div>
   )
 }

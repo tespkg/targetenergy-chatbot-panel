@@ -10,7 +10,7 @@ import TextTpSpeechIcon from 'img/icons/text-to-speech-icon.svg'
 import { STREAMING_AUDIO_PLAYER } from './constants'
 // import TextTpSpeechInProgressIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
 
-const AUDIO_BUFFER_SIZE_THRESHOLD = 64 * 1024
+const AUDIO_BUFFER_SIZE_THRESHOLD = 128 * 1024
 
 interface Props {
   text: string
@@ -27,11 +27,15 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   const queuedAudioBuffers = useRef<AudioBuffer[]>([])
   const currentPlayingBufferIndex = useRef<number>(0)
   const currentPlayingAudioSource = useRef<AudioBufferSourceNode | null>(null)
+  const startedAt = useRef<number>(0)
+  const pausedAt = useRef<number>(0)
 
   /** Callbacks and Functions */
   const onAudioBufferReceived = () => {
     // Let's play the audio on first audio buffer
     if (queuedAudioBuffers.current.length === 1) {
+      console.log('start at::', audioContextRef.current.currentTime)
+      startedAt.current = audioContextRef.current.currentTime
       StreamingAudioPlayerEvents.publish(STREAMING_AUDIO_PLAYER.PLAY, id)
     }
   }
@@ -134,13 +138,15 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
     const audioBuffer = get(queuedAudioBuffers.current, currentPlayingBufferIndex.current)
     const source = createAudioBufferSourceNodeFromAudioBuffer(audioBuffer)
     currentPlayingAudioSource.current = source
-    source.start(0, 0)
+    startedAt.current = audioContextRef.current.currentTime
+    source.start(0, pausedAt.current ? pausedAt.current - startedAt.current : 0)
   }
   //
   const pauseEventListener = () => {
     console.log('On Pause:::::')
     playingState.current = false
     setPlaying(false)
+    pausedAt.current = audioContextRef.current.currentTime
     audioContextRef.current.close().then(() => {
       if (currentPlayingAudioSource && currentPlayingAudioSource.current) {
         currentPlayingAudioSource.current.stop(0)

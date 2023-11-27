@@ -26,7 +26,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   const audioContextRef = useRef<AudioContext>(null!)
   const queuedAudioBuffers = useRef<AudioBuffer[]>([])
   const currentPlayingBufferIndex = useRef<number>(0)
-  const currentPlayingAudioSource = useRef<AudioBufferSourceNode>(null!)
+  const currentPlayingAudioSource = useRef<AudioBufferSourceNode | null>(null)
 
   /** Callbacks and Functions */
   const onAudioBufferReceived = () => {
@@ -107,8 +107,10 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
         playingState.current = false
         setPlaying(false)
         currentPlayingBufferIndex.current = 0
-        audioContextRef.current.suspend().then(() => {
-          currentPlayingAudioSource.current.stop(0)
+        audioContextRef.current.close().then(() => {
+          if (currentPlayingAudioSource && currentPlayingAudioSource.current) {
+            currentPlayingAudioSource.current.stop(0)
+          }
         })
       }
     }
@@ -122,24 +124,28 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   }
   //
   const resumeEventListener = () => {
-    console.log('On Resume:::::')
-    audioContextRef.current.resume().then(() => {
-      playingState.current = true
-      setPlaying(true)
-      const audioBuffer = get(queuedAudioBuffers.current, currentPlayingBufferIndex.current)
-      const source = createAudioBufferSourceNodeFromAudioBuffer(audioBuffer)
-      currentPlayingAudioSource.current = source
-      source.start(0, 0)
-    })
+    console.log('On Resume:::::', audioContextRef.current.currentTime)
+    if (audioContextRef.current.state === 'closed') {
+      // @ts-ignore
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
+    }
+    playingState.current = true
+    setPlaying(true)
+    const audioBuffer = get(queuedAudioBuffers.current, currentPlayingBufferIndex.current)
+    const source = createAudioBufferSourceNodeFromAudioBuffer(audioBuffer)
+    currentPlayingAudioSource.current = source
+    source.start(0, 0)
   }
   //
   const pauseEventListener = () => {
-    // console.log('On Pause:::::')
-    // audioContextRef.current.suspend().then(() => {
-    //   playingState.current = false
-    //   setPlaying(false)
-    //   currentPlayingAudioSource.current.stop(0)
-    // })
+    console.log('On Pause:::::')
+    playingState.current = false
+    setPlaying(false)
+    audioContextRef.current.close().then(() => {
+      if (currentPlayingAudioSource && currentPlayingAudioSource.current) {
+        currentPlayingAudioSource.current.stop(0)
+      }
+    })
   }
   //
   const playEventListener = () => {

@@ -302,17 +302,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   //
   const initializeChatContext = useCallback(() => {
     setChatContent(undefined)
-    // addMessageToChatContent(`How can I help you?`, CHATBOT_ROLE.ASSISTANT, false, true)
-    addMessageToChatContent(
-      // `A sentence is a group of words that are joined together to mean something. A sentence is the basic unit of language. It expresses a complete thought. It does this by following the grammatical basic rules of syntax.`,
-      `Voilà!
-
-In view, a humble vaudevillian veteran, cast vicariously as both victim and villain by the vicissitudes of Fate. This visage, no mere veneer of vanity, is a vestige of the vox populi, now vacant, vanished. However, this valorous visitation of a by-gone vexation stands vivified, and has vowed to vanquish these venal and virulent vermin vanguarding vice and vouchsafing the violently vicious and voracious violation of volition. The only verdict is vengeance; a vendetta, held as a votive, not in vain, for the value and veracity of such shall one day vindicate the vigilant and the virtuous. Verily, this vichyssoise of verbiage veers most verbose, so let me simply add that it is my very good honor to meet you and you may call me V.`,
-
-      CHATBOT_ROLE.ASSISTANT,
-      false,
-      true
-    )
+    addMessageToChatContent(`How can I help you?`, CHATBOT_ROLE.ASSISTANT, false, true)
   }, [addMessageToChatContent])
   //
   useEffect(() => {

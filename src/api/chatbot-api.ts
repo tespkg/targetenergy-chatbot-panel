@@ -1,7 +1,7 @@
 import { BotGenerateRequest } from '../agents/bot-types'
 
-// const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`
-const BASE_URL = 'http://localhost:8000/api/v1'
+const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`
+// const BASE_URL = 'http://localhost:8000/api/v1'
 
 export async function transcribe(voice: Blob) {
   const formData = new FormData()

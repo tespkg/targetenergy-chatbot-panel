@@ -188,7 +188,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
       })
     }
   }, [])
-  //
+
   useEffect(() => {
     StreamingAudioPlayerEvents.subscribe(STREAMING_AUDIO_PLAYER.PLAY, id, playEventListener)
     StreamingAudioPlayerEvents.subscribe(STREAMING_AUDIO_PLAYER.RESUME, id, resumeEventListener)
@@ -198,6 +198,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
       StreamingAudioPlayerEvents.unsubscribe(STREAMING_AUDIO_PLAYER.RESUME, id, () => {})
       StreamingAudioPlayerEvents.unsubscribe(STREAMING_AUDIO_PLAYER.PAUSE, id, () => {})
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /** Renderer */
@@ -210,7 +211,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
         <Button title={'Resume'} onClick={onResumeClick} displayTitle={false} frame={false} imageSource={PlayIcon} />
       )}
 
-      {!isPlaying && queuedAudioBuffers.current.length == 0 && !isConvertingTextToSpeech && (
+      {!isPlaying && queuedAudioBuffers.current.length === 0 && !isConvertingTextToSpeech && (
         <Button
           title={'Text to Speech'}
           onClick={onConvertTextToAudioClick}
@@ -219,7 +220,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
           imageSource={TextTpSpeechIcon}
         />
       )}
-      {!isPlaying && queuedAudioBuffers.current.length == 0 && isConvertingTextToSpeech && (
+      {!isPlaying && queuedAudioBuffers.current.length === 0 && isConvertingTextToSpeech && (
         <Button
           title={'Converting Text to Speech'}
           onClick={() => {}}

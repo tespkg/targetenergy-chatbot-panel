@@ -7,6 +7,7 @@ import { StreamingAudioPlayerEvents } from './events'
 import PlayIcon from 'img/icons/play-icon.svg'
 import PauseIcon from 'img/icons/pause-icon.svg'
 import TextTpSpeechIcon from 'img/icons/text-to-speech-icon.svg'
+import TextTpSpeechConvertIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
 import { STREAMING_AUDIO_PLAYER } from './constants'
 // import TextTpSpeechInProgressIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
 
@@ -21,6 +22,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   /** States */
   const [isPlaying, setPlaying] = useState(false)
   const playingState = useRef<boolean>(false)
+  const [isConvertingTextToSpeech, setConvertingTextToSpeech] = useState(false)
 
   /** References */
   const audioContextRef = useRef<AudioContext>(null!)
@@ -40,47 +42,53 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   }
   //
   const convertTextToSpeech = (text: string, stream: boolean) => {
+    setConvertingTextToSpeech(true)
     textToSpeech({
       text: text,
       stream: stream,
-    }).then((response) => {
-      console.log('response:::::::::::::', response)
-      let receivedValuesSize = 0
-      let allReceivedValues: Uint8Array[] = []
-      const reader = response.body!.getReader()
-      const read = async () => {
-        const { value, done } = await reader.read()
-        if (done) {
-          if (allReceivedValues.length > 0) {
+    })
+      .then((response) => {
+        console.log('response:::::::::::::', response)
+        let receivedValuesSize = 0
+        let allReceivedValues: Uint8Array[] = []
+        const reader = response.body!.getReader()
+        const read = async () => {
+          const { value, done } = await reader.read()
+          if (done) {
+            if (allReceivedValues.length > 0) {
+              const mergedChunks = AudioUtils.mergeArrayOfUint8Array(allReceivedValues, receivedValuesSize)
+              audioContextRef.current!.decodeAudioData(mergedChunks.buffer).then((decodedAudioBuffer) => {
+                queuedAudioBuffers.current.push(decodedAudioBuffer)
+                onAudioBufferReceived()
+              })
+            }
+            reader.releaseLock()
+            return
+          }
+          // decode chunk to audio stream
+          receivedValuesSize += value.length
+          allReceivedValues.push(value)
+          if (receivedValuesSize > AUDIO_BUFFER_SIZE_THRESHOLD) {
+            // We have enough values to play
+
             const mergedChunks = AudioUtils.mergeArrayOfUint8Array(allReceivedValues, receivedValuesSize)
             audioContextRef.current!.decodeAudioData(mergedChunks.buffer).then((decodedAudioBuffer) => {
               queuedAudioBuffers.current.push(decodedAudioBuffer)
               onAudioBufferReceived()
             })
+            allReceivedValues = []
+            receivedValuesSize = 0
           }
-          reader.releaseLock()
-          return
+          await read()
         }
-        // decode chunk to audio stream
-        receivedValuesSize += value.length
-        allReceivedValues.push(value)
-        if (receivedValuesSize > AUDIO_BUFFER_SIZE_THRESHOLD) {
-          // We have enough values to play
-
-          const mergedChunks = AudioUtils.mergeArrayOfUint8Array(allReceivedValues, receivedValuesSize)
-          audioContextRef.current!.decodeAudioData(mergedChunks.buffer).then((decodedAudioBuffer) => {
-            queuedAudioBuffers.current.push(decodedAudioBuffer)
-            onAudioBufferReceived()
-          })
-          allReceivedValues = []
-          receivedValuesSize = 0
-        }
-        await read()
-      }
-      read().then(() => {
-        // Maybe we can delete all previous buffers and creating a completed buffer
+        read().then(() => {
+          // Maybe we can delete all previous buffers and creating a completed buffer
+          setConvertingTextToSpeech(false)
+        })
       })
-    })
+      .catch(() => {
+        setConvertingTextToSpeech(false)
+      })
   }
   //
   const onConvertTextToAudioClick = () => {
@@ -202,13 +210,22 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
         <Button title={'Resume'} onClick={onResumeClick} displayTitle={false} frame={false} imageSource={PlayIcon} />
       )}
 
-      {!isPlaying && queuedAudioBuffers.current.length == 0 && (
+      {!isPlaying && queuedAudioBuffers.current.length == 0 && !isConvertingTextToSpeech && (
         <Button
           title={'Text to Speech'}
           onClick={onConvertTextToAudioClick}
           displayTitle={false}
           frame={false}
           imageSource={TextTpSpeechIcon}
+        />
+      )}
+      {!isPlaying && queuedAudioBuffers.current.length == 0 && isConvertingTextToSpeech && (
+        <Button
+          title={'Converting Text to Speech'}
+          onClick={() => {}}
+          displayTitle={false}
+          frame={false}
+          imageSource={TextTpSpeechConvertIcon}
         />
       )}
     </div>

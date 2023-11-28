@@ -34,7 +34,6 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   const onAudioBufferReceived = () => {
     // Let's play the audio on first audio buffer
     if (queuedAudioBuffers.current.length === 1) {
-      console.log('start at::', audioContextRef.current.currentTime)
       startedAt.current = audioContextRef.current.currentTime
       StreamingAudioPlayerEvents.publish(STREAMING_AUDIO_PLAYER.PLAY, id)
     }
@@ -111,10 +110,12 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
         playingState.current = false
         setPlaying(false)
         currentPlayingBufferIndex.current = 0
-        audioContextRef.current.close().then(() => {
-          if (currentPlayingAudioSource && currentPlayingAudioSource.current) {
-            currentPlayingAudioSource.current.stop(0)
-          }
+        audioContextRef.current.suspend().then(() => {
+          audioContextRef.current.close().then(() => {
+            if (currentPlayingAudioSource && currentPlayingAudioSource.current) {
+              currentPlayingAudioSource.current.stop(0)
+            }
+          })
         })
       }
     }
@@ -128,7 +129,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   }
   //
   const resumeEventListener = () => {
-    console.log('On Resume:::::', audioContextRef.current.currentTime)
+    console.log('Resume Event Listener.')
     if (audioContextRef.current.state === 'closed') {
       // @ts-ignore
       audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
@@ -138,23 +139,26 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
     const audioBuffer = get(queuedAudioBuffers.current, currentPlayingBufferIndex.current)
     const source = createAudioBufferSourceNodeFromAudioBuffer(audioBuffer)
     currentPlayingAudioSource.current = source
+    source.start(0, pausedAt.current ? Math.floor(pausedAt.current - startedAt.current) : 0)
     startedAt.current = audioContextRef.current.currentTime
-    source.start(0, pausedAt.current ? pausedAt.current - startedAt.current : 0)
   }
   //
   const pauseEventListener = () => {
-    console.log('On Pause:::::')
+    console.log('Pause Event Listener.')
     playingState.current = false
     setPlaying(false)
     pausedAt.current = audioContextRef.current.currentTime
-    audioContextRef.current.close().then(() => {
-      if (currentPlayingAudioSource && currentPlayingAudioSource.current) {
-        currentPlayingAudioSource.current.stop(0)
-      }
+    audioContextRef.current.suspend().then(() => {
+      audioContextRef.current.close().then(() => {
+        if (currentPlayingAudioSource && currentPlayingAudioSource.current) {
+          currentPlayingAudioSource.current.stop(0)
+        }
+      })
     })
   }
   //
   const playEventListener = () => {
+    console.log('Plat Event Listener.')
     playingState.current = true
     setPlaying(true)
     const audioBuffer = get(queuedAudioBuffers.current, currentPlayingBufferIndex.current)
@@ -171,7 +175,9 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
     audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)()
 
     return () => {
-      audioContextRef.current.close().then()
+      audioContextRef.current.suspend().then(() => {
+        audioContextRef.current.close().then()
+      })
     }
   }, [])
   //

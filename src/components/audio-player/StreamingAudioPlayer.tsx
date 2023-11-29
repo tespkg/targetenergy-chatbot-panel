@@ -20,7 +20,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
   /** Memos */
   const isConvertTextToSpeechButtonEnable = useMemo(() => {
     return audioPlayerState === STREAMING_AUDIO_PLAYER_STATE.IDLE && !hasAudioBuffers
-  }, [audioPlayerState])
+  }, [audioPlayerState, hasAudioBuffers])
   //
   const isPauseButtonEnable = useMemo(() => {
     return audioPlayerState === STREAMING_AUDIO_PLAYER_STATE.PLAYING
@@ -32,7 +32,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
         audioPlayerState === STREAMING_AUDIO_PLAYER_STATE.IDLE) &&
       hasAudioBuffers
     )
-  }, [audioPlayerState])
+  }, [audioPlayerState, hasAudioBuffers])
 
   /** Renderer */
   return (

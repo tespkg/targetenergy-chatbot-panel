@@ -7,10 +7,10 @@ import { AudioUtils } from '../../components/audio-player/utils'
 
 const AUDIO_BUFFER_SIZE_THRESHOLD = 128 * 1024
 
-interface props {
+interface Props {
   id: string
 }
-export const useStreamingAudioPlayer = ({ id }: props) => {
+export const useStreamingAudioPlayer = ({ id }: Props) => {
   /** States */
   const [audioPlayerState, setAudioAudioPlayerState] = useState<STREAMING_AUDIO_PLAYER_STATE>(
     STREAMING_AUDIO_PLAYER_STATE.IDLE
@@ -168,6 +168,7 @@ export const useStreamingAudioPlayer = ({ id }: props) => {
         audioContextRef.current.close().then()
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   //
   useEffect(() => {
@@ -180,6 +181,7 @@ export const useStreamingAudioPlayer = ({ id }: props) => {
       StreamingAudioPlayerEvents.unsubscribe(STREAMING_AUDIO_PLAYER_EVENT.RESUME, id, () => {})
       StreamingAudioPlayerEvents.unsubscribe(STREAMING_AUDIO_PLAYER_EVENT.PAUSE, id, () => {})
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   /** Return */

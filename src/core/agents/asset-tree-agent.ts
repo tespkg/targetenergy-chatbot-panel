@@ -1,13 +1,15 @@
-import { ChatFunction, ChatFunctionSet, runChatAgent } from './chatbot-agent'
+import { runChatAgent } from '../orchestration/agent'
 import { subAgentParameters } from './common'
-import { BotMessage } from './bot-types'
+import { BotMessage } from '../orchestration/bot-types'
+import { PluginSet } from '../orchestration/llm-function-set'
+import { LLMAgent, LlmTool } from '../orchestration/llm-function'
 
-export const assetTreeAgent: ChatFunction = {
+export const assetTreeAgent: LLMAgent = {
+  type: 'agent',
   name: 'asset_tree',
   title: 'Asset Tree',
   description: (ctx) =>
     'Can answer questions about asset tree including listing the assets and selecting or unselecting them. Assets include companies, continents, counties, regions, blocks, stations, fields and reservoirs',
-  isAgent: true,
   parameters: (ctx) => subAgentParameters,
   run: async (context, args, abortSignal, callbacks) => {
     const { question } = args
@@ -22,7 +24,7 @@ export const assetTreeAgent: ChatFunction = {
     return await runChatAgent(
       'Asset Tree',
       messages,
-      new ChatFunctionSet([listAssetsFunction, toggleAssetNodeFunction], abortSignal, callbacks),
+      new PluginSet([listAssetsFunction, toggleAssetNodeFunction], abortSignal, callbacks),
       {
         abortSignal,
         callbacks,
@@ -33,7 +35,8 @@ export const assetTreeAgent: ChatFunction = {
   },
 }
 
-const toggleAssetNodeFunction: ChatFunction = {
+const toggleAssetNodeFunction: LlmTool = {
+  type: 'tool',
   name: 'toggle_asset_node_selection',
   title: 'Toggle Asset Node Selection',
   description: (ctx) => 'Toggles (selects or deselects) the asset nodes in the asset tree',
@@ -50,7 +53,6 @@ const toggleAssetNodeFunction: ChatFunction = {
     },
     required: ['node_ids'],
   }),
-  isAgent: false,
   run: async (context, args, abortSignal, callbacks) => {
     const { node_ids } = args
     const { assetTree, toggleAssetNodes } = context
@@ -79,12 +81,12 @@ const toggleAssetNodeFunction: ChatFunction = {
   },
 }
 
-const listAssetsFunction: ChatFunction = {
+const listAssetsFunction: LlmTool = {
+  type: 'tool',
   name: 'list_assets',
   title: 'List Assets',
   description: (ctx) =>
     'Lists the assets in the asset tree in a markdown format. The ids and selected status can be included in the output',
-  isAgent: false,
   run: async (context, args, abortSignal, callbacks) => {
     const { assetTree } = context
 

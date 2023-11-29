@@ -1,7 +1,9 @@
-import { ChatFunction, ChatFunctionSet, runChatAgent } from './chatbot-agent'
+import { runChatAgent } from '../orchestration/agent'
 import { subAgentParameters } from './common'
-import { BotMessage } from './bot-types'
-import { formatTemplatedString } from '../commons/utils/string-utils'
+import { BotMessage } from '../orchestration/bot-types'
+import { formatTemplatedString } from '../../commons/utils/string-utils'
+import {LLMAgent, LlmTool} from '../orchestration/llm-function'
+import { PluginSet } from '../orchestration/llm-function-set'
 
 const SYSTEM_MESSAGE_TEMPLATE = `You are helpful chatbot designed to help users interact Dashboard Panels in the Portfolio Manager application.
 
@@ -19,12 +21,12 @@ The list of panels and sub panels are:
 \${panels}
 `
 
-export const panelManagerAgent: ChatFunction = {
+export const panelManagerAgent: LLMAgent = {
+  type: 'agent',
   name: 'panel_manager',
   title: 'Panel Manager',
   description: (ctx) =>
     'Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.',
-  isAgent: true,
   parameters: (context) => subAgentParameters,
   run: async (context, args, abortSignal, callbacks) => {
     const { question } = args
@@ -44,7 +46,7 @@ export const panelManagerAgent: ChatFunction = {
     return await runChatAgent(
       'Panel Manager',
       messages,
-      new ChatFunctionSet(
+      new PluginSet(
         [listPanelsFunction, listSubPanelsFunction, togglePanelFunction, fetchPanelData],
         abortSignal,
         callbacks
@@ -59,12 +61,12 @@ export const panelManagerAgent: ChatFunction = {
   },
 }
 
-const listPanelsFunction: ChatFunction = {
+const listPanelsFunction: LlmTool = {
+  type: 'tool',
   name: 'list_panels',
   title: 'List Panels',
   description: (ctx) =>
     'Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.',
-  isAgent: false,
   run: async (context, args, abortSignal, callbacks) => {
     const { dashboard } = context
 
@@ -81,12 +83,12 @@ const listPanelsFunction: ChatFunction = {
   },
 }
 
-const listSubPanelsFunction: ChatFunction = {
+const listSubPanelsFunction: LlmTool = {
+  type: 'tool',
   name: 'list_sub_panels',
   title: 'List Sub Panels',
   description: (ctx) =>
     'Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.',
-  isAgent: false,
   parameters: (ctx) => ({
     type: 'object',
     properties: {
@@ -118,7 +120,8 @@ const listSubPanelsFunction: ChatFunction = {
   },
 }
 
-const togglePanelFunction: ChatFunction = {
+const togglePanelFunction: LlmTool = {
+  type: 'tool',
   name: 'toggle_panel',
   title: 'Toggle Panel',
   description: (ctx) => 'Toggles (expands or collapses) the panel',
@@ -132,7 +135,6 @@ const togglePanelFunction: ChatFunction = {
     },
     required: ['panel_name'],
   }),
-  isAgent: false,
   run: async (context, args, abortSignal, callbacks) => {
     const { panel_name } = args
     const { dashboard } = context
@@ -153,7 +155,8 @@ const togglePanelFunction: ChatFunction = {
   },
 }
 
-const fetchPanelData: ChatFunction = {
+const fetchPanelData: LlmTool = {
+  type: 'tool',
   name: 'fetch_panel_data',
   title: 'Fetch Panel Data',
   description: (ctx) =>
@@ -168,7 +171,6 @@ const fetchPanelData: ChatFunction = {
     },
     required: ['panel_name'],
   }),
-  isAgent: false,
   run: async (context, args, abortSignal, callbacks) => {
     const { panel_name } = args
     const { dashboard } = context

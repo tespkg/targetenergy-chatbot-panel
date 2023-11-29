@@ -79,7 +79,7 @@ const TextMessageViewer = ({
   return (
     <Fragment>
       <Markdown
-        className={classNames('messageViewer-message-messageText', {
+        className={classNames('messageViewer-message-messageText', 'markdown-html', {
           user: role === CHATBOT_ROLE.USER,
           assistant: role === CHATBOT_ROLE.ASSISTANT,
         })}

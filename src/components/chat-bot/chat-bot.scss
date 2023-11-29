@@ -138,14 +138,13 @@ $input-vertical-margin: 8px;
       display: none;
     }
   }
-
-
-  ul, ol {
-    padding: revert !important;
-  }
+  
   strong {
     font-weight: revert !important;
     padding: revert !important;
+  }
+  .markdown-html th {
+    font-weight: 700 !important;
   }
 }
 

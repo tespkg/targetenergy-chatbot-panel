@@ -148,8 +148,9 @@ $input-vertical-margin: 8px;
   }
 }
 
-.panel-container:has(.ChatBot) {
-  background-color: #eaeaea;
-  border: solid 1px #000000;
-  border-radius: 5px;
-}
+// Not sure why we need these styles. Commenting...
+//.panel-container:has(.ChatBot) {
+//  background-color: #eaeaea;
+//  border: solid 1px #000000;
+//  border-radius: 5px;
+//}

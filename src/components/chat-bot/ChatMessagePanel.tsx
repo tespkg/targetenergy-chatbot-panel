@@ -38,6 +38,7 @@ interface ChatBotMessage {
   audio?: Blob
   type: SUPPORTED_MESSAGE_TYPE
   id: string
+  parentMessageId?: string | 'parent'
   includeInContextHistory: boolean
   includeInChatPanel: boolean
 }
@@ -70,13 +71,21 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   const [isChatbotBusy, setChatbotBusy] = useState(false)
 
   const addMessageToChatContent = useCallback(
-    (text: string, role: CHATBOT_ROLE, includeInContextHistory: boolean, includeInChatPanel: boolean) => {
+    (
+      text: string,
+      messageId: string,
+      parentMessageId: string,
+      role: CHATBOT_ROLE,
+      includeInContextHistory: boolean,
+      includeInChatPanel: boolean
+    ) => {
       if (text) {
         setChatContent((prev) => {
           return [
             ...(prev || []),
             {
-              id: uniqueId('text_message_'),
+              id: messageId,
+              parentMessageId: parentMessageId,
               message: text,
               role: role,
               includeInContextHistory: includeInContextHistory,
@@ -90,13 +99,14 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
     },
     []
   )
-  const addVoiceToChatContent = useCallback((audio: Blob) => {
+  const addVoiceToChatContent = useCallback((audio: Blob, messageId: string) => {
     if (audio) {
       setChatContent((prev) => {
         return [
           ...(prev || []),
           {
-            id: uniqueId('audio_message_'),
+            id: messageId,
+            parentMessageId: 'parentMessage',
             message: '',
             audio: audio,
             role: CHATBOT_ROLE.USER,
@@ -106,6 +116,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           },
           {
             id: uniqueId('text_message_'),
+            parentMessageId: messageId,
             message: 'Trying to convert the voice to text...',
             role: CHATBOT_ROLE.ASSISTANT,
             includeInContextHistory: false,
@@ -117,7 +128,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
     }
   }, [])
 
-  const addChatChunkReceived = useCallback((text: string) => {
+  const addChatChunkReceived = useCallback((text: string, parentMessageId: string) => {
     if (!text) {
       return
     }
@@ -133,6 +144,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
             ...prev,
             {
               id: uniqueId('text_message'),
+              parentMessageId: parentMessageId,
               role: CHATBOT_ROLE.ASSISTANT,
               message: text,
               includeInContextHistory: true,
@@ -158,7 +170,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           includeInContextHistory: true,
           includeInChatPanel: false,
           type: SUPPORTED_MESSAGE_TYPE.TEXT,
-        },
+        } as ChatBotMessage,
       ]
       return chatHistory
         .filter(({ includeInContextHistory }) => includeInContextHistory)
@@ -203,8 +215,8 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         break
     }
   }
-  const generate = useCallback(
-    (messages: BotMessage[]) => {
+  const generateApi = useCallback(
+    (messages: BotMessage[], parentMessageId: string) => {
       const abortSignal = new AbortController().signal
 
       return runAgents(messages, {
@@ -222,7 +234,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           onDelta: (eventData: DeltaEventData) => {
             const { message, agent } = eventData
             if (agent === ROOT_AGENT_NAME) {
-              addChatChunkReceived(message)
+              addChatChunkReceived(message, parentMessageId)
             }
             // updateChatbotStatus(eventData)
           },
@@ -283,20 +295,23 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
       return
     }
 
-    addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
-    const content = await generate(getBotMessages(text, CHATBOT_ROLE.USER))
+    const messageId = uniqueId('text_message_')
+    addMessageToChatContent(text, messageId, 'parent', CHATBOT_ROLE.USER, true, true)
+    const content = await generateApi(getBotMessages(text, CHATBOT_ROLE.USER), messageId)
     console.log('Final generate result ::: ', content)
-  }, [addMessageToChatContent, dashboard, generate, getBotMessages, text])
+  }, [addMessageToChatContent, dashboard, generateApi, getBotMessages, text])
 
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {
-      addVoiceToChatContent(voice)
+      const messageId = uniqueId('audio_message_')
+      addVoiceToChatContent(voice, messageId)
       const transcription = await transcribe(voice)
-      addMessageToChatContent(transcription, CHATBOT_ROLE.USER, true, true)
-      const content = await generate(getBotMessages(transcription, CHATBOT_ROLE.USER))
+      const transcriptionMessageId = uniqueId('text_message_')
+      addMessageToChatContent(transcription, transcriptionMessageId, messageId, CHATBOT_ROLE.USER, true, true)
+      const content = await generateApi(getBotMessages(transcription, CHATBOT_ROLE.USER), messageId)
       console.log('Final generate result ::: ', content)
     },
-    [addMessageToChatContent, addVoiceToChatContent, generate, getBotMessages]
+    [addMessageToChatContent, addVoiceToChatContent, generateApi, getBotMessages]
   )
 
   /** Callbacks */
@@ -304,7 +319,8 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   //
   const initializeChatContext = useCallback(() => {
     setChatContent(undefined)
-    addMessageToChatContent(`How can I help you?`, CHATBOT_ROLE.ASSISTANT, false, true)
+    const messageId = uniqueId('text_message_')
+    addMessageToChatContent(`How can I help you?`, messageId, 'parent', CHATBOT_ROLE.ASSISTANT, false, true)
   }, [addMessageToChatContent])
   //
   useEffect(() => {

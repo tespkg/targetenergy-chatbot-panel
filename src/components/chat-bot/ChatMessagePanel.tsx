@@ -354,14 +354,20 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
-            .map(({ message, type, audio, id, role }) => {
+            .map(({ message, type, audio, id, role }, index, self) => {
               const viewModel = new MessageViewerViewModel()
               viewModel.message = message
               viewModel.type = type
               viewModel.audio = audio
               viewModel.id = id
               viewModel.role = role
-              return <MessageViewer key={id} viewModel={viewModel} />
+              return (
+                <MessageViewer
+                  key={id}
+                  viewModel={viewModel}
+                  isChatbotBusy={isChatbotBusy && index === self.length - 1}
+                />
+              )
             })}
       </div>
       {chatbotStatus !== null && (

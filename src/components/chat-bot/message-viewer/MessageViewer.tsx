@@ -11,9 +11,10 @@ import './message-viewer.scss'
 
 interface Props {
   className?: string
+  isChatbotBusy: boolean
   viewModel: MessageViewerViewModel
 }
-export const MessageViewer = ({ className, viewModel }: Props) => {
+export const MessageViewer = ({ className, isChatbotBusy, viewModel }: Props) => {
   /** Extract Properties from view model */
   const { message, audio, role, id, type } = viewModel
 
@@ -37,7 +38,7 @@ export const MessageViewer = ({ className, viewModel }: Props) => {
         {type === SUPPORTED_MESSAGE_TYPE.AUDIO ? (
           <AudioMessageViewer audio={audio} />
         ) : (
-          <TextMessageViewer message={message} role={role} id={id} />
+          <TextMessageViewer message={message} role={role} id={id} isChatbotBusy={isChatbotBusy} />
         )}
       </div>
     </div>
@@ -63,7 +64,17 @@ const AvatarViewer = ({ role }: { role: CHATBOT_ROLE }) => {
   )
 }
 //
-const TextMessageViewer = ({ message, role, id }: { message: string; role: CHATBOT_ROLE; id: string }) => {
+const TextMessageViewer = ({
+  message,
+  role,
+  isChatbotBusy,
+  id,
+}: {
+  message: string
+  role: CHATBOT_ROLE
+  isChatbotBusy: boolean
+  id: string
+}) => {
   /** Renderer */
   return (
     <Fragment>
@@ -77,7 +88,7 @@ const TextMessageViewer = ({ message, role, id }: { message: string; role: CHATB
       </Markdown>
       {role === CHATBOT_ROLE.ASSISTANT && (
         <div className={'messageViewer-message-actionsContainer'}>
-          <StreamingAudioPlayer text={message} id={id} />
+          <StreamingAudioPlayer text={message} id={id} disabled={isChatbotBusy} />
         </div>
       )}
     </Fragment>

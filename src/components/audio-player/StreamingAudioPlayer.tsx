@@ -6,14 +6,14 @@ import TextTpSpeechIcon from 'img/icons/text-to-speech-icon.svg'
 import TextTpSpeechConvertIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
 import { STREAMING_AUDIO_PLAYER_STATE } from './constants'
 import { useStreamingAudioPlayer } from '../../hooks/use-voice-recorder/useStreamingAudioPlayer'
-// import TextTpSpeechInProgressIcon from 'img/icons/text-to-speech-in-progress-icon.svg'
 
 interface Props {
   text: string
   id: string
+  disabled: boolean
 }
 
-export const StreamingAudioPlayer = ({ text, id }: Props) => {
+export const StreamingAudioPlayer = ({ text, id, disabled }: Props) => {
   /** Hooks */
   const { audioPlayerState, convertTextToSpeech, resume, pause, hasAudioBuffers } = useStreamingAudioPlayer({ id })
 
@@ -52,6 +52,7 @@ export const StreamingAudioPlayer = ({ text, id }: Props) => {
           displayTitle={false}
           frame={false}
           imageSource={TextTpSpeechIcon}
+          disabled={disabled}
         />
       )}
       {audioPlayerState === STREAMING_AUDIO_PLAYER_STATE.PROCESSING && (

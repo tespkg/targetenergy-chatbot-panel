@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
 import TrashBin from 'img/icons/trashbin.svg'
+// import Broom from 'img/icons/broom.svg'
+import ClearHistoryIcon from 'img/icons/clear-history.svg'
 import RecordIcon from 'img/icons/record.svg'
 import StopIcon from 'img/icons/stop-circle.svg'
 import LoadingIcon from 'img/icons/animated-loading.svg'
@@ -335,7 +337,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           <Button
             title="Clear"
             displayTitle={false}
-            imageSource={TrashBin}
+            imageSource={ClearHistoryIcon}
             imageSize={16}
             onClick={initializeChatContext}
           />

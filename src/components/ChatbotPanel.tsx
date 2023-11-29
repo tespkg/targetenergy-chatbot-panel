@@ -19,6 +19,7 @@ import './style.css'
 // let renderCount = 0
 
 interface Props extends PanelProps<TreeOptions> {}
+
 type NodeSelection = { [key: string]: string[] }
 
 const getStyles = () => {
@@ -35,15 +36,12 @@ export const defaultFormatTemplate = `{{~#each .}}{{#if @index}} OR {{/if}}
 
 const getSearchParam = (variableName: string) => locationService.getSearch().get(`var-${variableName}`) ?? ''
 
-export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, replaceVariables, timeRange }) => {
+export const ChatbotPanel = ({ options, data, width, height, replaceVariables, timeRange }: Props) => {
   const styles = useStyles2(getStyles)
 
   const {
     field,
     variableName,
-    // firstFourLevelsSortingVariableName,
-    // treeFiltersVariableName,
-    defaultExpansionLevel,
   } = options
 
   const rows = data.series
@@ -85,7 +83,7 @@ export const ChatbotPanel: React.FC<Props> = ({ options, data, width, height, re
   // @ts-ignore
   let dataError: React.ReactNode | undefined
   try {
-    tree = transformData(rows ?? [], defaultExpansionLevel, selected, false, '', {}, mounted.current)
+    tree = transformData(rows ?? [], selected, false, '', {}, mounted.current)
   } catch (e) {
     dataError = (
       <Alert title={`Invalid data format in "${options.field}" column`}>
@@ -290,7 +288,6 @@ function parseSelected(query: string): { [type: string]: string[] } {
 
 function transformData(
   rows: string[],
-  defaultExpansionLevel: number,
   selected: NodeSelection,
   showSelected: boolean,
   debouncedSearchText: string,
@@ -379,11 +376,6 @@ function transformData(
     // state changes", there is no easy way to collapse all or just collapse
     // any node that has decendent selected
     let walk = (node: TreeNodeData, lvl: number) => {
-      if (lvl < defaultExpansionLevel) {
-        // console.log(lvl, defaultExpansionLevel, node.name)
-        node.showChildren = true
-      }
-
       if (selectedNodes.map((n) => n.id).includes(node.id)) {
         let v = node
         while (v.parent) {
@@ -409,5 +401,5 @@ function transformData(
 }
 
 function throwExpression(errorMessage: string): never {
-  throw new Error(errorMessage)
+    throw new Error(errorMessage)
 }

@@ -3,8 +3,5 @@ export interface TreeOptions {
   variableName: string
   defaultValue: string
   formatQuery: string
-  firstFourLevelsSortingVariableName: string
-  treeFiltersVariableName: string
-  defaultExpansionLevel: number
-  debug?: boolean
+  debug?: boolean,
 }

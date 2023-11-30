@@ -12,11 +12,11 @@ import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 import { last, uniqueId } from 'lodash'
-import { BotMessage } from '../../agents/bot-types'
+import { BotMessage } from '../../core/orchestration/bot-types'
 import { AssetTree } from '../../commons/types/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
-import { runAgents } from '../../agents/agent-runner'
+import { runAgents } from '../../core/agents/agent-runner'
 import { transcribe } from '../../api/chatbot-api'
 import { Dashboard } from '../../commons/types/dashboard-manager'
 import { getTemplateSrv } from '@grafana/runtime'
@@ -28,7 +28,7 @@ import {
   ROOT_AGENT_NAME,
   SuccessEventData,
   WorkingEventData,
-} from '../../agents/callbacks'
+} from '../../core/orchestration/callbacks'
 import { MessageViewer } from './message-viewer/MessageViewer'
 import { MessageViewerViewModel } from './message-viewer/MessageViewerViewModel'
 

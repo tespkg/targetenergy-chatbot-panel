@@ -1,15 +1,15 @@
 import {
-  BotFunctionDefinition,
   BotGenerateRequest,
   BotGenerateResponse,
   BotMessage,
   ChatCompletionMessageToolCall,
 } from './bot-types'
-import { agentCallbacks, Callbacks, NullCallbacks } from './callbacks'
-import { AssetTree } from '../commons/types/asset-tree'
-import { TreeNodeData } from '../commons/types/TreeNodeData'
-import { generate } from '../api/chatbot-api'
-import { Dashboard } from '../commons/types/dashboard-manager'
+import { Callbacks, NullCallbacks } from './callbacks'
+import { AssetTree } from '../../commons/types/asset-tree'
+import { TreeNodeData } from '../../commons/types/TreeNodeData'
+import { generate } from '../../api/chatbot-api'
+import { Dashboard } from '../../commons/types/dashboard-manager'
+import {PluginSet} from "./llm-function-set";
 
 export interface ChatFunctionContext {
   assetTree?: AssetTree
@@ -23,63 +23,6 @@ export interface ChatFunctionContext {
 
 const NullContext: ChatFunctionContext = {}
 
-export type ChatFunction = {
-  name: string
-  title: string
-  description: (context: ChatFunctionContext) => string
-  parameters?: (context: ChatFunctionContext) => any
-  isAgent?: boolean
-  run: (
-    context: ChatFunctionContext,
-    args: any,
-    abortSignal?: AbortSignal,
-    callbacks?: Callbacks
-  ) => Promise<string | BotMessage>
-}
-
-export class ChatFunctionSet {
-  functions: ChatFunction[] = []
-  abortSignal?: AbortSignal
-  callbacks?: Callbacks
-
-  constructor(functions: ChatFunction[] = [], abortSignal?: AbortSignal, callbacks?: Callbacks) {
-    this.functions = functions
-    this.abortSignal = abortSignal
-    this.callbacks = callbacks
-  }
-
-  get(name: string) {
-    const func = this.functions.find((f) => f.name === name)
-    if (!func) {
-      throw new Error(`Unknown function: ${name}`)
-    }
-    const abortSignal = this.abortSignal
-    let callbacks = this.callbacks
-    if (func.isAgent) {
-      callbacks = agentCallbacks(func.name, callbacks)
-    }
-    return {
-      run: (context: ChatFunctionContext, args: any) => {
-        return func.run(context, args, abortSignal, callbacks)
-      },
-      isAgent: func.isAgent,
-      title: func.title,
-    }
-  }
-
-  toolMetadata(context: ChatFunctionContext): BotFunctionDefinition[] {
-    return this.functions.map((f) => ({
-      name: f.name,
-      description: f.description(context),
-      parameters: f.parameters
-        ? f.parameters(context)
-        : {
-            type: 'object',
-            properties: {},
-          },
-    }))
-  }
-}
 
 export interface ChatAgentOptions {
   context?: ChatFunctionContext
@@ -92,7 +35,7 @@ export interface ChatAgentOptions {
 export async function runChatAgent(
   title: string,
   messages: BotMessage[],
-  functionSet: ChatFunctionSet,
+  plugins: PluginSet,
   options: ChatAgentOptions = {}
 ): Promise<BotMessage> {
   const { maxTurns = 5, abortSignal, systemMessage, context = NullContext } = options
@@ -115,7 +58,7 @@ export async function runChatAgent(
 
     const generateRequest: BotGenerateRequest = {
       messages: messages,
-      functions: functionSet.toolMetadata(context),
+      functions: plugins.toolMetadata(context),
     }
 
     callbacks.onWorking?.({
@@ -189,13 +132,13 @@ export async function runChatAgent(
     }
 
     for (const toolCall of toolCalls) {
-      if (!functionSet) {
+      if (!plugins) {
         throw new Error('tool call but no functions provided')
       }
 
-      const funcName = toolCall.function.name
-      const func = functionSet.get(funcName)
-      const funcArgs = JSON.parse(toolCall.function.arguments)
+      const pluginName = toolCall.function.name
+      const plugin = plugins.get(pluginName)
+      const pluginArgs = JSON.parse(toolCall.function.arguments)
 
       const functionCtx: ChatFunctionContext = {
         ...(context || {}),
@@ -206,29 +149,29 @@ export async function runChatAgent(
       callbacks.onWorking?.({
         type: 'working',
         turn: turn,
-        message: func.isAgent ? `Talking to agent ${func.title}` : `Calling function ${func.title}`,
-        params: funcArgs,
+        message: plugin.type === "agent" ? `Talking to agent ${plugin.title}` : `Calling tool ${plugin.title}`,
+        params: pluginArgs,
       })
 
       let funcResult: any
       try {
-        funcResult = await func.run(functionCtx, funcArgs)
+        funcResult = await plugin.run(functionCtx, pluginArgs)
         callbacks.onSuccess?.({
           type: 'success',
-          message: func.isAgent ? `Finished talking to agent ${func.title}` : `Finished calling function ${func.title}`,
-          agent: funcName,
-          params: funcArgs,
+          message: plugin.type === "agent" ? `Finished talking to agent ${plugin.title}` : `Finished calling tool ${plugin.title}`,
+          agent: pluginName,
+          params: pluginArgs,
           result: funcResult,
           turn: turn,
         })
       } catch (e: any) {
         callbacks.onError?.({
           type: 'error',
-          message: func.isAgent ? `Error talking to agent ${func.title}` : `Error calling function ${func.title}`,
+          message: plugin.type === "agent" ? `Error talking to agent ${plugin.title}` : `Error calling tool ${plugin.title}`,
           error: e,
           turn: turn,
-          func: funcName,
-          params: funcArgs,
+          func: pluginName,
+          params: pluginArgs,
         })
         // TODO: add a switch to throw instead of continue
         messages.push({
@@ -245,11 +188,6 @@ export async function runChatAgent(
         tool_call_id: toolCall.id,
         content: funcResult.content ?? funcResult,
       }
-
-      // const toolMessage: BotMessage = {
-      //   role: 'assistant',
-      //   content: funcResult.result ?? funcResult,
-      // }
 
       messages.push(toolMessage)
     }

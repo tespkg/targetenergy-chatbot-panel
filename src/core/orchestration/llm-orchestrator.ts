@@ -112,6 +112,8 @@ export async function runAgent(
                 arguments: JSON.stringify(message.function_call.arguments),
               },
             })
+          } else if (message.token_usage) {
+            assistantMessage.tokenUsage = message.token_usage
           }
         }
       }

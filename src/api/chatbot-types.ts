@@ -4,10 +4,18 @@ export interface BotFunctionCall {
   arguments: Record<string, any>
 }
 
+export interface TokenUsage {
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  total_price: number
+}
+
 export interface BotGenerateResponse {
   text?: string
   audio_transcription?: string
   function_call?: BotFunctionCall
+  token_usage?: TokenUsage
   err: string
 }
 
@@ -39,6 +47,7 @@ export interface BotMessage {
   role: string
   tool_call_id?: string
   tool_calls?: ChatCompletionMessageToolCall[]
+  tokenUsage?: TokenUsage
 }
 
 export interface BotGenerateRequest {

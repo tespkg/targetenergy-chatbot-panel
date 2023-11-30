@@ -5,6 +5,7 @@
   width: 100%;
   height: fit-content;
   padding: 2px 5px;
+  position: relative;
 
   &-avatar {
     display: flex;
@@ -72,9 +73,19 @@
 
   &-message.user {
     background-color: #1e90ff;
+    padding-right: 32px;
   }
   &-message.user.audio {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
     background-color: unset;
+    padding-right: 16px !important;
+
+    .buttonWrapper {
+      margin-left: 5px;
+    }
   }
 }
 

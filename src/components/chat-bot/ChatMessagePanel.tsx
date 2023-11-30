@@ -106,7 +106,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           ...(prev || []),
           {
             id: messageId,
-            parentMessageId: 'parentMessage',
+            parentMessageId: 'parent',
             message: '',
             audio: audio,
             role: CHATBOT_ROLE.USER,
@@ -315,7 +315,28 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   )
 
   /** Callbacks */
-
+  const onDeleteMessage = (messageId: string, parentMessageId: string) => {
+    console.log('Going to delete message with id: ', messageId)
+    setChatContent((prevMessages) => {
+      if (prevMessages === undefined) {
+        return prevMessages
+      }
+      const deletedMessage = prevMessages.find((message) => message.id === messageId)
+      if (deletedMessage) {
+        if (deletedMessage.parentMessageId === 'parent') {
+          // If the deleted message is parent itself, we need to delete it and all messages which their parent is currently deleted message.
+          return prevMessages.filter((message) => message.id !== messageId && message.parentMessageId !== messageId)
+        } else {
+          // If the deleted message is child, we need to delete it, the parent and all messages which a mutual parent message.
+          return prevMessages.filter(
+            (message) =>
+              message.id !== messageId && message.id !== parentMessageId && message.parentMessageId !== parentMessageId
+          )
+        }
+      }
+      return prevMessages
+    })
+  }
   //
   const initializeChatContext = useCallback(() => {
     setChatContent(undefined)
@@ -370,18 +391,20 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
-            .map(({ message, type, audio, id, role }, index, self) => {
+            .map(({ message, type, audio, id, role, parentMessageId }, index, self) => {
               const viewModel = new MessageViewerViewModel()
               viewModel.message = message
               viewModel.type = type
               viewModel.audio = audio
               viewModel.id = id
+              viewModel.parentMessageId = parentMessageId || 'parent'
               viewModel.role = role
               return (
                 <MessageViewer
                   key={id}
                   viewModel={viewModel}
                   isChatbotBusy={isChatbotBusy && index === self.length - 1}
+                  onDelete={onDeleteMessage}
                 />
               )
             })}

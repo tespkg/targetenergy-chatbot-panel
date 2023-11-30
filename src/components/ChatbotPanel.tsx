@@ -39,10 +39,7 @@ const getSearchParam = (variableName: string) => locationService.getSearch().get
 export const ChatbotPanel = ({ options, data, width, height, replaceVariables, timeRange }: Props) => {
   const styles = useStyles2(getStyles)
 
-  const {
-    field,
-    variableName,
-  } = options
+  const { field, variableName } = options
 
   const rows = data.series
     .map((d) => d.fields.find((f) => f.name === field))
@@ -189,19 +186,6 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
       setDashboard(dashboard)
     })
   }, [timeRange])
-
-  // const assetNodesRef = useRef<AssetNodes>()
-  // useLayoutEffect(() => {
-  //   assetNodesRef.current = new AssetNodes(tree)
-  //   console.log('asset nodes', assetNodesRef.current)
-  //   console.log(
-  //     'asset nodes markdown',
-  //     assetNodesRef.current.toMarkdown({
-  //       includeIds: true,
-  //       includeSelected: true,
-  //     })
-  //   )
-  // }, [tree])
 
   /** Chatbot minimize button stuff */
   const [isOpen, setIsOpen] = useState(true)
@@ -401,5 +385,5 @@ function transformData(
 }
 
 function throwExpression(errorMessage: string): never {
-    throw new Error(errorMessage)
+  throw new Error(errorMessage)
 }

@@ -1,4 +1,4 @@
-import { BotGenerateRequest } from '../core/orchestration/bot-types'
+import { BotGenerateRequest, TextToSpeechRequest } from './chatbot-types'
 
 const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`
 // const BASE_URL = 'http://localhost:8000/api/v1'
@@ -39,11 +39,6 @@ export async function generate(request: BotGenerateRequest, abortSignal?: AbortS
   }
 
   return response
-}
-
-export interface TextToSpeechRequest {
-  text: string
-  stream?: boolean
 }
 
 export async function textToSpeech(req: TextToSpeechRequest, abortSignal?: AbortSignal) {

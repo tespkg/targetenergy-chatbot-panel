@@ -1,65 +1,4 @@
-import { runChatAgent } from '../orchestration/agent'
-import { subAgentParameters } from './common'
-import { BotMessage } from '../orchestration/bot-types'
-import { formatTemplatedString } from '../../commons/utils/string-utils'
-import {LLMAgent, LlmTool} from '../orchestration/llm-function'
-import { PluginSet } from '../orchestration/llm-function-set'
-
-const SYSTEM_MESSAGE_TEMPLATE = `You are helpful chatbot designed to help users interact Dashboard Panels in the Portfolio Manager application.
-
-## INSTRUCTIONS
-
-Your task is to generate function calls to achieve user's objectives.
-If the value for a required function parameter is missing ask the user to provide the value.
-
-# DASHBOARD STRUCTURE
-
-The dashboard is consisted of panels and sub panels. Panels are a group of sub panels and the actual tables, visualizations and charts reside in sub panels.
-
-The list of panels and sub panels are:
-
-\${panels}
-`
-
-export const panelManagerAgent: LLMAgent = {
-  type: 'agent',
-  name: 'panel_manager',
-  title: 'Panel Manager',
-  description: (ctx) =>
-    'Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.',
-  parameters: (context) => subAgentParameters,
-  run: async (context, args, abortSignal, callbacks) => {
-    const { question } = args
-    const { dashboard } = context
-
-    const messages: BotMessage[] = [
-      {
-        role: 'user',
-        content: question as string,
-      },
-    ]
-
-    const systemMessage = formatTemplatedString(SYSTEM_MESSAGE_TEMPLATE, {
-      panels: dashboard?.toMarkdown() || '',
-    })
-
-    return await runChatAgent(
-      'Panel Manager',
-      messages,
-      new PluginSet(
-        [listPanelsFunction, listSubPanelsFunction, togglePanelFunction, fetchPanelData],
-        abortSignal,
-        callbacks
-      ),
-      {
-        abortSignal,
-        callbacks,
-        context,
-        systemMessage,
-      }
-    )
-  },
-}
+import { LLMAgent, LlmTool } from '../orchestration/llm-function'
 
 const listPanelsFunction: LlmTool = {
   type: 'tool',
@@ -206,4 +145,30 @@ const fetchPanelData: LlmTool = {
 
     return response
   },
+}
+
+const SYSTEM_MESSAGE_TEMPLATE = `You are helpful chatbot designed to help users interact Dashboard Panels in the Portfolio Manager application.
+
+## INSTRUCTIONS
+
+Your task is to generate function calls to achieve user's objectives.
+If the value for a required function parameter is missing ask the user to provide the value.
+
+# DASHBOARD STRUCTURE
+
+The dashboard is consisted of panels and sub panels. Panels are a group of sub panels and the actual tables, visualizations and charts reside in sub panels.
+
+The list of panels and sub panels are:
+
+\${panels}
+`
+
+export const panelManagerAgent: LLMAgent = {
+  type: 'agent',
+  name: 'panel_manager',
+  title: 'Panel Manager',
+  description: (ctx) =>
+    'Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.',
+  systemMessage: SYSTEM_MESSAGE_TEMPLATE,
+  plugins: [listPanelsFunction, listSubPanelsFunction, togglePanelFunction, fetchPanelData],
 }

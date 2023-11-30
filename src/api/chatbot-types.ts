@@ -45,3 +45,8 @@ export interface BotGenerateRequest {
   functions: BotFunctionDefinition[]
   messages: BotMessage[]
 }
+
+export interface TextToSpeechRequest {
+  text: string
+  stream?: boolean
+}

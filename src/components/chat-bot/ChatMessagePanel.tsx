@@ -12,25 +12,25 @@ import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
 import { Input } from '@grafana/ui'
 import { Button } from 'components/button/Button'
 import { last, uniqueId } from 'lodash'
-import { BotMessage } from '../../core/orchestration/bot-types'
+import { BotMessage } from '../../api/chatbot-types'
 import { AssetTree } from '../../commons/types/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { useVoiceRecorder } from 'hooks/use-voice-recorder/useVoiceRecorder'
-import { runAgents } from '../../core/agents/agent-runner'
+import { runMainAgent } from '../../core/agents/main-agent'
 import { transcribe } from '../../api/chatbot-api'
 import { Dashboard } from '../../commons/types/dashboard-manager'
-import { getTemplateSrv } from '@grafana/runtime'
 import MinimizeIcon from 'img/icons/chevron-down.svg'
 import './chat-bot.scss'
 import {
-  DeltaEventData,
-  ErrorEventData,
-  ROOT_AGENT_NAME,
-  SuccessEventData,
-  WorkingEventData,
-} from '../../core/orchestration/callbacks'
+  DeltaEvent,
+  ErrorEvent,
+  MAIN_AGENT_NAME,
+  SuccessEvent,
+  WorkingEvent,
+} from '../../core/orchestration/llm-callbacks'
 import { MessageViewer } from './message-viewer/MessageViewer'
 import { MessageViewerViewModel } from './message-viewer/MessageViewerViewModel'
+import { useDebugCommand } from '../../debug/use-debug-command'
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE
@@ -68,6 +68,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   const textInputRef = useRef(null)
   const [chatbotStatus, setChatbotStatus] = useState<string | null>(null)
   const [isChatbotBusy, setChatbotBusy] = useState(false)
+  const { isCommand, processCommand } = useDebugCommand()
 
   const addMessageToChatContent = useCallback(
     (text: string, role: CHATBOT_ROLE, includeInContextHistory: boolean, includeInChatPanel: boolean) => {
@@ -170,7 +171,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
     [chatContent]
   )
 
-  const updateChatbotStatus = (eventData: SuccessEventData | DeltaEventData | ErrorEventData | WorkingEventData) => {
+  const updateChatbotStatus = (eventData: SuccessEvent | DeltaEvent | ErrorEvent | WorkingEvent) => {
     const { type, message } = eventData
     // let agentTitle = agent
     // switch (agent) {
@@ -207,7 +208,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
     (messages: BotMessage[]) => {
       const abortSignal = new AbortController().signal
 
-      return runAgents(messages, {
+      return runMainAgent(messages, {
         abortSignal,
         context: {
           assetTree: nodes,
@@ -215,22 +216,22 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           dashboard: dashboard,
         },
         callbacks: {
-          onSuccess: (eventData: SuccessEventData) => {
+          onSuccess: (eventData: SuccessEvent) => {
             console.log(eventData)
             updateChatbotStatus(eventData)
           },
-          onDelta: (eventData: DeltaEventData) => {
+          onDelta: (eventData: DeltaEvent) => {
             const { message, agent } = eventData
-            if (agent === ROOT_AGENT_NAME) {
+            if (agent === MAIN_AGENT_NAME) {
               addChatChunkReceived(message)
             }
             // updateChatbotStatus(eventData)
           },
-          onError: (eventData: ErrorEventData) => {
+          onError: (eventData: ErrorEvent) => {
             console.log(eventData)
             updateChatbotStatus(eventData)
           },
-          onWorking: (eventData: WorkingEventData) => {
+          onWorking: (eventData: WorkingEvent) => {
             console.log(eventData)
             updateChatbotStatus(eventData)
           },
@@ -241,52 +242,17 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   )
 
   const handleNewUserMessage = useCallback(async () => {
-    if (text.startsWith('/')) {
-      // then it is a command and we are testing
-      const command = text.substring(1)
-      switch (command) {
-        case 'toggle_row': {
-          const rowName = 'BOE Production-Equity Share'
-          // Select rows by a unique attribute or structure, here we use the row's title text
-          const rows = Array.from(document.querySelectorAll('.dashboard-row'))
-          console.log('Queries rows :::', rows)
-
-          // @ts-ignore
-          const targetRow = rows.find((row) => row.innerText.includes(rowName))
-          if (targetRow) {
-            // targetRow.click()
-            // Find the toggle button or element in the row and click it
-            const toggleButton = targetRow.querySelector('.dashboard-row__title') as HTMLButtonElement // Adjust this selector based on the actual structure
-            toggleButton.click()
-          }
-          break
-        }
-        case 'json_model': {
-          console.log('Parsed dashboard:', dashboard)
-          const panel = dashboard.findPanel('Change in Proven Oil Reserves')
-          console.log('Parsed panel:', panel)
-          const data = await panel?.csvData()
-          console.log('Parsed data:', data)
-          break
-        }
-        case 'global_variables': {
-          const variables = getTemplateSrv().getVariables()
-          console.log(variables)
-          break
-        }
-        case 'dashboard_markdown': {
-          console.log('Dashboard Markdown\n', dashboard.toMarkdown(2))
-          break
-        }
-      }
-
+    if (isCommand(text)) {
+      await processCommand(text, {
+        dashboard,
+      })
       return
     }
 
     addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
     const content = await generate(getBotMessages(text, CHATBOT_ROLE.USER))
     console.log('Final generate result ::: ', content)
-  }, [addMessageToChatContent, dashboard, generate, getBotMessages, text])
+  }, [addMessageToChatContent, dashboard, generate, getBotMessages, isCommand, processCommand, text])
 
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {

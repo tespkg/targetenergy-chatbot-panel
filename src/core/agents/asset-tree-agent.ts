@@ -1,39 +1,4 @@
-import { runChatAgent } from '../orchestration/agent'
-import { subAgentParameters } from './common'
-import { BotMessage } from '../orchestration/bot-types'
-import { PluginSet } from '../orchestration/llm-function-set'
 import { LLMAgent, LlmTool } from '../orchestration/llm-function'
-
-export const assetTreeAgent: LLMAgent = {
-  type: 'agent',
-  name: 'asset_tree',
-  title: 'Asset Tree',
-  description: (ctx) =>
-    'Can answer questions about asset tree including listing the assets and selecting or unselecting them. Assets include companies, continents, counties, regions, blocks, stations, fields and reservoirs',
-  parameters: (ctx) => subAgentParameters,
-  run: async (context, args, abortSignal, callbacks) => {
-    const { question } = args
-
-    const messages: BotMessage[] = [
-      {
-        role: 'user',
-        content: question as string,
-      },
-    ]
-
-    return await runChatAgent(
-      'Asset Tree',
-      messages,
-      new PluginSet([listAssetsFunction, toggleAssetNodeFunction], abortSignal, callbacks),
-      {
-        abortSignal,
-        callbacks,
-        context,
-        systemMessage: context.agentOptions?.systemMessage,
-      }
-    )
-  },
-}
 
 const toggleAssetNodeFunction: LlmTool = {
   type: 'tool',
@@ -97,4 +62,13 @@ const listAssetsFunction: LlmTool = {
 
     return markdown || ''
   },
+}
+
+export const assetTreeAgent: LLMAgent = {
+  type: 'agent',
+  name: 'asset_tree',
+  title: 'Asset Tree',
+  description: (ctx) =>
+    'Can answer questions about asset tree including listing the assets and selecting or unselecting them. Assets include companies, continents, counties, regions, blocks, stations, fields and reservoirs',
+  plugins: [listAssetsFunction, toggleAssetNodeFunction],
 }

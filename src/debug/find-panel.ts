@@ -1,6 +1,6 @@
 import { DebugCommand } from './debug-command'
 import { getTemplateSrv } from '@grafana/runtime'
-import { mainAgent } from '../core/agents/agent-runner'
+import { mainAgent } from '../core/agents/main-agent'
 import { prettifyPlugin } from '../core/orchestration/llm-utils'
 
 export const findPanel: DebugCommand = {

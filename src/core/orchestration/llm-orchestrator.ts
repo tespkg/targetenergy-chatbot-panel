@@ -3,13 +3,14 @@ import {
   BotGenerateResponse,
   BotMessage,
   ChatCompletionMessageToolCall,
-} from './bot-types'
-import { Callbacks, NullCallbacks } from './callbacks'
+} from '../../api/chatbot-types'
+import { LlmCallbackManager, LlmCallbacks } from './llm-callbacks'
 import { AssetTree } from '../../commons/types/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { generate } from '../../api/chatbot-api'
 import { Dashboard } from '../../commons/types/dashboard-manager'
-import {PluginSet} from "./llm-function-set";
+import { PluginSet } from './llm-function-set'
+import { LLMAgent } from './llm-function'
 
 export interface ChatFunctionContext {
   assetTree?: AssetTree
@@ -23,23 +24,27 @@ export interface ChatFunctionContext {
 
 const NullContext: ChatFunctionContext = {}
 
-
 export interface ChatAgentOptions {
   context?: ChatFunctionContext
   maxTurns?: number
   systemMessage?: string
-  callbacks?: Callbacks
+  callbacks?: LlmCallbackManager | LlmCallbacks
   abortSignal?: AbortSignal
 }
 
-export async function runChatAgent(
-  title: string,
+export async function runAgent(
   messages: BotMessage[],
-  plugins: PluginSet,
+  agent: LLMAgent,
   options: ChatAgentOptions = {}
 ): Promise<BotMessage> {
-  const { maxTurns = 5, abortSignal, systemMessage, context = NullContext } = options
-  const callbacks = options.callbacks ?? NullCallbacks
+  const { maxTurns = 5, abortSignal, context = NullContext } = options
+  const callbackManager =
+    options.callbacks instanceof LlmCallbackManager
+      ? options.callbacks
+      : new LlmCallbackManager(agent.name, options.callbacks)
+  const title = agent.title
+  const plugins = new PluginSet(agent.plugins, callbackManager, abortSignal)
+  const systemMessage = agent.systemMessage ?? options.systemMessage
 
   if (systemMessage) {
     messages.unshift({
@@ -58,11 +63,10 @@ export async function runChatAgent(
 
     const generateRequest: BotGenerateRequest = {
       messages: messages,
-      functions: plugins.toolMetadata(context),
+      functions: plugins.getDefinitions(context),
     }
 
-    callbacks.onWorking?.({
-      type: 'working',
+    callbackManager.onWorking?.({
       message: `Talking to ${title} agent. Turn: ${turn}`,
       params: generateRequest,
       turn: turn,
@@ -95,8 +99,7 @@ export async function runChatAgent(
           // console.log('Received chunk: ', message)
           if (message.text) {
             assistantMessage.content += message.text
-            callbacks.onDelta?.({
-              type: 'delta',
+            callbackManager.onDelta?.({
               turn: turn,
               message: message.text,
             })
@@ -117,8 +120,7 @@ export async function runChatAgent(
       assistantMessage.tool_calls = toolCalls
     }
 
-    callbacks.onSuccess?.({
-      type: 'success',
+    callbackManager.onSuccess?.({
       message: 'Completed LLM call',
       turn: turn,
       params: generateRequest,
@@ -146,28 +148,29 @@ export async function runChatAgent(
         agentOptions: options,
       }
 
-      callbacks.onWorking?.({
-        type: 'working',
+      callbackManager.onWorking?.({
         turn: turn,
-        message: plugin.type === "agent" ? `Talking to agent ${plugin.title}` : `Calling tool ${plugin.title}`,
+        message: plugin.type === 'agent' ? `Talking to agent ${plugin.title}` : `Calling tool ${plugin.title}`,
         params: pluginArgs,
       })
 
       let funcResult: any
       try {
         funcResult = await plugin.run(functionCtx, pluginArgs)
-        callbacks.onSuccess?.({
-          type: 'success',
-          message: plugin.type === "agent" ? `Finished talking to agent ${plugin.title}` : `Finished calling tool ${plugin.title}`,
-          agent: pluginName,
+        callbackManager.onSuccess?.({
+          message:
+            plugin.type === 'agent'
+              ? `Finished talking to agent ${plugin.title}`
+              : `Finished calling tool ${plugin.title}`,
+          // agent: pluginName, TODO:
           params: pluginArgs,
           result: funcResult,
           turn: turn,
         })
       } catch (e: any) {
-        callbacks.onError?.({
-          type: 'error',
-          message: plugin.type === "agent" ? `Error talking to agent ${plugin.title}` : `Error calling tool ${plugin.title}`,
+        callbackManager.onError?.({
+          message:
+            plugin.type === 'agent' ? `Error talking to agent ${plugin.title}` : `Error calling tool ${plugin.title}`,
           error: e,
           turn: turn,
           func: pluginName,

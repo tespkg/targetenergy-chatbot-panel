@@ -6,6 +6,8 @@ import { MessageViewerViewModel } from './MessageViewerViewModel'
 import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
 import UserAvatar from 'img/icons/user_avatar.svg'
 import { StreamingAudioPlayer } from '../../audio-player/StreamingAudioPlayer'
+import { Button } from '../../button/Button'
+import TrashBinIcon from 'img/icons/trashbin.svg'
 
 import './message-viewer.scss'
 
@@ -13,10 +15,11 @@ interface Props {
   className?: string
   isChatbotBusy: boolean
   viewModel: MessageViewerViewModel
+  onDelete: (messageId: string, parentMessageId: string) => void
 }
-export const MessageViewer = ({ className, isChatbotBusy, viewModel }: Props) => {
+export const MessageViewer = ({ className, isChatbotBusy, viewModel, onDelete }: Props) => {
   /** Extract Properties from view model */
-  const { message, audio, role, id, type } = viewModel
+  const { message, audio, role, id, parentMessageId, type } = viewModel
 
   /** Renderer */
   return (
@@ -36,9 +39,16 @@ export const MessageViewer = ({ className, isChatbotBusy, viewModel }: Props) =>
         })}
       >
         {type === SUPPORTED_MESSAGE_TYPE.AUDIO ? (
-          <AudioMessageViewer audio={audio} />
+          <AudioMessageViewer audio={audio} id={id} parentId={parentMessageId} onDelete={onDelete} role={role} />
         ) : (
-          <TextMessageViewer message={message} role={role} id={id} isChatbotBusy={isChatbotBusy} />
+          <TextMessageViewer
+            message={message}
+            role={role}
+            id={id}
+            parentId={parentMessageId}
+            isChatbotBusy={isChatbotBusy}
+            onDelete={onDelete}
+          />
         )}
       </div>
     </div>
@@ -67,13 +77,17 @@ const AvatarViewer = ({ role }: { role: CHATBOT_ROLE }) => {
 const TextMessageViewer = ({
   message,
   role,
-  isChatbotBusy,
   id,
+  parentId,
+  isChatbotBusy,
+  onDelete,
 }: {
   message: string
   role: CHATBOT_ROLE
   isChatbotBusy: boolean
+  parentId: string
   id: string
+  onDelete: (id: string, parentId: string) => void
 }) => {
   /** Renderer */
   return (
@@ -86,23 +100,59 @@ const TextMessageViewer = ({
       >
         {message}
       </Markdown>
-      {role === CHATBOT_ROLE.ASSISTANT && (
-        <div className={'messageViewer-message-actionsContainer'}>
-          <StreamingAudioPlayer text={message} id={id} disabled={isChatbotBusy} />
-        </div>
-      )}
+      <div className={'messageViewer-message-actionsContainer'}>
+        {role === CHATBOT_ROLE.ASSISTANT && <StreamingAudioPlayer text={message} id={id} disabled={isChatbotBusy} />}
+        {role === CHATBOT_ROLE.USER && (
+          <Button
+            title="Clear"
+            displayTitle={false}
+            frame={false}
+            imageSource={TrashBinIcon}
+            imageSize={16}
+            onClick={() => {
+              onDelete(id, parentId)
+            }}
+          />
+        )}
+      </div>
     </Fragment>
   )
 }
 //
-const AudioMessageViewer = ({ audio }: { audio?: Blob }) => {
+const AudioMessageViewer = ({
+  id,
+  parentId,
+  role,
+  audio,
+  onDelete,
+}: {
+  audio?: Blob
+  role: CHATBOT_ROLE
+  id: string
+  parentId: string
+  onDelete: (id: string, parentId: string) => void
+}) => {
   /** Renderer */
   return audio ? (
-    <audio
-      className="messageViewer-message-messageVoice"
-      src={URL.createObjectURL(audio)}
-      controls
-      controlsList="nodownload"
-    />
+    <Fragment>
+      <audio
+        className="messageViewer-message-messageVoice"
+        src={URL.createObjectURL(audio)}
+        controls
+        controlsList="nodownload"
+      />
+      {role === CHATBOT_ROLE.USER && (
+        <Button
+          title="Clear"
+          displayTitle={false}
+          frame={false}
+          imageSource={TrashBinIcon}
+          imageSize={16}
+          onClick={() => {
+            onDelete(id, parentId)
+          }}
+        />
+      )}
+    </Fragment>
   ) : null
 }

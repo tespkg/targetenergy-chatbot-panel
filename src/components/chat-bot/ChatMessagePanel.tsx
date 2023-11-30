@@ -38,6 +38,7 @@ interface ChatBotMessage {
   audio?: Blob
   type: SUPPORTED_MESSAGE_TYPE
   id: string
+  parentMessageId?: string | 'parent'
   includeInContextHistory: boolean
   includeInChatPanel: boolean
 }
@@ -71,13 +72,21 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   const { isCommand, processCommand } = useDebugCommand()
 
   const addMessageToChatContent = useCallback(
-    (text: string, role: CHATBOT_ROLE, includeInContextHistory: boolean, includeInChatPanel: boolean) => {
+    (
+      text: string,
+      messageId: string,
+      parentMessageId: string,
+      role: CHATBOT_ROLE,
+      includeInContextHistory: boolean,
+      includeInChatPanel: boolean
+    ) => {
       if (text) {
         setChatContent((prev) => {
           return [
             ...(prev || []),
             {
-              id: uniqueId('text_message_'),
+              id: messageId,
+              parentMessageId: parentMessageId,
               message: text,
               role: role,
               includeInContextHistory: includeInContextHistory,
@@ -91,13 +100,14 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
     },
     []
   )
-  const addVoiceToChatContent = useCallback((audio: Blob) => {
+  const addVoiceToChatContent = useCallback((audio: Blob, messageId: string) => {
     if (audio) {
       setChatContent((prev) => {
         return [
           ...(prev || []),
           {
-            id: uniqueId('audio_message_'),
+            id: messageId,
+            parentMessageId: 'parent',
             message: '',
             audio: audio,
             role: CHATBOT_ROLE.USER,
@@ -107,6 +117,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           },
           {
             id: uniqueId('text_message_'),
+            parentMessageId: messageId,
             message: 'Trying to convert the voice to text...',
             role: CHATBOT_ROLE.ASSISTANT,
             includeInContextHistory: false,
@@ -118,7 +129,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
     }
   }, [])
 
-  const addChatChunkReceived = useCallback((text: string) => {
+  const addChatChunkReceived = useCallback((text: string, parentMessageId?: string) => {
     if (!text) {
       return
     }
@@ -134,6 +145,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
             ...prev,
             {
               id: uniqueId('text_message'),
+              parentMessageId: parentMessageId,
               role: CHATBOT_ROLE.ASSISTANT,
               message: text,
               includeInContextHistory: true,
@@ -159,7 +171,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           includeInContextHistory: true,
           includeInChatPanel: false,
           type: SUPPORTED_MESSAGE_TYPE.TEXT,
-        },
+        } as ChatBotMessage,
       ]
       return chatHistory
         .filter(({ includeInContextHistory }) => includeInContextHistory)
@@ -204,8 +216,8 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         break
     }
   }
-  const generate = useCallback(
-    (messages: BotMessage[]) => {
+  const generateApi = useCallback(
+    (messages: BotMessage[], parentMessageId: string) => {
       const abortSignal = new AbortController().signal
 
       return runMainAgent(messages, {
@@ -249,28 +261,53 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
       return
     }
 
-    addMessageToChatContent(text, CHATBOT_ROLE.USER, true, true)
-    const content = await generate(getBotMessages(text, CHATBOT_ROLE.USER))
+    const messageId = uniqueId('text_message_')
+    addMessageToChatContent(text, messageId, 'parent', CHATBOT_ROLE.USER, true, true)
+    const content = await generateApi(getBotMessages(text, CHATBOT_ROLE.USER), messageId)
     console.log('Final generate result ::: ', content)
-  }, [addMessageToChatContent, dashboard, generate, getBotMessages, isCommand, processCommand, text])
+  }, [addMessageToChatContent, dashboard, generateApi, getBotMessages, isCommand, processCommand, text])
 
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {
-      addVoiceToChatContent(voice)
+      const messageId = uniqueId('audio_message_')
+      addVoiceToChatContent(voice, messageId)
       const transcription = await transcribe(voice)
-      addMessageToChatContent(transcription, CHATBOT_ROLE.USER, true, true)
-      const content = await generate(getBotMessages(transcription, CHATBOT_ROLE.USER))
+      const transcriptionMessageId = uniqueId('text_message_')
+      addMessageToChatContent(transcription, transcriptionMessageId, messageId, CHATBOT_ROLE.USER, true, true)
+      const content = await generateApi(getBotMessages(transcription, CHATBOT_ROLE.USER), messageId)
       console.log('Final generate result ::: ', content)
     },
-    [addMessageToChatContent, addVoiceToChatContent, generate, getBotMessages]
+    [addMessageToChatContent, addVoiceToChatContent, generateApi, getBotMessages]
   )
 
   /** Callbacks */
-
+  const onDeleteMessage = (messageId: string, parentMessageId: string) => {
+    console.log('Going to delete message with id: ', messageId)
+    setChatContent((prevMessages) => {
+      if (prevMessages === undefined) {
+        return prevMessages
+      }
+      const deletedMessage = prevMessages.find((message) => message.id === messageId)
+      if (deletedMessage) {
+        if (deletedMessage.parentMessageId === 'parent') {
+          // If the deleted message is parent itself, we need to delete it and all messages which their parent is currently deleted message.
+          return prevMessages.filter((message) => message.id !== messageId && message.parentMessageId !== messageId)
+        } else {
+          // If the deleted message is child, we need to delete it, the parent and all messages which a mutual parent message.
+          return prevMessages.filter(
+            (message) =>
+              message.id !== messageId && message.id !== parentMessageId && message.parentMessageId !== parentMessageId
+          )
+        }
+      }
+      return prevMessages
+    })
+  }
   //
   const initializeChatContext = useCallback(() => {
     setChatContent(undefined)
-    addMessageToChatContent(`How can I help you?`, CHATBOT_ROLE.ASSISTANT, false, true)
+    const messageId = uniqueId('text_message_')
+    addMessageToChatContent(`How can I help you?`, messageId, 'parent', CHATBOT_ROLE.ASSISTANT, false, true)
   }, [addMessageToChatContent])
   //
   useEffect(() => {
@@ -320,18 +357,20 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
-            .map(({ message, type, audio, id, role }, index, self) => {
+            .map(({ message, type, audio, id, role, parentMessageId }, index, self) => {
               const viewModel = new MessageViewerViewModel()
               viewModel.message = message
               viewModel.type = type
               viewModel.audio = audio
               viewModel.id = id
+              viewModel.parentMessageId = parentMessageId || 'parent'
               viewModel.role = role
               return (
                 <MessageViewer
                   key={id}
                   viewModel={viewModel}
                   isChatbotBusy={isChatbotBusy && index === self.length - 1}
+                  onDelete={onDeleteMessage}
                 />
               )
             })}

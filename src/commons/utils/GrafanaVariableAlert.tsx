@@ -1,14 +1,14 @@
-import React from 'react'
-import { Alert } from '@grafana/ui'
-import { getGrafanaVariable } from './grafana-variable-utils'
+import React from "react";
+import { Alert } from "@grafana/ui";
+import { getGrafanaVariable } from "./grafana-variable-utils";
 
 type GrafanaVariableAlertProps = {
-  variableName: string
-}
+  variableName: string;
+};
 
 const GrafanaVariableAlert: React.FC<GrafanaVariableAlertProps> = ({ variableName }) => {
-  const hasVar = getGrafanaVariable(variableName)
-  return !hasVar || hasVar.type !== 'textbox' ? (
+  const hasVar = getGrafanaVariable(variableName);
+  return !hasVar || hasVar.type !== "textbox" ? (
     <Alert title="Variable not configured properly" severity="error">
       Please create a &quot;Text box&quot; variable with name `{variableName}`.
       <br /> This plugin sets the variable when a node is selected.
@@ -17,7 +17,7 @@ const GrafanaVariableAlert: React.FC<GrafanaVariableAlertProps> = ({ variableNam
     </Alert>
   ) : (
     <></>
-  )
-}
+  );
+};
 
-export default GrafanaVariableAlert
+export default GrafanaVariableAlert;

@@ -1,4 +1,4 @@
 export interface DebugCommand {
-  name: string
-  execute: (args: any) => Promise<void>
+  name: string;
+  execute: (args: any) => Promise<void>;
 }

@@ -1,7 +1,10 @@
-import { generateFirstFourLevelsSortingVariableValue, generateTreeFiltersVariableValue } from './grafana-variable-utils'
+import {
+  generateFirstFourLevelsSortingVariableValue,
+  generateTreeFiltersVariableValue,
+} from "./grafana-variable-utils";
 
-describe('grafana-variable-utils test', () => {
-  it('generateFirstFourLevelsSortingVariableValue', () => {
+describe("grafana-variable-utils test", () => {
+  it("generateFirstFourLevelsSortingVariableValue", () => {
     expect(
       generateFirstFourLevelsSortingVariableValue({
         continentIndex: 2,
@@ -9,7 +12,7 @@ describe('grafana-variable-utils test', () => {
         typeIndex: 1,
         companyIndex: 0,
       })
-    ).toBe('1,2,3,4')
+    ).toBe("1,2,3,4");
     expect(
       generateFirstFourLevelsSortingVariableValue({
         continentIndex: 2,
@@ -17,7 +20,7 @@ describe('grafana-variable-utils test', () => {
         typeIndex: 0,
         companyIndex: 1,
       })
-    ).toBe('2,1,3,4')
+    ).toBe("2,1,3,4");
     expect(
       generateFirstFourLevelsSortingVariableValue({
         continentIndex: 0,
@@ -25,7 +28,7 @@ describe('grafana-variable-utils test', () => {
         typeIndex: 3,
         companyIndex: 2,
       })
-    ).toBe('3,4,1,2')
+    ).toBe("3,4,1,2");
     expect(
       generateFirstFourLevelsSortingVariableValue({
         continentIndex: 1,
@@ -33,12 +36,12 @@ describe('grafana-variable-utils test', () => {
         typeIndex: 0,
         companyIndex: 3,
       })
-    ).toBe('4,1,2,3')
-  })
-})
+    ).toBe("4,1,2,3");
+  });
+});
 
-describe('grafana-variable-utils test', () => {
-  it('generateTreeFiltersVariableValue', () => {
+describe("grafana-variable-utils test", () => {
+  it("generateTreeFiltersVariableValue", () => {
     expect(
       generateTreeFiltersVariableValue(
         {
@@ -61,7 +64,7 @@ describe('grafana-variable-utils test', () => {
           completionChecked: true,
         }
       )
-    ).toBe('1,1,1,1,1,1,1,1,1,1,1')
+    ).toBe("1,1,1,1,1,1,1,1,1,1,1");
     expect(
       generateTreeFiltersVariableValue(
         {
@@ -84,6 +87,6 @@ describe('grafana-variable-utils test', () => {
           completionChecked: false,
         }
       )
-    ).toBe('0,1,0,1,1,1,1,1,1,1,0')
-  })
-})
+    ).toBe("0,1,0,1,1,1,1,1,1,1,0");
+  });
+});

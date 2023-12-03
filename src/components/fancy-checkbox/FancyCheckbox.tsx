@@ -1,12 +1,12 @@
-import { Checkbox } from '@grafana/ui'
-import React from 'react'
-import './style.css'
+import { Checkbox } from "@grafana/ui";
+import React from "react";
+import "./style.css";
 
 type FancyCheckboxProps = {
-  title: string
-  defaultChecked?: boolean
-  onChange?: React.FormEventHandler<HTMLInputElement> | undefined
-}
+  title: string;
+  defaultChecked?: boolean;
+  onChange?: React.FormEventHandler<HTMLInputElement> | undefined;
+};
 
 const FancyCheckbox: React.FC<FancyCheckboxProps> = ({ title, defaultChecked = false, onChange }) => {
   return (
@@ -14,7 +14,7 @@ const FancyCheckbox: React.FC<FancyCheckboxProps> = ({ title, defaultChecked = f
       <span>{title}</span>
       <Checkbox defaultChecked={defaultChecked} onChange={onChange} />
     </div>
-  )
-}
+  );
+};
 
-export default FancyCheckbox
+export default FancyCheckbox;

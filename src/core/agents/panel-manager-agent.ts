@@ -1,151 +1,151 @@
-import { LLMAgent, LlmTool } from '../orchestration/llm-function'
+import { LLMAgent, LlmTool } from "../orchestration/llm-function";
 
 const listPanelsFunction: LlmTool = {
-  type: 'tool',
-  name: 'list_panels',
-  title: 'List Panels',
+  type: "tool",
+  name: "list_panels",
+  title: "List Panels",
   description: (ctx) =>
-    'Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.',
+    "Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.",
   run: async (context, args, abortSignal, callbacks) => {
-    const { dashboard } = context.app
+    const { dashboard } = context.app;
 
     if (!dashboard) {
-      throw new Error('Dashboard is not defined')
+      throw new Error("Dashboard is not defined");
     }
 
     const panelInfos = dashboard.panels.map((p) => ({
       title: p.title,
       collapsed: p.isCollapsed(),
-    }))
+    }));
 
-    return JSON.stringify(panelInfos, null, 2)
+    return JSON.stringify(panelInfos, null, 2);
   },
-}
+};
 
 const listSubPanelsFunction: LlmTool = {
-  type: 'tool',
-  name: 'list_sub_panels',
-  title: 'List Sub Panels',
+  type: "tool",
+  name: "list_sub_panels",
+  title: "List Sub Panels",
   description: (ctx) =>
-    'Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.',
+    "Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.",
   parameters: (ctx) => ({
-    type: 'object',
+    type: "object",
     properties: {
       panel_name: {
-        type: 'string',
-        description: 'Panel name to list sub panels',
+        type: "string",
+        description: "Panel name to list sub panels",
       },
     },
-    required: ['panel_name'],
+    required: ["panel_name"],
   }),
   run: async (context, args, abortSignal, callbacks) => {
-    const { panel_name } = args
-    const { dashboard } = context.app
+    const { panel_name } = args;
+    const { dashboard } = context.app;
 
     if (!dashboard) {
-      throw new Error('Dashboard is not defined')
+      throw new Error("Dashboard is not defined");
     }
 
-    const panelGroup = dashboard.panels.find((pg) => pg.title.includes(panel_name))
+    const panelGroup = dashboard.panels.find((pg) => pg.title.includes(panel_name));
     if (!panelGroup) {
-      throw new Error(`Panel group with name ${panel_name} not found`)
+      throw new Error(`Panel group with name ${panel_name} not found`);
     }
 
     const subPanelNames = panelGroup.panels.map((p) => ({
       title: p.title,
-    }))
+    }));
 
-    return `Sub Panels for ${panel_name}:\n${JSON.stringify(subPanelNames, null, 2)}`
+    return `Sub Panels for ${panel_name}:\n${JSON.stringify(subPanelNames, null, 2)}`;
   },
-}
+};
 
 const togglePanelFunction: LlmTool = {
-  type: 'tool',
-  name: 'toggle_panel',
-  title: 'Toggle Panel',
-  description: (ctx) => 'Toggles (expands or collapses) the panel',
+  type: "tool",
+  name: "toggle_panel",
+  title: "Toggle Panel",
+  description: (ctx) => "Toggles (expands or collapses) the panel",
   parameters: (ctx) => ({
-    type: 'object',
+    type: "object",
     properties: {
       panel_name: {
-        type: 'string',
-        description: 'Panel name to toggle',
+        type: "string",
+        description: "Panel name to toggle",
       },
     },
-    required: ['panel_name'],
+    required: ["panel_name"],
   }),
   run: async (context, args, abortSignal, callbacks) => {
-    const { panel_name } = args
-    const { dashboard } = context.app
+    const { panel_name } = args;
+    const { dashboard } = context.app;
 
     if (!dashboard) {
-      throw new Error('Dashboard is not defined')
+      throw new Error("Dashboard is not defined");
     }
 
-    const panels = dashboard.panels
-    const panel = panels.find((p) => p.title.includes(panel_name))
+    const panels = dashboard.panels;
+    const panel = panels.find((p) => p.title.includes(panel_name));
     if (!panel) {
-      throw new Error(`Panel with name ${panel_name} not found`)
+      throw new Error(`Panel with name ${panel_name} not found`);
     }
 
-    panel.toggle()
+    panel.toggle();
 
-    return panel.isCollapsed() ? `Collapsed panel ${panel_name}.` : `Expanded panel ${panel_name}.`
+    return panel.isCollapsed() ? `Collapsed panel ${panel_name}.` : `Expanded panel ${panel_name}.`;
   },
-}
+};
 
 const fetchPanelData: LlmTool = {
-  type: 'tool',
-  name: 'fetch_panel_data',
-  title: 'Fetch Panel Data',
+  type: "tool",
+  name: "fetch_panel_data",
+  title: "Fetch Panel Data",
   description: (ctx) =>
-    'Fetches the data for the sub panel. The data will be in csv format. The data can be used for visualization or analysis. Whenever the user asks for data analysis, call this function before performing the analysis.',
+    "Fetches the data for the sub panel. The data will be in csv format. The data can be used for visualization or analysis. Whenever the user asks for data analysis, call this function before performing the analysis.",
   parameters: (ctx) => ({
-    type: 'object',
+    type: "object",
     properties: {
       panel_name: {
-        type: 'string',
-        description: 'Panel name to fetch data for',
+        type: "string",
+        description: "Panel name to fetch data for",
       },
     },
-    required: ['panel_name'],
+    required: ["panel_name"],
   }),
   run: async (context, args, abortSignal, callbacks) => {
-    const { panel_name } = args
-    const { dashboard } = context.app
+    const { panel_name } = args;
+    const { dashboard } = context.app;
 
     if (!dashboard) {
-      throw new Error('Dashboard is not defined')
+      throw new Error("Dashboard is not defined");
     }
 
-    const subPanel = dashboard.findPanel(panel_name)
+    const subPanel = dashboard.findPanel(panel_name);
     if (!subPanel) {
-      throw new Error(`Panel with name ${panel_name} not found`)
+      throw new Error(`Panel with name ${panel_name} not found`);
     }
 
-    const data = await subPanel.csvData()
+    const data = await subPanel.csvData();
 
     const analysisTips: Record<string, string> = {
-      '1P Proven - Oil':
-        'List the reservoir reserve and then indicate which reservoir contributes the most and the least to reserves.',
-      '1P Proven - Associated Gas':
-        'List the reservoir reserve and then indicate which reservoir contributes the most and the least to reserves.',
-      'Change in Proven Oil Reserves':
-        'The provided data are changes in proven reverse vs action on reservoir. You should report the most and least effective actions.',
-      '1P Proven - Oil - Production Profile':
-        'The provided data are the list of oil production for different reservoirs. You should compare the average production of reservoirs.',
-    }
+      "1P Proven - Oil":
+        "List the reservoir reserve and then indicate which reservoir contributes the most and the least to reserves.",
+      "1P Proven - Associated Gas":
+        "List the reservoir reserve and then indicate which reservoir contributes the most and the least to reserves.",
+      "Change in Proven Oil Reserves":
+        "The provided data are changes in proven reverse vs action on reservoir. You should report the most and least effective actions.",
+      "1P Proven - Oil - Production Profile":
+        "The provided data are the list of oil production for different reservoirs. You should compare the average production of reservoirs.",
+    };
 
-    const response = data.join('\n\n')
+    const response = data.join("\n\n");
 
-    const tip = analysisTips[panel_name] || ''
+    const tip = analysisTips[panel_name] || "";
     if (tip) {
-      return `${response}\n\nTo analyze these data you should: ${tip}`
+      return `${response}\n\nTo analyze these data you should: ${tip}`;
     }
 
-    return response
+    return response;
   },
-}
+};
 
 const SYSTEM_MESSAGE_TEMPLATE = `You are helpful chatbot designed to help users interact Dashboard Panels in the Portfolio Manager application.
 
@@ -161,14 +161,14 @@ The dashboard is consisted of panels and sub panels. Panels are a group of sub p
 The list of panels and sub panels are:
 
 \${panels}
-`
+`;
 
 export const panelManagerAgent: LLMAgent = {
-  type: 'agent',
-  name: 'panel_manager',
-  title: 'Panel Manager',
+  type: "agent",
+  name: "panel_manager",
+  title: "Panel Manager",
   description: (ctx) =>
-    'Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.',
+    "Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.",
   systemMessage: SYSTEM_MESSAGE_TEMPLATE,
   plugins: [listPanelsFunction, listSubPanelsFunction, togglePanelFunction, fetchPanelData],
-}
+};

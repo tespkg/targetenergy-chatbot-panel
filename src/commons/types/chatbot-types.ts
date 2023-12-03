@@ -1,13 +1,13 @@
 export interface BotFunctionExecutionContext {
-  addIntent(intent: string): void
+  addIntent(intent: string): void;
 }
 
 export interface BotFunctionArgs {
-  context?: BotFunctionExecutionContext
+  context?: BotFunctionExecutionContext;
 }
 
 export const NullBotFunctionContext: BotFunctionExecutionContext = {
   addIntent(intent: string) {
     // do nothing
   },
-}
+};

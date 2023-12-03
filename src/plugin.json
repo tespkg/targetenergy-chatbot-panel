@@ -4,7 +4,9 @@
   "name": "Chatbot Panel",
   "id": "targetenergy-chatbot-panel",
   "info": {
-    "keywords": ["panel"],
+    "keywords": [
+      "panel"
+    ],
     "description": "Chatbot panel plugin",
     "author": {
       "name": "Target Energy Solutions"

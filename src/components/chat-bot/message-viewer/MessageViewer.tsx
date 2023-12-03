@@ -1,38 +1,39 @@
-import React, { Fragment } from 'react'
-import classNames from 'classnames'
-import Markdown from 'markdown-to-jsx'
-import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from 'commons/enums/Chatbot'
-import { MessageViewerViewModel } from './MessageViewerViewModel'
-import AssistantAvatar from 'img/icons/assisstant_avatar.svg'
-import UserAvatar from 'img/icons/user_avatar.svg'
-import { StreamingAudioPlayer } from '../../audio-player/StreamingAudioPlayer'
-import { Button } from '../../button/Button'
-import TrashBinIcon from 'img/icons/trashbin.svg'
+import React, { Fragment } from "react";
+import classNames from "classnames";
+import Markdown from "markdown-to-jsx";
+import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
+import { MessageViewerViewModel } from "./MessageViewerViewModel";
+import AssistantAvatar from "img/icons/assisstant_avatar.svg";
+import UserAvatar from "img/icons/user_avatar.svg";
+import { StreamingAudioPlayer } from "../../audio-player/StreamingAudioPlayer";
+import { Button } from "../../button/Button";
+import TrashBinIcon from "img/icons/trashbin.svg";
 
-import './message-viewer.scss'
+import "./message-viewer.scss";
 
 interface Props {
-  className?: string
-  isChatbotBusy: boolean
-  viewModel: MessageViewerViewModel
-  onDelete: (messageId: string, parentMessageId: string) => void
+  className?: string;
+  isChatbotBusy: boolean;
+  viewModel: MessageViewerViewModel;
+  onDelete: (messageId: string, parentMessageId: string) => void;
 }
+
 export const MessageViewer = ({ className, isChatbotBusy, viewModel, onDelete }: Props) => {
   /** Extract Properties from view model */
-  const { message, audio, role, id, parentMessageId, type } = viewModel
+  const { message, audio, role, id, parentMessageId, type } = viewModel;
 
   /** Renderer */
   return (
     <div
       key={id}
-      className={classNames(className, 'messageViewer', {
+      className={classNames(className, "messageViewer", {
         user: role === CHATBOT_ROLE.USER,
         assistant: role === CHATBOT_ROLE.ASSISTANT,
       })}
     >
       <AvatarViewer role={role} />
       <div
-        className={classNames('messageViewer-message', {
+        className={classNames("messageViewer-message", {
           user: role === CHATBOT_ROLE.USER,
           assistant: role === CHATBOT_ROLE.ASSISTANT,
           audio: type === SUPPORTED_MESSAGE_TYPE.AUDIO,
@@ -52,18 +53,18 @@ export const MessageViewer = ({ className, isChatbotBusy, viewModel, onDelete }:
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
 const AvatarViewer = ({ role }: { role: CHATBOT_ROLE }) => {
   /** Renderer */
   return (
     <div
-      className={classNames('messageViewer-avatar', {
+      className={classNames("messageViewer-avatar", {
         user: role === CHATBOT_ROLE.USER,
         assistant: role === CHATBOT_ROLE.ASSISTANT,
       })}
-      title={role === CHATBOT_ROLE.ASSISTANT ? 'Bot' : 'You'}
+      title={role === CHATBOT_ROLE.ASSISTANT ? "Bot" : "You"}
     >
       {role === CHATBOT_ROLE.ASSISTANT ? (
         <img className="messageViewer-avatar-image" src={AssistantAvatar} alt="Bot" />
@@ -71,8 +72,8 @@ const AvatarViewer = ({ role }: { role: CHATBOT_ROLE }) => {
         <img className="messageViewer-avatar-image" src={UserAvatar} alt="User" />
       )}
     </div>
-  )
-}
+  );
+};
 //
 const TextMessageViewer = ({
   message,
@@ -82,25 +83,25 @@ const TextMessageViewer = ({
   isChatbotBusy,
   onDelete,
 }: {
-  message: string
-  role: CHATBOT_ROLE
-  isChatbotBusy: boolean
-  parentId: string
-  id: string
-  onDelete: (id: string, parentId: string) => void
+  message: string;
+  role: CHATBOT_ROLE;
+  isChatbotBusy: boolean;
+  parentId: string;
+  id: string;
+  onDelete: (id: string, parentId: string) => void;
 }) => {
   /** Renderer */
   return (
     <Fragment>
       <Markdown
-        className={classNames('messageViewer-message-messageText', 'markdown-html', {
+        className={classNames("messageViewer-message-messageText", "markdown-html", {
           user: role === CHATBOT_ROLE.USER,
           assistant: role === CHATBOT_ROLE.ASSISTANT,
         })}
       >
         {message}
       </Markdown>
-      <div className={'messageViewer-message-actionsContainer'}>
+      <div className={"messageViewer-message-actionsContainer"}>
         {role === CHATBOT_ROLE.ASSISTANT && <StreamingAudioPlayer text={message} id={id} disabled={isChatbotBusy} />}
         {role === CHATBOT_ROLE.USER && (
           <Button
@@ -110,14 +111,14 @@ const TextMessageViewer = ({
             imageSource={TrashBinIcon}
             imageSize={16}
             onClick={() => {
-              onDelete(id, parentId)
+              onDelete(id, parentId);
             }}
           />
         )}
       </div>
     </Fragment>
-  )
-}
+  );
+};
 //
 const AudioMessageViewer = ({
   id,
@@ -126,11 +127,11 @@ const AudioMessageViewer = ({
   audio,
   onDelete,
 }: {
-  audio?: Blob
-  role: CHATBOT_ROLE
-  id: string
-  parentId: string
-  onDelete: (id: string, parentId: string) => void
+  audio?: Blob;
+  role: CHATBOT_ROLE;
+  id: string;
+  parentId: string;
+  onDelete: (id: string, parentId: string) => void;
 }) => {
   /** Renderer */
   return audio ? (
@@ -149,10 +150,10 @@ const AudioMessageViewer = ({
           imageSource={TrashBinIcon}
           imageSize={16}
           onClick={() => {
-            onDelete(id, parentId)
+            onDelete(id, parentId);
           }}
         />
       )}
     </Fragment>
-  ) : null
-}
+  ) : null;
+};

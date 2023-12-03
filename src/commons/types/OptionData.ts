@@ -1,5 +1,5 @@
 export type OptionData = {
-  id: string
-  label: string
-  isDraggable: boolean
-}
+  id: string;
+  label: string;
+  isDraggable: boolean;
+};

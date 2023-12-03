@@ -1,27 +1,27 @@
-import React from 'react'
-import { ClassNamesArg, css, cx } from '@emotion/css'
-import * as Constants from './Constants'
-import './style.css'
+import React from "react";
+import { ClassNamesArg, css, cx } from "@emotion/css";
+import * as Constants from "./Constants";
+import "./style.css";
 
 type ExpandShapeProps = {
-  className?: ClassNamesArg
-  isExpanded: boolean
-  onClick: () => void
-}
+  className?: ClassNamesArg;
+  isExpanded: boolean;
+  onClick: () => void;
+};
 
 const ExpandShape: React.FC<ExpandShapeProps> = ({ className, isExpanded, onClick }) => {
   const trianglePoints = React.useMemo(() => {
-    const cellSize = Constants.EXPAND_SHAPE_WIDTH / 10
+    const cellSize = Constants.EXPAND_SHAPE_WIDTH / 10;
     //
     let ps = [
       [cellSize * 2, cellSize * 1],
       [cellSize * 8, cellSize * 5],
       [cellSize * 2, cellSize * 9],
-    ]
-    return ps.map((point) => point.join(',')).join(' ')
-  }, [])
+    ];
+    return ps.map((point) => point.join(",")).join(" ");
+  }, []);
 
-  const strokeWidth = React.useMemo(() => Constants.EXPAND_SHAPE_WIDTH / 10 + 1, [])
+  const strokeWidth = React.useMemo(() => Constants.EXPAND_SHAPE_WIDTH / 10 + 1, []);
 
   return (
     <div
@@ -30,7 +30,7 @@ const ExpandShape: React.FC<ExpandShapeProps> = ({ className, isExpanded, onClic
           width: ${Constants.EXPAND_SHAPE_WIDTH}px;
           height: ${Constants.EXPAND_SHAPE_HEIGHT}px;
         `,
-        'tpp-expand-shape',
+        "tpp-expand-shape",
         className
       )}
       onClick={onClick}
@@ -48,14 +48,14 @@ const ExpandShape: React.FC<ExpandShapeProps> = ({ className, isExpanded, onClic
             css`
               stroke-width: ${strokeWidth}px;
             `,
-            'tpp-expand-shape--triangle',
-            isExpanded ? 'expanded' : 'collapsed'
+            "tpp-expand-shape--triangle",
+            isExpanded ? "expanded" : "collapsed"
           )}
           points={trianglePoints}
         />
       </svg>
     </div>
-  )
-}
+  );
+};
 
-export default ExpandShape
+export default ExpandShape;

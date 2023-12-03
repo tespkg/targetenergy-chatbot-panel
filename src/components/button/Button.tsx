@@ -1,18 +1,18 @@
-import React from 'react'
-import classNames from 'classnames'
-import './button.scss'
+import React from "react";
+import classNames from "classnames";
+import "./button.scss";
 
 interface ButtonProps {
-  className?: string
-  title: string
-  primary?: boolean
-  iconLeft?: boolean
-  imageSource?: string
-  imageSize?: number
-  displayTitle?: boolean
-  frame?: boolean
-  onClick: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void
-  disabled?: boolean
+  className?: string;
+  title: string;
+  primary?: boolean;
+  iconLeft?: boolean;
+  imageSource?: string;
+  imageSize?: number;
+  displayTitle?: boolean;
+  frame?: boolean;
+  onClick: (event: React.MouseEvent<HTMLElement, MouseEvent>) => void;
+  disabled?: boolean;
 }
 
 export const Button = ({
@@ -33,8 +33,8 @@ export const Button = ({
       <button
         className={classNames(
           className,
-          'buttonWrapper-button',
-          frame ? (primary ? 'primary' : 'secondary') : 'noframe',
+          "buttonWrapper-button",
+          frame ? (primary ? "primary" : "secondary") : "noframe",
           { icon: !displayTitle },
           { disabled: disabled },
           { titleLayout: displayTitle && !imageSource },
@@ -56,5 +56,5 @@ export const Button = ({
         )}
       </button>
     </div>
-  )
-}
+  );
+};

@@ -1,21 +1,21 @@
-import { css, cx } from '@emotion/css'
-import { Checkbox, Tooltip } from '@grafana/ui'
-import { MatchSearch } from 'commons/enums/MatchSearch'
-import { TreeNodeData } from 'commons/types/TreeNodeData'
-import ExpandShape from 'components/expand-shape/ExpandShape'
-import React from 'react'
-import { getTreeNodeIcon } from 'commons/utils/tree-node-icon-utils'
-import './style.css'
+import { css, cx } from "@emotion/css";
+import { Checkbox, Tooltip } from "@grafana/ui";
+import { MatchSearch } from "commons/enums/MatchSearch";
+import { TreeNodeData } from "commons/types/TreeNodeData";
+import ExpandShape from "components/expand-shape/ExpandShape";
+import React from "react";
+import { getTreeNodeIcon } from "commons/utils/tree-node-icon-utils";
+import "./style.css";
 
 type TreeNodeProps = {
-  data: TreeNodeData
-  onToggleNode: (node: TreeNodeData) => void
-  onSelectNode: (node: TreeNodeData) => void
-}
+  data: TreeNodeData;
+  onToggleNode: (node: TreeNodeData) => void;
+  onSelectNode: (node: TreeNodeData) => void;
+};
 
 const TreeNode: React.FC<TreeNodeProps> = ({ data, onToggleNode, onSelectNode }) => {
-  const hasChildren = data.children && data.children.length > 0
-  let showChildren = data.showChildren || data.matchSearch === MatchSearch.childMatch
+  const hasChildren = data.children && data.children.length > 0;
+  let showChildren = data.showChildren || data.matchSearch === MatchSearch.childMatch;
 
   return (
     <li
@@ -32,8 +32,8 @@ const TreeNode: React.FC<TreeNodeProps> = ({ data, onToggleNode, onSelectNode })
       >
         <ExpandShape
           className={css`
-            visibility: ${hasChildren ? 'inherited' : 'hidden'};
-            cursor: ${hasChildren ? 'pointer' : 'default'};
+            visibility: ${hasChildren ? "inherited" : "hidden"};
+            cursor: ${hasChildren ? "pointer" : "default"};
             margin-right: 10px;
           `}
           isExpanded={showChildren}
@@ -51,9 +51,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({ data, onToggleNode, onSelectNode })
           <span
             className={cx(
               css`
-                cursor: ${hasChildren ? 'pointer' : 'default'};
+                cursor: ${hasChildren ? "pointer" : "default"};
               `,
-              'tpp--tree-node--checkbox-title'
+              "tpp--tree-node--checkbox-title"
             )}
             onClick={() => onToggleNode(data)}
           >
@@ -79,7 +79,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({ data, onToggleNode, onSelectNode })
         </ul>
       )}
     </li>
-  )
-}
+  );
+};
 
-export default TreeNode
+export default TreeNode;

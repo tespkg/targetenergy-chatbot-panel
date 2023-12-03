@@ -67,7 +67,7 @@ $input-vertical-margin: 8px;
       margin-right: 5px;
       margin-bottom: 5px;
     }
-  } 
+  }
 
   &-statusContainer {
     display: flex;
@@ -84,6 +84,7 @@ $input-vertical-margin: 8px;
       font-size: 12px;
       color: rgba(0, 0, 0, 0.6);
     }
+
     &-loadingIcon {
       width: 12px;
       height: 12px;
@@ -138,11 +139,12 @@ $input-vertical-margin: 8px;
       display: none;
     }
   }
-  
+
   strong {
     font-weight: revert !important;
     padding: revert !important;
   }
+
   .markdown-html th {
     font-weight: 700 !important;
   }

@@ -1,9 +1,9 @@
-import { BotMessage } from '../../api/chatbot-types'
-import { assetTreeAgent } from './asset-tree-agent'
-import { MAIN_AGENT_NAME } from '../orchestration/llm-callbacks'
-import { panelManagerAgent } from './panel-manager-agent'
-import { FunctionContext, LLMAgent } from '../orchestration/llm-function'
-import { LlmAgentExecutor } from '../orchestration/llm-agent-executor'
+import { BotMessage } from "../../api/chatbot-types";
+import { assetTreeAgent } from "./asset-tree-agent";
+import { MAIN_AGENT_NAME } from "../orchestration/llm-callbacks";
+import { panelManagerAgent } from "./panel-manager-agent";
+import { FunctionContext, LLMAgent } from "../orchestration/llm-function";
+import { LlmAgentExecutor } from "../orchestration/llm-agent-executor";
 
 const DEFAULT_SYSTEM_MESSAGE = `You are helpful chatbot designed to help users interact with the Portfolio Manager Dashboard.
 
@@ -31,18 +31,18 @@ empowers decision-makers to optimize their asset management strategy effectively
 
 - Application has a asset tree which controls the shown assets and data in the dashboard.
 - User can toggle the asset tree nodes to control the shown assets and data in the dashboard.
-`
+`;
 
 export const mainAgent: LLMAgent = {
-  type: 'agent',
+  type: "agent",
   name: MAIN_AGENT_NAME,
-  title: 'Main',
-  description: (ctx) => 'Main agent that orchestrates other agents',
+  title: "Main",
+  description: (ctx) => "Main agent that orchestrates other agents",
   systemMessage: DEFAULT_SYSTEM_MESSAGE,
   plugins: [assetTreeAgent, panelManagerAgent],
-}
+};
 
 export async function runMainAgent(messages: BotMessage[], context: FunctionContext) {
-  const result = await LlmAgentExecutor.execute(messages, mainAgent, context)
-  return result.content
+  const result = await LlmAgentExecutor.execute(messages, mainAgent, context);
+  return result.content;
 }

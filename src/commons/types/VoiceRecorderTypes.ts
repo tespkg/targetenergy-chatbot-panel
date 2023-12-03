@@ -1,1 +1,1 @@
-export type RecorderStatus = 'inactive' | 'recording'
+export type RecorderStatus = "inactive" | "recording";

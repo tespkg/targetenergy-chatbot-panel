@@ -1,105 +1,107 @@
 /* 'tpp' stands for 'Tree Panel Plugin' just to make it unique from Grafana class names. */
 /* Search */
 .tpp-toolbar > div[class$='-input-wrapper'] {
-  width: unset;
-  flex-grow: 1;
-  margin-bottom: 0;
+    width: unset;
+    flex-grow: 1;
+    margin-bottom: 0;
 }
 
 .tpp-toolbar input[class$='-input-input'] {
-  border-radius: 5px;
-  border: 0;
-  background-color: #f4f5f5;
+    border-radius: 5px;
+    border: 0;
+    background-color: #f4f5f5;
 }
 
 /* Button */
 .tpp--button {
-  border-radius: 5px;
-  height: 32px;
-  background-color: #f4f5f5;
+    border-radius: 5px;
+    height: 32px;
+    background-color: #f4f5f5;
 }
+
 .tpp--button.primary {
-  background-color: #e6effe;
+    background-color: #e6effe;
 }
 
 /* Button hover */
 .tpp--button:hover {
-  box-shadow: rgb(24 26 27 / 20%) -2px 3px 5px;
+    box-shadow: rgb(24 26 27 / 20%) -2px 3px 5px;
 }
 
 .tpp--button:not(.primary):hover {
-  background-color: #f4f5f5;
+    background-color: #f4f5f5;
 }
 
 .tpp--button.primary:hover {
-  background-color: #e6effe;
+    background-color: #e6effe;
 }
 
 /* Button title */
 .tpp--button.primary span {
-  color: #1979ff;
-  font-family: system-ui, sans-serif;
-  font-size: 16px;
-  padding: 5px;
+    color: #1979ff;
+    font-family: system-ui, sans-serif;
+    font-size: 16px;
+    padding: 5px;
 }
 
 /* Image button */
 .tpp--button.image {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 32px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 32px;
 }
 
 .tpp--button.image img {
-  width: 16px;
-  height: 16px;
+    width: 16px;
+    height: 16px;
 }
 
 /* Checkbox title */
 .tpp--checkbox span {
-  color: #717b95;
-  font-family: system-ui, sans-serif;
-  font-size: 15px;
-  font-weight: bold;
+    color: #717b95;
+    font-family: system-ui, sans-serif;
+    font-size: 15px;
+    font-weight: bold;
 }
 
 .tpp--tree-content {
-  overflow: auto;
-  width: 100%;
-  height: calc(100% - 36px);
+    overflow: auto;
+    width: 100%;
+    height: calc(100% - 36px);
 }
 
 
 :root {
-  --minimized-chatbot-size: 96px;
-  --chatbot-icon-size: 72px;
+    --minimized-chatbot-size: 96px;
+    --chatbot-icon-size: 72px;
 
 }
+
 .chatbotPanel {
-  width: 100%;
-  height: 100%;
+    width: 100%;
+    height: 100%;
 }
 
 .chatbotPanel-chatOpenButton {
-  max-width: var(--chatbot-icon-size) !important;
-  max-height: var(--chatbot-icon-size) !important;
-  width: var(--chatbot-icon-size) !important;
-  height: var(--chatbot-icon-size) !important;
-  background-color: transparent !important;
+    max-width: var(--chatbot-icon-size) !important;
+    max-height: var(--chatbot-icon-size) !important;
+    width: var(--chatbot-icon-size) !important;
+    height: var(--chatbot-icon-size) !important;
+    background-color: transparent !important;
 
 }
 
 .closedChatbotPanelContainer {
-  height: var(--minimized-chatbot-size) !important;
-  width: var(--minimized-chatbot-size) !important;
-  transform: translate(calc(100vw - var(--minimized-chatbot-size)), calc(100vh - var(--minimized-chatbot-size))) !important;
+    height: var(--minimized-chatbot-size) !important;
+    width: var(--minimized-chatbot-size) !important;
+    transform: translate(calc(100vw - var(--minimized-chatbot-size)), calc(100vh - var(--minimized-chatbot-size))) !important;
 }
 
 .closedChatbotPanel {
-  height: var(--minimized-chatbot-size) !important;
-  width: var(--minimized-chatbot-size) !important;
-  position: absolute !important;
-  right: 0 !important;
-  bottom: 0 !important;
+    height: var(--minimized-chatbot-size) !important;
+    width: var(--minimized-chatbot-size) !important;
+    position: absolute !important;
+    right: 0 !important;
+    bottom: 0 !important;
 }

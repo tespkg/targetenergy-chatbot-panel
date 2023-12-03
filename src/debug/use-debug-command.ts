@@ -1,6 +1,6 @@
 import { Dashboard } from "../commons/types/dashboard-manager";
 import { useCallback } from "react";
-import { debugCommands } from "./find-panel";
+import { debugCommands } from "./debug-commands";
 
 interface Props {
   dashboard: Dashboard;

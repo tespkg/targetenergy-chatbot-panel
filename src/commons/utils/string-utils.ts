@@ -1,3 +1,6 @@
+import { isNumber } from "lodash";
+import { toFixed } from "./number-utils";
+
 export const stringToUpperUnderscored = (input: string) => {
   return input?.toUpperCase().replace(/ +/g, "_");
 };
@@ -8,4 +11,11 @@ export function formatTemplatedString(templatedString: string, variables: any) {
     templatedString = templatedString.replace(pattern, value as string);
   }
   return templatedString;
+}
+
+export function toCsvCell(value: any): string {
+  if (isNumber(value)) {
+    return `${toFixed(value, 1)}`;
+  }
+  return `${value}`;
 }

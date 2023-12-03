@@ -1,6 +1,7 @@
 import { getTemplateSrv } from "@grafana/runtime";
 import { TimeRange } from "@grafana/data";
 import { repeat } from "lodash";
+import { toCsvCell } from "../utils/string-utils";
 
 export class Dashboard {
   id: number;
@@ -193,6 +194,7 @@ class SubPanel {
           queryType: target.queryType,
           rawSql: this.getSqlQuery(target.rawSql),
           refId: target.refId,
+          maxDataPoints: 10,
         })),
         range: this.timeRange,
         from: `${this.timeRange.from.unix() * 1000}`,
@@ -203,9 +205,7 @@ class SubPanel {
       },
     });
 
-    const json = await response.json();
-    console.log("Fetched data ::: ", json);
-    return json;
+    return await response.json();
   };
 
   csvData = async () => {
@@ -217,8 +217,9 @@ class SubPanel {
       frames.forEach((frame: any) => {
         const fields = frame.schema.fields;
         const headers = fields.map((field: any) => field.name);
+
         const data = frame.data.values;
-        const rows = data[0].map((_: any, colIndex: number) => data.map((row: any) => row[colIndex]));
+        const rows = data[0].map((_: any, rowIndex: number) => data.map((col: any) => col[rowIndex]).map(toCsvCell));
 
         let csvContent = headers.join(",") + "\n"; // Add headers
         rows.forEach((row: any) => {

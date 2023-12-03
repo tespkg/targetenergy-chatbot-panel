@@ -17,7 +17,8 @@ export const findPanel: DebugCommand = {
     const panel = dashboard.findPanel(name);
     console.log("Parsed panel:", panel);
     const data = await panel?.csvData();
-    console.log("Parsed data:", data);
+    const formattedData = data.join("\n\n");
+    console.log("Parsed data:", formattedData);
   },
 };
 

@@ -5,20 +5,13 @@ import {
   ChatCompletionMessageToolCall,
 } from "../../api/chatbot-types";
 import { FunctionContext, LLMAgent } from "./llm-function";
-import { LlmCallbackManager, LlmCallbacks, LlmTrace } from "./llm-callbacks";
+import { LlmCallbackManager, LlmTrace } from "./llm-callbacks";
 import { PluginSet } from "./llm-function-set";
 import { v4 as uuidv4 } from "uuid";
 import { generate } from "../../api/chatbot-api";
+import { PluginOptions } from "@babel/core";
 
 const DEFAULT_MAX_TURNS = 5;
-
-export interface ChatAgentOptions {
-  maxTurns?: number;
-  systemMessage?: string;
-  callbacks?: LlmCallbackManager | LlmCallbacks;
-  abortSignal?: AbortSignal;
-  parentId?: string;
-}
 
 const DEFAULT_CONTEXT: FunctionContext = {
   app: {},
@@ -36,7 +29,7 @@ export class LlmAgentExecutor {
   private readonly context: FunctionContext;
   private readonly abortSignal?: AbortSignal;
   private readonly parentId?: string;
-  private readonly options: ChatAgentOptions;
+  private readonly options: PluginOptions;
 
   static async execute(messages: BotMessage[], agent: LLMAgent, context?: FunctionContext): Promise<BotMessage> {
     const executor = new LlmAgentExecutor(messages, agent, { ...DEFAULT_CONTEXT, ...(context ?? {}) });

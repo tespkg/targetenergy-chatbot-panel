@@ -4,9 +4,9 @@ const listPanelsFunction: LlmTool = {
   type: "tool",
   name: "list_panels",
   title: "List Panels",
-  description: (ctx) =>
+  description: (_) =>
     "Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.",
-  run: async (context, args, abortSignal, callbacks) => {
+  run: async (context, _) => {
     const { dashboard } = context.app;
 
     if (!dashboard) {
@@ -26,9 +26,9 @@ const listSubPanelsFunction: LlmTool = {
   type: "tool",
   name: "list_sub_panels",
   title: "List Sub Panels",
-  description: (ctx) =>
+  description: (_) =>
     "Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.",
-  parameters: (ctx) => ({
+  parameters: (_) => ({
     type: "object",
     properties: {
       panel_name: {
@@ -38,7 +38,7 @@ const listSubPanelsFunction: LlmTool = {
     },
     required: ["panel_name"],
   }),
-  run: async (context, args, abortSignal, callbacks) => {
+  run: async (context, args) => {
     const { panel_name } = args;
     const { dashboard } = context.app;
 
@@ -63,8 +63,8 @@ const togglePanelFunction: LlmTool = {
   type: "tool",
   name: "toggle_panel",
   title: "Toggle Panel",
-  description: (ctx) => "Toggles (expands or collapses) the panel",
-  parameters: (ctx) => ({
+  description: (_) => "Toggles (expands or collapses) the panel",
+  parameters: (_) => ({
     type: "object",
     properties: {
       panel_name: {
@@ -74,7 +74,7 @@ const togglePanelFunction: LlmTool = {
     },
     required: ["panel_name"],
   }),
-  run: async (context, args, abortSignal, callbacks) => {
+  run: async (context, args) => {
     const { panel_name } = args;
     const { dashboard } = context.app;
 
@@ -98,9 +98,9 @@ const fetchPanelData: LlmTool = {
   type: "tool",
   name: "fetch_panel_data",
   title: "Fetch Panel Data",
-  description: (ctx) =>
+  description: (_) =>
     "Fetches the data for the sub panel. The data will be in csv format. The data can be used for visualization or analysis. Whenever the user asks for data analysis, call this function before performing the analysis.",
-  parameters: (ctx) => ({
+  parameters: (_) => ({
     type: "object",
     properties: {
       panel_name: {
@@ -110,7 +110,7 @@ const fetchPanelData: LlmTool = {
     },
     required: ["panel_name"],
   }),
-  run: async (context, args, abortSignal, callbacks) => {
+  run: async (context, args) => {
     const { panel_name } = args;
     const { dashboard } = context.app;
 
@@ -167,7 +167,7 @@ export const panelManagerAgent: LLMAgent = {
   type: "agent",
   name: "panel_manager",
   title: "Panel Manager",
-  description: (ctx) =>
+  description: (_) =>
     "Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.",
   systemMessage: SYSTEM_MESSAGE_TEMPLATE,
   plugins: [listPanelsFunction, listSubPanelsFunction, togglePanelFunction, fetchPanelData],

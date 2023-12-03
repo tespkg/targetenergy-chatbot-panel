@@ -37,7 +37,7 @@ export const mainAgent: LLMAgent = {
   type: "agent",
   name: MAIN_AGENT_NAME,
   title: "Main",
-  description: (ctx) => "Main agent that orchestrates other agents",
+  description: (_) => "Main agent that orchestrates other agents",
   systemMessage: DEFAULT_SYSTEM_MESSAGE,
   plugins: [assetTreeAgent, panelManagerAgent],
 };

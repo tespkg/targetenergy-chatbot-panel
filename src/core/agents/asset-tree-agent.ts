@@ -4,8 +4,8 @@ const toggleAssetNodeFunction: LlmTool = {
   type: "tool",
   name: "toggle_asset_node_selection",
   title: "Toggle Asset Node Selection",
-  description: (ctx) => "Toggles (selects or deselects) the asset nodes in the asset tree",
-  parameters: (ctx) => ({
+  description: (_) => "Toggles (selects or deselects) the asset nodes in the asset tree",
+  parameters: (_) => ({
     type: "object",
     properties: {
       node_ids: {
@@ -18,7 +18,7 @@ const toggleAssetNodeFunction: LlmTool = {
     },
     required: ["node_ids"],
   }),
-  run: async (context, args, abortSignal, callbacks) => {
+  run: async (context, args) => {
     const { node_ids } = args;
     const { assetTree, toggleAssetNodes } = context.app;
 
@@ -50,9 +50,9 @@ const listAssetsFunction: LlmTool = {
   type: "tool",
   name: "list_assets",
   title: "List Assets",
-  description: (ctx) =>
+  description: (_) =>
     "Lists the assets in the asset tree in a markdown format. The ids and selected status can be included in the output",
-  run: async (context, args, abortSignal, callbacks) => {
+  run: async (context, _) => {
     const { assetTree } = context.app;
 
     const markdown = assetTree?.toMarkdown({
@@ -68,7 +68,7 @@ export const assetTreeAgent: LLMAgent = {
   type: "agent",
   name: "asset_tree",
   title: "Asset Tree",
-  description: (ctx) =>
+  description: (_) =>
     "Can answer questions about asset tree including listing the assets and selecting or unselecting them. Assets include companies, continents, counties, regions, blocks, stations, fields and reservoirs",
   plugins: [listAssetsFunction, toggleAssetNodeFunction],
 };

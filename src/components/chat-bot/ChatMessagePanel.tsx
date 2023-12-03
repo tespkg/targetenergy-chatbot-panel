@@ -251,6 +251,8 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
       } catch (e) {
         // TODO: handle the error properly and show it to the user.
         console.error("Main agent errored: ", e);
+        setChatbotBusy(false);
+        setChatbotStatus(null);
       }
     },
     [addChatChunkReceived, dashboard, nodes, onToggleNodes]

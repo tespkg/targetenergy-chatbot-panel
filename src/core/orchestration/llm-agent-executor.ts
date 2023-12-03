@@ -117,6 +117,7 @@ export class LlmAgentExecutor {
     let toolCalls: ChatCompletionMessageToolCall[] = [];
 
     const response = await generate(generateRequest, this.abortSignal);
+    this.checkAbortSignal();
     const reader = response.body!.getReader();
     const decoder = new TextDecoder("utf-8");
     while (true) {

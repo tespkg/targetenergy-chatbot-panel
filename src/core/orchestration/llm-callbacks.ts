@@ -47,40 +47,100 @@ export interface SuccessEventData {
 
 export type SuccessEvent = CommonEventData & SuccessEventData
 
+export interface LlmTrace {
+  id: string
+  parentId?: string
+  name: string
+  type: 'agent' | 'tool'
+  startTime: Date
+  endTime: Date
+  promptTokens: number
+  completionTokens: number
+  totalTokens: number
+  totalPrice: number
+  inputs: any
+  outputs: any
+  meta: any
+  error?: any
+  subTraces: LlmTrace[]
+}
+
 export interface LlmCallbacks {
   onDelta?: (eventData: DeltaEvent) => Promise<void> | void
   onWorking?: (eventData: WorkingEvent) => Promise<void> | void
   onError?: (eventData: ErrorEvent) => Promise<void> | void
   onSuccess?: (eventData: SuccessEvent) => Promise<void> | void
+  onTrace?: (trace: LlmTrace) => Promise<void> | void
 }
 
 export class LlmCallbackManager {
   private readonly callbacks?: LlmCallbacks
   private readonly agentName: string
+  private traces: LlmTrace[]
 
   constructor(agentName: string, callbacks?: LlmCallbacks) {
     this.agentName = agentName
     this.callbacks = callbacks
+    this.traces = []
   }
 
   forAgent(agentName: string): LlmCallbackManager {
     return new LlmCallbackManager(this.agentName + '.' + agentName, this.callbacks)
   }
 
-  onDelta = async (eventData: DeltaEventData) => {
+  emitDelta = async (eventData: DeltaEventData) => {
     await this.callbacks?.onDelta?.({ ...eventData, ...this.commonEventData(EventType.Delta) })
   }
 
-  onWorking = async (eventData: WorkingEventData) => {
+  emitWorking = async (eventData: WorkingEventData) => {
     await this.callbacks?.onWorking?.({ ...eventData, ...this.commonEventData(EventType.Working) })
   }
 
-  onError = async (eventData: ErrorEventData) => {
+  emitError = async (eventData: ErrorEventData) => {
     await this.callbacks?.onError?.({ ...eventData, ...this.commonEventData(EventType.Error) })
   }
 
-  onSuccess = async (eventData: SuccessEventData) => {
+  emitSuccess = async (eventData: SuccessEventData) => {
     await this.callbacks?.onSuccess?.({ ...eventData, ...this.commonEventData(EventType.Success) })
+  }
+
+  emitTrace = async (trace: LlmTrace) => {
+    trace = this.traces.find((t) => t.id === trace.id) ?? trace
+
+    // A quick and dirty way of only emitting the top-level traces for now
+    if (trace.parentId) {
+      return
+    }
+
+    await this.callbacks?.onTrace?.(trace)
+  }
+
+  addTrace = (trace: LlmTrace) => {
+    this.traces.push(trace)
+
+    let addToParent = true
+    while (trace.parentId) {
+      const parent = this.traces.find((t) => t.id === trace.parentId)
+      if (!parent) {
+        break
+      }
+
+      // Aggregate the token consumption with parents
+      parent.promptTokens += trace.promptTokens
+      parent.completionTokens += trace.completionTokens
+      parent.totalTokens += trace.totalTokens
+      parent.totalPrice += trace.totalPrice
+
+      // Update the parent end time
+      parent.endTime = trace.endTime
+
+      // Add the trace to the parent (should only happen once)
+      if (addToParent) {
+        parent.subTraces.push(trace)
+      }
+
+      trace = parent
+    }
   }
 
   commonEventData = (type: EventType): CommonEventData => {

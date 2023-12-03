@@ -4,13 +4,14 @@ import {
   BotMessage,
   ChatCompletionMessageToolCall,
 } from '../../api/chatbot-types'
-import { LlmCallbackManager, LlmCallbacks } from './llm-callbacks'
+import { LlmCallbackManager, LlmCallbacks, LlmTrace } from './llm-callbacks'
 import { AssetTree } from '../../commons/types/asset-tree'
 import { TreeNodeData } from '../../commons/types/TreeNodeData'
 import { generate } from '../../api/chatbot-api'
 import { Dashboard } from '../../commons/types/dashboard-manager'
 import { PluginSet } from './llm-function-set'
 import { LLMAgent } from './llm-function'
+import { v4 as uuidv4 } from 'uuid'
 
 export interface ChatFunctionContext {
   assetTree?: AssetTree
@@ -30,6 +31,7 @@ export interface ChatAgentOptions {
   systemMessage?: string
   callbacks?: LlmCallbackManager | LlmCallbacks
   abortSignal?: AbortSignal
+  parentId?: string
 }
 
 export async function runAgent(
@@ -38,6 +40,7 @@ export async function runAgent(
   options: ChatAgentOptions = {}
 ): Promise<BotMessage> {
   const { maxTurns = 5, abortSignal, context = NullContext } = options
+  const parentId = options.parentId
   const callbackManager =
     options.callbacks instanceof LlmCallbackManager
       ? options.callbacks
@@ -66,13 +69,23 @@ export async function runAgent(
       functions: plugins.getDefinitions(context),
     }
 
-    callbackManager.onWorking?.({
+    callbackManager.emitWorking?.({
       message: `Talking to ${title} agent. Turn: ${turn}`,
       params: generateRequest,
       turn: turn,
     })
 
     console.log('======================= Sending request to backend =======================')
+    const runId = uuidv4()
+    const trace = {
+      id: runId,
+      parentId: parentId,
+      name: `${agent.name} - Turn ${turn}`,
+      type: 'agent',
+      startTime: new Date(),
+      inputs: generateRequest, // TODO: needs better formatting
+      subTraces: [] as LlmTrace[],
+    } as LlmTrace
     console.log('request body', generateRequest)
     const response = await generate(generateRequest, abortSignal)
 
@@ -99,7 +112,7 @@ export async function runAgent(
           // console.log('Received chunk: ', message)
           if (message.text) {
             assistantMessage.content += message.text
-            callbackManager.onDelta?.({
+            callbackManager.emitDelta?.({
               turn: turn,
               message: message.text,
             })
@@ -122,16 +135,24 @@ export async function runAgent(
       assistantMessage.tool_calls = toolCalls
     }
 
-    callbackManager.onSuccess?.({
+    callbackManager.emitSuccess?.({
       message: 'Completed LLM call',
       turn: turn,
       params: generateRequest,
       result: assistantMessage,
     })
+    trace.outputs = assistantMessage
+    trace.endTime = new Date()
+    trace.promptTokens = assistantMessage.tokenUsage?.prompt_tokens ?? 0
+    trace.completionTokens = assistantMessage.tokenUsage?.completion_tokens ?? 0
+    trace.totalTokens = assistantMessage.tokenUsage?.total_tokens ?? 0
+    trace.totalPrice = assistantMessage.tokenUsage?.total_price ?? 0
+    callbackManager.addTrace(trace)
 
     messages.push(assistantMessage)
 
     if (!toolCalls.length) {
+      callbackManager.emitTrace?.(trace)
       return assistantMessage
     }
 
@@ -147,30 +168,45 @@ export async function runAgent(
       const functionCtx: ChatFunctionContext = {
         ...(context || {}),
         messages,
-        agentOptions: options,
+        agentOptions: { ...options, parentId: runId },
       }
 
-      callbackManager.onWorking?.({
+      callbackManager.emitWorking?.({
         turn: turn,
         message: plugin.type === 'agent' ? `Talking to agent ${plugin.title}` : `Calling tool ${plugin.title}`,
         params: pluginArgs,
       })
 
-      let funcResult: any
+      let pluginResult: any
+      const pluginTrace = {
+        id: uuidv4(),
+        parentId: runId,
+        name: `${pluginName} - Turn ${turn}`,
+        type: plugin.type,
+        startTime: new Date(),
+        inputs: pluginArgs,
+        subTraces: [] as LlmTrace[],
+      } as LlmTrace
       try {
-        funcResult = await plugin.run(functionCtx, pluginArgs)
-        callbackManager.onSuccess?.({
+        pluginResult = await plugin.run(functionCtx, pluginArgs)
+        callbackManager.emitSuccess?.({
           message:
             plugin.type === 'agent'
               ? `Finished talking to agent ${plugin.title}`
               : `Finished calling tool ${plugin.title}`,
           // agent: pluginName, TODO:
           params: pluginArgs,
-          result: funcResult,
+          result: pluginResult,
           turn: turn,
         })
+        pluginTrace.outputs = pluginResult
+        pluginTrace.endTime = new Date()
+        pluginTrace.promptTokens = pluginResult?.tokenUsage?.prompt_tokens ?? 0
+        pluginTrace.completionTokens = pluginResult?.tokenUsage?.completion_tokens ?? 0
+        pluginTrace.totalTokens = pluginResult?.tokenUsage?.total_tokens ?? 0
+        pluginTrace.totalPrice = pluginResult?.tokenUsage?.total_price ?? 0
       } catch (e: any) {
-        callbackManager.onError?.({
+        callbackManager.emitError?.({
           message:
             plugin.type === 'agent' ? `Error talking to agent ${plugin.title}` : `Error calling tool ${plugin.title}`,
           error: e,
@@ -184,6 +220,8 @@ export async function runAgent(
           tool_call_id: toolCall.id,
           content: `Error calling function ${toolCall?.function?.name}: ${e.message}`,
         })
+        pluginTrace.endTime = new Date()
+        pluginTrace.error = e
         continue
       }
 
@@ -191,11 +229,14 @@ export async function runAgent(
       const toolMessage: BotMessage = {
         role: 'tool',
         tool_call_id: toolCall.id,
-        content: funcResult.content ?? funcResult,
+        content: pluginResult.content ?? pluginResult,
       }
 
       messages.push(toolMessage)
+      callbackManager.addTrace(pluginTrace)
     }
+
+    callbackManager.emitTrace?.(trace)
   }
 
   throw new Error(`Reached max conversation turns of ${maxTurns}`)

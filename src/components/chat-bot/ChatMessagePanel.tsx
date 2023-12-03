@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import classNames from 'classnames'
 import TrashBin from 'img/icons/trashbin.svg'
-// import Broom from 'img/icons/broom.svg'
 import ClearHistoryIcon from 'img/icons/clear-history.svg'
 import RecordIcon from 'img/icons/record.svg'
 import StopIcon from 'img/icons/stop-circle.svg'
@@ -24,6 +23,7 @@ import './chat-bot.scss'
 import {
   DeltaEvent,
   ErrorEvent,
+  LlmTrace,
   MAIN_AGENT_NAME,
   SuccessEvent,
   WorkingEvent,
@@ -185,21 +185,6 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
 
   const updateChatbotStatus = (eventData: SuccessEvent | DeltaEvent | ErrorEvent | WorkingEvent) => {
     const { type, message } = eventData
-    // let agentTitle = agent
-    // switch (agent) {
-    //   case 'root':
-    //     agentTitle = 'Chatbot'
-    //     break
-    //   case 'root.asset_tree':
-    //     agentTitle = 'Chatbot Asset-Tree'
-    //     break
-    //   case 'root.panel_manager':
-    //     agentTitle = 'Chatbot Panel-Manager'
-    //     break
-    //
-    //   default:
-    //     break
-    // }
     switch (type) {
       case 'success':
       case 'error':
@@ -246,6 +231,9 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           onWorking: (eventData: WorkingEvent) => {
             console.log(eventData)
             updateChatbotStatus(eventData)
+          },
+          onTrace: (trace: LlmTrace) => {
+            console.log('Trace', trace)
           },
         },
       })

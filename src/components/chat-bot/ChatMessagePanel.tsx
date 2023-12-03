@@ -13,7 +13,7 @@ import { Button } from "components/button/Button";
 import { last, uniqueId } from "lodash";
 import { BotMessage } from "../../api/chatbot-types";
 import { AssetTree } from "../../commons/types/asset-tree";
-import { TreeNodeData } from "../../commons/types/TreeNodeData";
+import { TreeNodeData } from "../../commons/types/tree-node-data";
 import { useVoiceRecorder } from "hooks/use-voice-recorder/useVoiceRecorder";
 import { runMainAgent } from "../../core/agents/main-agent";
 import { transcribe } from "../../api/chatbot-api";

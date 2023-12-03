@@ -3,7 +3,7 @@ import { BotMessage } from "../../api/chatbot-types";
 import { ChatAgentOptions } from "./llm-agent-executor";
 import { AssetTree } from "../../commons/types/asset-tree";
 import { Dashboard } from "../../commons/types/dashboard-manager";
-import { TreeNodeData } from "../../commons/types/TreeNodeData";
+import { TreeNodeData } from "../../commons/types/tree-node-data";
 
 export interface AppContext {
   assetTree?: AssetTree;

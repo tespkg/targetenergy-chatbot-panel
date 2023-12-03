@@ -10,7 +10,7 @@ import { ChatMessagePanel } from "components/chat-bot/ChatMessagePanel";
 import * as Handlebars from "handlebars";
 import { setGrafanaVariable } from "commons/utils/grafana-variable-utils";
 import { AssetTree } from "commons/types/asset-tree";
-import { TreeNodeData } from "commons/types/TreeNodeData";
+import { TreeNodeData } from "commons/types/tree-node-data";
 import { MatchSearch } from "commons/enums/MatchSearch";
 import ChatIcon from "img/icons/chat.svg";
 import { Dashboard } from "commons/types/dashboard-manager";

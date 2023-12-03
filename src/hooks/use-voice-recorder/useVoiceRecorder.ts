@@ -1,4 +1,4 @@
-import { RecorderStatus } from "commons/types/VoiceRecorderTypes";
+import { RecorderStatus } from "commons/types/voice-recorder-types";
 import { useCallback, useRef, useState } from "react";
 
 const mimeType = "audio/webm";

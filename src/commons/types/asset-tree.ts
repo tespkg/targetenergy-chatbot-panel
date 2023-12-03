@@ -1,4 +1,4 @@
-import { TreeNodeData } from "./TreeNodeData";
+import { TreeNodeData } from "./tree-node-data";
 
 interface MarkdownOptions {
   includeIds?: boolean;

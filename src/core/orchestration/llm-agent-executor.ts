@@ -83,9 +83,7 @@ export class LlmAgentExecutor {
   }
 
   private runTurn = async (turn: number) => {
-    if (this.abortSignal?.aborted) {
-      throw new Error("the agent was aborted");
-    }
+    this.checkAbortSignal();
 
     const generateRequest = {
       messages: this.messages,
@@ -122,6 +120,7 @@ export class LlmAgentExecutor {
     const reader = response.body!.getReader();
     const decoder = new TextDecoder("utf-8");
     while (true) {
+      this.checkAbortSignal();
       const { done, value } = await reader.read();
       if (done) {
         break;
@@ -182,6 +181,7 @@ export class LlmAgentExecutor {
 
   private processToolCalls = async (toolCalls: ChatCompletionMessageToolCall[], parentId: string, turn: number) => {
     for (const toolCall of toolCalls) {
+      this.checkAbortSignal();
       if (!this.plugins) {
         throw new Error("tool call but no plugins were provided");
       }
@@ -295,5 +295,11 @@ export class LlmAgentExecutor {
   private errorToolTrace = (trace: LlmTrace, error: any) => {
     trace.endTime = new Date();
     trace.error = error;
+  };
+
+  private checkAbortSignal = () => {
+    if (this.abortSignal?.aborted) {
+      throw new Error("the agent was aborted");
+    }
   };
 }

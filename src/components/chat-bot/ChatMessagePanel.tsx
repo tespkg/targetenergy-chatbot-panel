@@ -6,7 +6,6 @@ import RecordIcon from "img/icons/record.svg";
 import StopIcon from "img/icons/stop-circle.svg";
 import LoadingIcon from "img/icons/animated-loading.svg";
 import SendMessage from "img/icons/send-message.svg";
-
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
 import { Input } from "@grafana/ui";
 import { Button } from "components/button/Button";
@@ -19,7 +18,6 @@ import { runMainAgent } from "../../core/agents/main-agent";
 import { transcribe } from "../../api/chatbot-api";
 import { Dashboard } from "../../commons/types/dashboard-manager";
 import MinimizeIcon from "img/icons/chevron-down.svg";
-import "./chat-bot.scss";
 import {
   DeltaEvent,
   ErrorEvent,
@@ -31,6 +29,7 @@ import {
 import { MessageViewer } from "./message-viewer/MessageViewer";
 import { MessageViewerViewModel } from "./message-viewer/MessageViewerViewModel";
 import { useDebugCommand } from "../../debug/use-debug-command";
+import "./chat-bot.scss";
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE;
@@ -63,6 +62,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
   } = useVoiceRecorder();
 
   /** States and Refs */
+  const abortControllerRef = useRef<AbortController | null>(null);
   const [text, setText] = useState("");
   const [chatContent, setChatContent] = useState<undefined | ChatBotMessage[]>(undefined);
   const chatContentRef = useRef(null);
@@ -201,44 +201,57 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         break;
     }
   };
-  const generateApi = useCallback(
-    (messages: BotMessage[], parentMessageId: string) => {
-      const abortSignal = new AbortController().signal;
 
-      return runMainAgent(messages, {
-        app: {
-          assetTree: nodes,
-          dashboard: dashboard,
-          toggleAssetNodes: onToggleNodes,
-        },
-        options: {
-          abortSignal,
-          callbacks: {
-            onSuccess: (eventData: SuccessEvent) => {
-              console.log(eventData);
-              updateChatbotStatus(eventData);
-            },
-            onDelta: (eventData: DeltaEvent) => {
-              const { message, agent } = eventData;
-              if (agent === MAIN_AGENT_NAME) {
-                addChatChunkReceived(message);
-              }
-              // updateChatbotStatus(eventData)
-            },
-            onError: (eventData: ErrorEvent) => {
-              console.log(eventData);
-              updateChatbotStatus(eventData);
-            },
-            onWorking: (eventData: WorkingEvent) => {
-              console.log(eventData);
-              updateChatbotStatus(eventData);
-            },
-            onTrace: (trace: LlmTrace) => {
-              console.log("Trace", trace);
+  const cancel = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+  }, []);
+
+  const runAgents = useCallback(
+    async (messages: BotMessage[], parentMessageId: string) => {
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
+      try {
+        await runMainAgent(messages, {
+          app: {
+            assetTree: nodes,
+            dashboard: dashboard,
+            toggleAssetNodes: onToggleNodes,
+          },
+          options: {
+            abortSignal: abortController.signal,
+            callbacks: {
+              onSuccess: (eventData: SuccessEvent) => {
+                console.log(eventData);
+                updateChatbotStatus(eventData);
+              },
+              onDelta: (eventData: DeltaEvent) => {
+                const { message, agent } = eventData;
+                if (agent === MAIN_AGENT_NAME) {
+                  addChatChunkReceived(message, parentMessageId);
+                }
+                // updateChatbotStatus(eventData)
+              },
+              onError: (eventData: ErrorEvent) => {
+                console.log(eventData);
+                updateChatbotStatus(eventData);
+              },
+              onWorking: (eventData: WorkingEvent) => {
+                console.log(eventData);
+                updateChatbotStatus(eventData);
+              },
+              onTrace: (trace: LlmTrace) => {
+                console.log("Trace", trace);
+              },
             },
           },
-        },
-      });
+        });
+      } catch (e) {
+        // TODO: handle the error properly and show it to the user.
+        console.error("Main agent errored: ", e);
+      }
     },
     [addChatChunkReceived, dashboard, nodes, onToggleNodes]
   );
@@ -253,9 +266,8 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
 
     const messageId = uniqueId("text_message_");
     addMessageToChatContent(text, messageId, "parent", CHATBOT_ROLE.USER, true, true);
-    const content = await generateApi(getBotMessages(text, CHATBOT_ROLE.USER), messageId);
-    console.log("Final generate result ::: ", content);
-  }, [addMessageToChatContent, dashboard, generateApi, getBotMessages, isCommand, processCommand, text]);
+    await runAgents(getBotMessages(text, CHATBOT_ROLE.USER), messageId);
+  }, [addMessageToChatContent, dashboard, runAgents, getBotMessages, isCommand, processCommand, text]);
 
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {
@@ -264,19 +276,19 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
       const transcription = await transcribe(voice);
       const transcriptionMessageId = uniqueId("text_message_");
       addMessageToChatContent(transcription, transcriptionMessageId, messageId, CHATBOT_ROLE.USER, true, true);
-      const content = await generateApi(getBotMessages(transcription, CHATBOT_ROLE.USER), messageId);
-      console.log("Final generate result ::: ", content);
+      await runAgents(getBotMessages(transcription, CHATBOT_ROLE.USER), messageId);
     },
-    [addMessageToChatContent, addVoiceToChatContent, generateApi, getBotMessages]
+    [addMessageToChatContent, addVoiceToChatContent, runAgents, getBotMessages]
   );
 
   /** Callbacks */
   const onDeleteMessage = (messageId: string, parentMessageId: string) => {
     console.log("Going to delete message with id: ", messageId);
     setChatContent((prevMessages) => {
-      if (prevMessages === undefined) {
+      if (!prevMessages) {
         return prevMessages;
       }
+
       const deletedMessage = prevMessages.find((message) => message.id === messageId);
       if (deletedMessage) {
         if (deletedMessage.parentMessageId === "parent") {
@@ -401,7 +413,21 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
               marginBottom: "8px",
             }}
             autoFocus
-          />
+            addonAfter={
+              isChatbotBusy && (
+                <Button
+                  className="ChatBot-inputContainer-buttonContainer send"
+                  title={"Cancel"}
+                  displayTitle={false}
+                  imageSource={StopIcon}
+                  imageSize={16}
+                  onClick={cancel}
+                />
+              )
+            }
+          >
+            {/*<div>Hi</div>*/}
+          </Input>
         )}
         {!recordedVoiceUrl && (
           <Button

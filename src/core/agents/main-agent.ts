@@ -1,9 +1,9 @@
 import { BotMessage } from '../../api/chatbot-types'
-import { ChatAgentOptions, runAgent } from '../orchestration/llm-orchestrator'
 import { assetTreeAgent } from './asset-tree-agent'
 import { MAIN_AGENT_NAME } from '../orchestration/llm-callbacks'
 import { panelManagerAgent } from './panel-manager-agent'
-import { LLMAgent } from '../orchestration/llm-function'
+import { FunctionContext, LLMAgent } from '../orchestration/llm-function'
+import { LlmAgentExecutor } from '../orchestration/llm-agent-executor'
 
 const DEFAULT_SYSTEM_MESSAGE = `You are helpful chatbot designed to help users interact with the Portfolio Manager Dashboard.
 
@@ -42,7 +42,7 @@ export const mainAgent: LLMAgent = {
   plugins: [assetTreeAgent, panelManagerAgent],
 }
 
-export async function runMainAgent(messages: BotMessage[], options: ChatAgentOptions = {}) {
-  const result = await runAgent(messages, mainAgent, options)
+export async function runMainAgent(messages: BotMessage[], context: FunctionContext) {
+  const result = await LlmAgentExecutor.execute(messages, mainAgent, context)
   return result.content
 }

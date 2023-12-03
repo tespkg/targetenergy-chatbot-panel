@@ -206,34 +206,36 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
       const abortSignal = new AbortController().signal
 
       return runMainAgent(messages, {
-        abortSignal,
-        context: {
+        app: {
           assetTree: nodes,
-          toggleAssetNodes: onToggleNodes,
           dashboard: dashboard,
+          toggleAssetNodes: onToggleNodes,
         },
-        callbacks: {
-          onSuccess: (eventData: SuccessEvent) => {
-            console.log(eventData)
-            updateChatbotStatus(eventData)
-          },
-          onDelta: (eventData: DeltaEvent) => {
-            const { message, agent } = eventData
-            if (agent === MAIN_AGENT_NAME) {
-              addChatChunkReceived(message)
-            }
-            // updateChatbotStatus(eventData)
-          },
-          onError: (eventData: ErrorEvent) => {
-            console.log(eventData)
-            updateChatbotStatus(eventData)
-          },
-          onWorking: (eventData: WorkingEvent) => {
-            console.log(eventData)
-            updateChatbotStatus(eventData)
-          },
-          onTrace: (trace: LlmTrace) => {
-            console.log('Trace', trace)
+        options: {
+          abortSignal,
+          callbacks: {
+            onSuccess: (eventData: SuccessEvent) => {
+              console.log(eventData)
+              updateChatbotStatus(eventData)
+            },
+            onDelta: (eventData: DeltaEvent) => {
+              const { message, agent } = eventData
+              if (agent === MAIN_AGENT_NAME) {
+                addChatChunkReceived(message)
+              }
+              // updateChatbotStatus(eventData)
+            },
+            onError: (eventData: ErrorEvent) => {
+              console.log(eventData)
+              updateChatbotStatus(eventData)
+            },
+            onWorking: (eventData: WorkingEvent) => {
+              console.log(eventData)
+              updateChatbotStatus(eventData)
+            },
+            onTrace: (trace: LlmTrace) => {
+              console.log('Trace', trace)
+            },
           },
         },
       })

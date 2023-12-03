@@ -76,16 +76,16 @@ export interface LlmCallbacks {
 export class LlmCallbackManager {
   private readonly callbacks?: LlmCallbacks
   private readonly agentName: string
-  private traces: LlmTrace[]
+  private readonly traces: LlmTrace[]
 
-  constructor(agentName: string, callbacks?: LlmCallbacks) {
+  constructor(agentName: string, callbacks?: LlmCallbacks, traces: LlmTrace[] = []) {
     this.agentName = agentName
     this.callbacks = callbacks
-    this.traces = []
+    this.traces = traces
   }
 
   forAgent(agentName: string): LlmCallbackManager {
-    return new LlmCallbackManager(this.agentName + '.' + agentName, this.callbacks)
+    return new LlmCallbackManager(this.agentName + '.' + agentName, this.callbacks, this.traces)
   }
 
   emitDelta = async (eventData: DeltaEventData) => {

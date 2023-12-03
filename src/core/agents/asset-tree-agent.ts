@@ -20,7 +20,7 @@ const toggleAssetNodeFunction: LlmTool = {
   }),
   run: async (context, args, abortSignal, callbacks) => {
     const { node_ids } = args
-    const { assetTree, toggleAssetNodes } = context
+    const { assetTree, toggleAssetNodes } = context.app
 
     if (!assetTree) {
       throw new Error('Asset tree is not defined')
@@ -53,7 +53,7 @@ const listAssetsFunction: LlmTool = {
   description: (ctx) =>
     'Lists the assets in the asset tree in a markdown format. The ids and selected status can be included in the output',
   run: async (context, args, abortSignal, callbacks) => {
-    const { assetTree } = context
+    const { assetTree } = context.app
 
     const markdown = assetTree?.toMarkdown({
       includeIds: true,

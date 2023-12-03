@@ -7,7 +7,7 @@ const listPanelsFunction: LlmTool = {
   description: (ctx) =>
     'Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.',
   run: async (context, args, abortSignal, callbacks) => {
-    const { dashboard } = context
+    const { dashboard } = context.app
 
     if (!dashboard) {
       throw new Error('Dashboard is not defined')
@@ -40,7 +40,7 @@ const listSubPanelsFunction: LlmTool = {
   }),
   run: async (context, args, abortSignal, callbacks) => {
     const { panel_name } = args
-    const { dashboard } = context
+    const { dashboard } = context.app
 
     if (!dashboard) {
       throw new Error('Dashboard is not defined')
@@ -76,7 +76,7 @@ const togglePanelFunction: LlmTool = {
   }),
   run: async (context, args, abortSignal, callbacks) => {
     const { panel_name } = args
-    const { dashboard } = context
+    const { dashboard } = context.app
 
     if (!dashboard) {
       throw new Error('Dashboard is not defined')
@@ -112,7 +112,7 @@ const fetchPanelData: LlmTool = {
   }),
   run: async (context, args, abortSignal, callbacks) => {
     const { panel_name } = args
-    const { dashboard } = context
+    const { dashboard } = context.app
 
     if (!dashboard) {
       throw new Error('Dashboard is not defined')

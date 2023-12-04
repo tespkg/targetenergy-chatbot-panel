@@ -390,7 +390,8 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
                 <MessageViewer
                   key={id}
                   viewModel={viewModel}
-                  isChatbotBusy={isChatbotBusy && index === self.length - 1}
+                  isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
+                  isDeleteMessageDisabled={isChatbotBusy}
                   onDelete={onDeleteMessage}
                 />
               );

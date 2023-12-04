@@ -262,7 +262,6 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           // TODO: special handling
           console.log("It was cancelled");
         }
-
         if (e instanceof MaxTurnExceededError) {
           // TODO: special handling
           console.log("It reached its max turns");

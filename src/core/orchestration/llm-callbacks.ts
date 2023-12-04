@@ -117,8 +117,10 @@ export class LlmCallbackManager {
 
   addTrace = (trace: LlmTrace) => {
     this.traces.push(trace);
+    this.updateTrace(trace, true);
+  };
 
-    let addToParent = true;
+  updateTrace = (trace: LlmTrace, addToParent = false) => {
     while (trace.parentId) {
       const parent = this.traces.find((t) => t.id === trace.parentId);
       if (!parent) {
@@ -137,6 +139,7 @@ export class LlmCallbackManager {
       // Add the trace to the parent (should only happen once)
       if (addToParent) {
         parent.subTraces.push(trace);
+        addToParent = false;
       }
 
       trace = parent;

@@ -1,7 +1,7 @@
 import { BotGenerateRequest, TextToSpeechRequest } from "./chatbot-types";
 import { TimeoutError } from "../commons/errors/timeout-error";
 
-// const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`
+// const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`;
 const BASE_URL = "http://localhost:8000/api/v1";
 const AUTOMATIC_TIMEOUT = 15 * 1000; // 15 seconds
 

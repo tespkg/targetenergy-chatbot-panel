@@ -82,7 +82,7 @@ export class LlmAgentExecutor {
     this.checkAbortSignal();
 
     const generateRequest = {
-      messages: this.messages,
+      messages: [...this.messages],
       functions: this.plugins.getDefinitions(this.context),
     };
 
@@ -173,7 +173,6 @@ export class LlmAgentExecutor {
       result: assistantMessage,
     });
     this.updateAgentTrace(agentTrace, assistantMessage);
-    this.callbackManager.addTrace(agentTrace);
 
     this.messages.push(assistantMessage);
 
@@ -194,12 +193,14 @@ export class LlmAgentExecutor {
       const plugin = this.plugins.get(pluginName);
       const pluginArgs = JSON.parse(toolCall.function.arguments);
 
+      const pluginTrace = this.newToolTrace(parentId, plugin.title, pluginArgs);
+
       const functionCtx: FunctionContext = {
         app: {
           ...this.context.app,
           messages: this.messages,
         },
-        options: { ...this.options, parentId: parentId },
+        options: { ...this.options, parentId: pluginTrace.id },
       };
 
       this.callbackManager.emitWorking?.({
@@ -209,7 +210,6 @@ export class LlmAgentExecutor {
       });
 
       let pluginResult: any;
-      const pluginTrace = this.newToolTrace(parentId, pluginName, pluginArgs, turn);
       try {
         pluginResult = await plugin.run(functionCtx, pluginArgs);
         this.callbackManager.emitSuccess?.({
@@ -250,12 +250,11 @@ export class LlmAgentExecutor {
       };
 
       this.messages.push(toolMessage);
-      this.callbackManager.addTrace(pluginTrace);
     }
   };
 
   private newAgentTrace = (generateReq: BotGenerateRequest, runId: string, turn: number) => {
-    return {
+    const trace = {
       id: runId,
       parentId: this.parentId,
       name: `${this.agent.title} - Turn ${turn}`,
@@ -263,37 +262,51 @@ export class LlmAgentExecutor {
       startTime: new Date(),
       inputs: generateReq, // TODO: needs better formatting
       subTraces: [] as LlmTrace[],
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      totalPrice: 0,
     } as LlmTrace;
+    this.callbackManager.addTrace(trace);
+    return trace;
   };
 
   private updateAgentTrace = (trace: LlmTrace, assistantMessage: BotMessage) => {
     trace.outputs = assistantMessage;
     trace.endTime = new Date();
-    trace.promptTokens = assistantMessage.tokenUsage?.prompt_tokens ?? 0;
-    trace.completionTokens = assistantMessage.tokenUsage?.completion_tokens ?? 0;
-    trace.totalTokens = assistantMessage.tokenUsage?.total_tokens ?? 0;
-    trace.totalPrice = assistantMessage.tokenUsage?.total_price ?? 0;
+    trace.promptTokens += assistantMessage.tokenUsage?.prompt_tokens ?? 0;
+    trace.completionTokens += assistantMessage.tokenUsage?.completion_tokens ?? 0;
+    trace.totalTokens += assistantMessage.tokenUsage?.total_tokens ?? 0;
+    trace.totalPrice += assistantMessage.tokenUsage?.total_price ?? 0;
+    this.callbackManager.updateTrace(trace);
   };
 
-  private newToolTrace = (parentId: string, pluginName: string, args: any, turn: number) => {
-    return {
+  private newToolTrace = (parentId: string, pluginName: string, args: any) => {
+    const trace = {
       id: uuidv4(),
       parentId: parentId,
-      name: `${pluginName} - Turn ${turn}`,
-      type: "agent",
+      name: `${pluginName} Tool`,
+      type: "tool",
       startTime: new Date(),
       inputs: args,
       subTraces: [] as LlmTrace[],
+      promptTokens: 0,
+      completionTokens: 0,
+      totalTokens: 0,
+      totalPrice: 0,
     } as LlmTrace;
+    this.callbackManager.addTrace(trace);
+    return trace;
   };
 
   private updateToolTrace = (trace: LlmTrace, pluginResult: any) => {
     trace.outputs = pluginResult;
     trace.endTime = new Date();
-    trace.promptTokens = pluginResult?.tokenUsage?.prompt_tokens ?? 0;
-    trace.completionTokens = pluginResult?.tokenUsage?.completion_tokens ?? 0;
-    trace.totalTokens = pluginResult?.tokenUsage?.total_tokens ?? 0;
-    trace.totalPrice = pluginResult?.tokenUsage?.total_price ?? 0;
+    trace.promptTokens += pluginResult?.tokenUsage?.prompt_tokens ?? 0;
+    trace.completionTokens += pluginResult?.tokenUsage?.completion_tokens ?? 0;
+    trace.totalTokens += pluginResult?.tokenUsage?.total_tokens ?? 0;
+    trace.totalPrice += pluginResult?.tokenUsage?.total_price ?? 0;
+    this.callbackManager.updateTrace(trace);
   };
 
   private errorToolTrace = (trace: LlmTrace, error: any) => {

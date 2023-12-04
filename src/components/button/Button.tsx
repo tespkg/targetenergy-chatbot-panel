@@ -6,8 +6,8 @@ interface ButtonProps {
   className?: string;
   title: string;
   primary?: boolean;
-  iconLeft?: boolean;
   imageSource?: string;
+  icon?: React.ReactNode;
   imageSize?: number;
   displayTitle?: boolean;
   frame?: boolean;
@@ -19,8 +19,8 @@ export const Button = ({
   className,
   title,
   primary = false,
-  iconLeft = true,
   imageSource,
+  icon,
   imageSize = 18,
   displayTitle = true,
   frame = true,
@@ -39,8 +39,7 @@ export const Button = ({
           { disabled: disabled },
           { titleLayout: displayTitle && !imageSource },
           { imageLayout: !displayTitle && imageSource },
-          { titleAndImageLayout: displayTitle && imageSource },
-          { iconLeft: displayTitle && imageSource && iconLeft }
+          { titleAndImageLayout: displayTitle && imageSource }
         )}
         title={title}
         onClick={onClick}
@@ -54,6 +53,7 @@ export const Button = ({
         ) : (
           <></>
         )}
+        {icon}
       </button>
     </div>
   );

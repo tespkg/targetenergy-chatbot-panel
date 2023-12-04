@@ -7,8 +7,7 @@ import AssistantAvatar from "img/icons/assisstant_avatar.svg";
 import UserAvatar from "img/icons/user_avatar.svg";
 import { StreamingAudioPlayer } from "../../audio-player/StreamingAudioPlayer";
 import { Button } from "../../button/Button";
-import TrashBinIcon from "img/icons/trashbin.svg";
-
+import { DeleteIcon } from "../../icons/DeleteIcon";
 import "./message-viewer.scss";
 
 interface Props {
@@ -108,7 +107,7 @@ const TextMessageViewer = ({
             title="Clear"
             displayTitle={false}
             frame={false}
-            imageSource={TrashBinIcon}
+            icon={<DeleteIcon width={16} height={16} />}
             imageSize={16}
             onClick={() => {
               onDelete(id, parentId);
@@ -147,7 +146,7 @@ const AudioMessageViewer = ({
           title="Clear"
           displayTitle={false}
           frame={false}
-          imageSource={TrashBinIcon}
+          icon={<DeleteIcon width={16} height={16} color={"rgba(0,0,0,0.6)"} />}
           imageSize={16}
           onClick={() => {
             onDelete(id, parentId);

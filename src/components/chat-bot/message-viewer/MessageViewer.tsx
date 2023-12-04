@@ -103,16 +103,18 @@ const TextMessageViewer = ({
       <div className={"messageViewer-message-actionsContainer"}>
         {role === CHATBOT_ROLE.ASSISTANT && <StreamingAudioPlayer text={message} id={id} disabled={isChatbotBusy} />}
         {role === CHATBOT_ROLE.USER && (
-          <Button
-            title="Clear"
-            displayTitle={false}
-            frame={false}
-            icon={<DeleteIcon width={16} height={16} />}
-            imageSize={16}
-            onClick={() => {
-              onDelete(id, parentId);
-            }}
-          />
+          <div className="deleteButtonContainer">
+            <Button
+              title="Clear"
+              displayTitle={false}
+              frame={false}
+              icon={<DeleteIcon width={16} height={16} />}
+              imageSize={16}
+              onClick={() => {
+                onDelete(id, parentId);
+              }}
+            />
+          </div>
         )}
       </div>
     </Fragment>
@@ -142,16 +144,18 @@ const AudioMessageViewer = ({
         controlsList="nodownload"
       />
       {role === CHATBOT_ROLE.USER && (
-        <Button
-          title="Clear"
-          displayTitle={false}
-          frame={false}
-          icon={<DeleteIcon width={16} height={16} color={"rgba(0,0,0,0.6)"} />}
-          imageSize={16}
-          onClick={() => {
-            onDelete(id, parentId);
-          }}
-        />
+        <div className="deleteButtonContainer">
+          <Button
+            title="Clear"
+            displayTitle={false}
+            frame={false}
+            icon={<DeleteIcon width={16} height={16} color={"rgba(0,0,0,0.6)"} />}
+            imageSize={16}
+            onClick={() => {
+              onDelete(id, parentId);
+            }}
+          />
+        </div>
       )}
     </Fragment>
   ) : null;

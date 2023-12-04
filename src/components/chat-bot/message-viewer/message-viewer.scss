@@ -64,6 +64,9 @@
       &-playButton {
       }
     }
+
+
+
   }
 
   &-message.assistant {
@@ -86,6 +89,16 @@
 
     .buttonWrapper {
       margin-left: 5px;
+    }
+  }
+
+  .deleteButtonContainer {
+    display: none;
+  }
+
+  &:hover {
+    .deleteButtonContainer {
+      display: block;
     }
   }
 }

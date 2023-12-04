@@ -10,6 +10,9 @@ import { PluginSet } from "./llm-function-set";
 import { v4 as uuidv4 } from "uuid";
 import { generate } from "../../api/chatbot-api";
 import { PluginOptions } from "@babel/core";
+import { MaxTurnExceededError } from "./llm-errors";
+
+import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
 
 const DEFAULT_MAX_TURNS = 5;
 
@@ -72,7 +75,7 @@ export class LlmAgentExecutor {
       }
       turn++;
     }
-    throw new Error(`Reached max conversation turns of ${this.maxTurns}`);
+    throw new MaxTurnExceededError(this.maxTurns);
   }
 
   private runTurn = async (turn: number) => {
@@ -109,8 +112,15 @@ export class LlmAgentExecutor {
     let assistantMessage: BotMessage = { role: "assistant", content: "", tool_calls: [] };
     let toolCalls: ChatCompletionMessageToolCall[] = [];
 
-    const response = await generate(generateRequest, this.abortSignal);
-    this.checkAbortSignal();
+    let response: Response;
+    try {
+      response = await generate(generateRequest, this.abortSignal);
+    } catch (error) {
+      // If the request was cancelled because of the abortSignal, `checkAbortSignal` will throw a custom exception
+      // Otherwise we rethrow the original error
+      this.checkAbortSignal();
+      throw error;
+    }
     const reader = response.body!.getReader();
     const decoder = new TextDecoder("utf-8");
     while (true) {
@@ -293,7 +303,7 @@ export class LlmAgentExecutor {
 
   private checkAbortSignal = () => {
     if (this.abortSignal?.aborted) {
-      throw new Error("the agent was aborted");
+      throw new OperationCancelledError("the agent was cancelled");
     }
   };
 }

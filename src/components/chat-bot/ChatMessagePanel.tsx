@@ -30,6 +30,9 @@ import { MessageViewer } from "./message-viewer/MessageViewer";
 import { MessageViewerViewModel } from "./message-viewer/MessageViewerViewModel";
 import { useDebugCommand } from "../../debug/use-debug-command";
 import "./chat-bot.scss";
+import { TimeoutError } from "../../commons/errors/timeout-error";
+import { MaxTurnExceededError } from "../../core/orchestration/llm-errors";
+import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE;
@@ -202,8 +205,9 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
     }
   };
 
-  const cancel = useCallback(() => {
+  const cancelAgent = useCallback(() => {
     if (abortControllerRef.current) {
+      console.log(">>>>>>>> Cancelling agent");
       abortControllerRef.current.abort();
     }
   }, []);
@@ -249,8 +253,22 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
           },
         });
       } catch (e) {
-        // TODO: handle the error properly and show it to the user.
         console.error("Main agent errored: ", e);
+        if (e instanceof TimeoutError) {
+          // TODO: special handling
+          console.log("It was a timeout error");
+        }
+        if (e instanceof OperationCancelledError) {
+          // TODO: special handling
+          console.log("It was cancelled");
+        }
+
+        if (e instanceof MaxTurnExceededError) {
+          // TODO: special handling
+          console.log("It reached its max turns");
+        }
+
+        // TODO: handle the error properly and show it to the user.
         setChatbotBusy(false);
         setChatbotStatus(null);
       }
@@ -423,7 +441,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
                   displayTitle={false}
                   imageSource={StopIcon}
                   imageSize={16}
-                  onClick={cancel}
+                  onClick={cancelAgent}
                 />
               )
             }

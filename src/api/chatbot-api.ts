@@ -1,4 +1,5 @@
 import { BotGenerateRequest, TextToSpeechRequest } from "./chatbot-types";
+import { TimeoutError } from "../commons/errors/timeout-error";
 
 // const BASE_URL = `https://dso.dev.meeraspace.com/chatbot-api/v1`
 const BASE_URL = "http://localhost:8000/api/v1";
@@ -54,7 +55,9 @@ export async function generate(request: BotGenerateRequest, abortSignal?: AbortS
     return response;
   } catch (error) {
     if (abortController.signal.aborted && !manuallyAborted) {
-      throw new Error("the request was aborted due to a timeout or manual abort");
+      throw new TimeoutError(
+        `the request was timed out because it exceeded the ${AUTOMATIC_TIMEOUT / 1000} seconds threshold`
+      );
     }
     throw error;
   } finally {

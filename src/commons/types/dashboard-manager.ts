@@ -194,7 +194,7 @@ class SubPanel {
           queryType: target.queryType,
           rawSql: this.getSqlQuery(target.rawSql),
           refId: target.refId,
-          maxDataPoints: 10,
+          // maxDataPoints: 10,
         })),
         range: this.timeRange,
         from: `${this.timeRange.from.unix() * 1000}`,

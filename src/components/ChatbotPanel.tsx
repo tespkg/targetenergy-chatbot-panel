@@ -5,6 +5,8 @@ import { css, cx } from "@emotion/css";
 import { locationService } from "@grafana/runtime";
 import { PanelProps } from "@grafana/data";
 import { Alert, useStyles2 } from "@grafana/ui";
+import { Provider as ReduxProvider } from "react-redux";
+import store from "../store/store";
 import { Button } from "./button/Button";
 import { ChatMessagePanel } from "components/chat-bot/ChatMessagePanel";
 import * as Handlebars from "handlebars";
@@ -239,39 +241,41 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
 
   /** Renderer */
   return (
-    <div
-      className={cx(
-        "chatbotPanel",
-        styles.wrapper,
-        isOpen
-          ? css`
-              width: ${width}px;
-              height: ${height}px;
-              padding: 4px;
-            `
-          : ""
-      )}
-    >
-      {isOpen ? (
-        <ChatMessagePanel
-          nodes={assetNodes}
-          onToggleNodes={handleSelectNodes}
-          dashboard={dashboard}
-          onToggleVisibility={onToggleVisibility}
-          toggleInfoPanelVisible={toggleInfoPanelVisible}
-        />
-      ) : (
-        <Button
-          className="chatbotPanel-chatOpenButton"
-          title={"Open Chatbot"}
-          displayTitle={false}
-          imageSource={ChatIcon}
-          imageSize={72}
-          onClick={onToggleVisibility}
-        />
-      )}
-      {isInfoPanelVisible && <InfoPanel onClose={toggleInfoPanelVisible} />}
-    </div>
+    <ReduxProvider store={store}>
+      <div
+        className={cx(
+          "chatbotPanel",
+          styles.wrapper,
+          isOpen
+            ? css`
+                width: ${width}px;
+                height: ${height}px;
+                padding: 4px;
+              `
+            : ""
+        )}
+      >
+        {isOpen ? (
+          <ChatMessagePanel
+            nodes={assetNodes}
+            onToggleNodes={handleSelectNodes}
+            dashboard={dashboard}
+            onToggleVisibility={onToggleVisibility}
+            toggleInfoPanelVisible={toggleInfoPanelVisible}
+          />
+        ) : (
+          <Button
+            className="chatbotPanel-chatOpenButton"
+            title={"Open Chatbot"}
+            displayTitle={false}
+            imageSource={ChatIcon}
+            imageSize={72}
+            onClick={onToggleVisibility}
+          />
+        )}
+        {isInfoPanelVisible && <InfoPanel onClose={toggleInfoPanelVisible} />}
+      </div>
+    </ReduxProvider>
   );
 };
 

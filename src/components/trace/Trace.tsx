@@ -9,10 +9,12 @@ import { AgentIcon } from "../icons/AgentIcon";
 
 interface Props {
   trace: LlmTrace;
+  selectedTraceId: string;
+  onTraceClick: (trace: LlmTrace) => void;
 }
-export const Trace = ({ trace }: Props) => {
+export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
   /** Extract properties */
-  const { startTime, endTime, name, promptTokens, completionTokens, totalTokens, totalPrice, type, subTraces } = trace;
+  const { id, startTime, endTime, name, promptTokens, completionTokens, totalPrice, type, subTraces } = trace;
 
   /** States */
   const [isCollapsed, setCollapsed] = useState(false);
@@ -44,48 +46,34 @@ export const Trace = ({ trace }: Props) => {
         return type;
     }
   }, [type]);
-  //
-  const totalCumulativeCost = useMemo(() => {
-    let totalCost = totalPrice;
-    subTraces.forEach(({ totalPrice: _totalCost }) => {
-      totalCost += _totalCost;
-    });
-
-    return totalCost;
-  }, [totalPrice, subTraces]);
-  //
-  const totalCumulativeTokenConsumption = useMemo(() => {
-    let _totalTokens = totalTokens;
-    subTraces.forEach(({ totalTokens: subTraceTotalTokens }) => {
-      _totalTokens += subTraceTotalTokens;
-    });
-
-    return _totalTokens;
-  }, [totalPrice, subTraces]);
 
   /** Renderer */
   return (
     <div className={classNames("trace")}>
-      <div
-        className="trace-header"
-        onClick={() => {
-          setCollapsed((prev) => !prev);
-        }}
-      >
-        <div className="trace-header-type">{typeIcon}</div>
-        <div className="trace-header-name">{name}</div>
+      <div className="trace-header">
+        <div
+          className="trace-header-type"
+          onClick={() => {
+            setCollapsed((prev) => !prev);
+          }}
+        >
+          {typeIcon}
+        </div>
+        <div
+          className={classNames("trace-header-name", { selected: selectedTraceId === id })}
+          onClick={() => {
+            onTraceClick(trace);
+          }}
+        >
+          {name}
+        </div>
         <div className="trace-header-duration">
           <ClockIcon />
           <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
         </div>
         <div className="trace-header-tokens">{`${promptTokens} -> ${completionTokens} Tokens`}</div>
-        <div className="trace-header-tokens">{`${totalCumulativeTokenConsumption} Total Tokens`}</div>
         <div className="trace-header-cost">
           <span className="trace-header-cost-text">{`Price ${totalPrice.toFixed(3)}`}</span>
-          <DollarIcon color={"rgba(150, 205,150, 1)"} />
-        </div>
-        <div className="trace-header-cost">
-          <span className="trace-header-cost-text">{`Total Trace Price ${totalCumulativeCost.toFixed(3)}`}</span>
           <DollarIcon color={"rgba(150, 205,150, 1)"} />
         </div>
       </div>
@@ -95,7 +83,7 @@ export const Trace = ({ trace }: Props) => {
             {subTraces.map((subTrace) => (
               <div className="trace-body-subTracesContainer-subTrace" key={subTrace.id}>
                 <div className="trace-body-subTracesContainer-subTrace-bodyHeaderConnector"></div>
-                <Trace trace={subTrace} />
+                <Trace trace={subTrace} onTraceClick={onTraceClick} selectedTraceId={selectedTraceId} />
               </div>
             ))}
           </div>

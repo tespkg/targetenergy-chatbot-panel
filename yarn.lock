@@ -2638,6 +2638,11 @@
     "@types/scheduler" "*"
     csstype "^3.0.2"
 
+"@types/redux-actions@^2.6.5":
+  version "2.6.5"
+  resolved "https://registry.yarnpkg.com/@types/redux-actions/-/redux-actions-2.6.5.tgz#3728477ada6c4bc0fe54ffae11def23a65c0714b"
+  integrity sha512-RgXOigay5cNweP+xH1ru+Vaaj1xXYLpWIfSVO8cSA8Ii2xvR+HRfWYdLe1UVOA8X0kIklalGOa0DTDyld0obkg==
+
 "@types/scheduler@*":
   version "0.16.2"
   resolved "https://registry.yarnpkg.com/@types/scheduler/-/scheduler-0.16.2.tgz#1a62f89525723dde24ba1b01b092bf5df8ad4d39"
@@ -2662,6 +2667,11 @@
   version "0.1.5"
   resolved "https://registry.yarnpkg.com/@types/source-list-map/-/source-list-map-0.1.5.tgz#1ec07192b889558a410833b237e595a906e5e349"
   integrity sha512-cHBTLeIGIREJx839cDfMLKWao+FaJOlaPz4mnFHXUzShS8sXhzw6irhvIpYvp28TbTmTeAt3v+QgHMANsGbQtA==
+
+"@types/sprintf-js@^1.1.4":
+  version "1.1.4"
+  resolved "https://registry.yarnpkg.com/@types/sprintf-js/-/sprintf-js-1.1.4.tgz#d27022638127111a79aab777d4d9292d1a11519a"
+  integrity sha512-aWK1reDYWxcjgcIIPmQi3u+OQDuYa9b+lr6eIsGWrekJ9vr1NSjr4Eab8oQ1iKuH1ltFHpXGyerAv1a3FMKxzQ==
 
 "@types/stack-utils@^2.0.0":
   version "2.0.1"
@@ -2691,6 +2701,11 @@
   integrity sha512-Hm/T0kV3ywpJyMGNbsItdivRhYNCQQf1IIsYsXnoVPES4t+FMLyDe0/K+Ea7ahWtMtSNb22ZdY7MIyoD9rqARg==
   dependencies:
     source-map "^0.6.1"
+
+"@types/use-sync-external-store@^0.0.3":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@types/use-sync-external-store/-/use-sync-external-store-0.0.3.tgz#b6725d5f4af24ace33b36fafd295136e75509f43"
+  integrity sha512-EwmlvuaxPNej9+T4v5AuBPJa2x2UOJVdjCtDHgcDqitUeOtjnJKJ+apYjVcAoBEMjKW1VVFGZLUb5+qqa09XFA==
 
 "@types/uuid@^9.0.7":
   version "9.0.7"
@@ -5946,6 +5961,11 @@ ignore@^5.2.0:
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-5.2.4.tgz#a291c0c6178ff1b960befe47fcdec301674a6324"
   integrity sha512-MAb38BcSbH0eHNBxn7ql2NH/kX33OkB3lZ1BNdh7ENeRChHTYsTvWrMubiIAMNS2llXEEgZ1MUOBtXChP3kaFQ==
 
+immutability-helper@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/immutability-helper/-/immutability-helper-3.1.1.tgz#2b86b2286ed3b1241c9e23b7b21e0444f52f77b7"
+  integrity sha512-Q0QaXjPjwIju/28TsugCHNEASwoCcJSyJV3uO1sOIQGI0jKgm9f41Lvz0DZj3n46cNCyAZTsEYoY4C2bVRUzyQ==
+
 immutable@4.1.0:
   version "4.1.0"
   resolved "https://registry.yarnpkg.com/immutable/-/immutable-4.1.0.tgz#f795787f0db780183307b9eb2091fcac1f6fafef"
@@ -6949,6 +6969,11 @@ jsprim@^2.0.2:
   dependencies:
     array-includes "^3.1.5"
     object.assign "^4.1.3"
+
+just-curry-it@5.3.0:
+  version "5.3.0"
+  resolved "https://registry.yarnpkg.com/just-curry-it/-/just-curry-it-5.3.0.tgz#1463602e932c5beb431a2a384dddcd48bb3c9c42"
+  integrity sha512-silMIRiFjUWlfaDhkgSzpuAyQ6EX/o09Eu8ZBfmFwQMbax7+LQzeIU2CBrICT6Ne4l86ITCGvUCBpCubWYy0Yw==
 
 kind-of@^6.0.2:
   version "6.0.3"
@@ -8405,6 +8430,14 @@ react-redux@^7.2.0:
     prop-types "^15.7.2"
     react-is "^17.0.2"
 
+react-redux@^9.0.1:
+  version "9.0.1"
+  resolved "https://registry.yarnpkg.com/react-redux/-/react-redux-9.0.1.tgz#bbdbdd55d5c3b0e996975269b7d6101b80487139"
+  integrity sha512-d+S89OqyChnY2J0O8wv8boRgnGo0tjvxkMLV78wx7h2ZyJvyeOQcBg4yrm7IxY36gxc63iOCfjjQAyhohKWJbA==
+  dependencies:
+    "@types/use-sync-external-store" "^0.0.3"
+    use-sync-external-store "^1.0.0"
+
 react-router-dom@^5.2.0:
   version "5.3.4"
   resolved "https://registry.yarnpkg.com/react-router-dom/-/react-router-dom-5.3.4.tgz#2ed62ffd88cae6db134445f4a0c0ae8b91d2e5e6"
@@ -8587,6 +8620,19 @@ redent@^3.0.0:
   dependencies:
     indent-string "^4.0.0"
     strip-indent "^3.0.0"
+
+reduce-reducers@1.0.4:
+  version "1.0.4"
+  resolved "https://registry.yarnpkg.com/reduce-reducers/-/reduce-reducers-1.0.4.tgz#fb77e751a9eb0201760ac5a605ca8c9c2d0537f8"
+  integrity sha512-Mb2WZ2bJF597exiqX7owBzrqJ74DHLK3yOQjCyPAaNifRncE8OD0wFIuoMhXxTnHK07+8zZ2SJEKy/qtiyR7vw==
+
+redux-actions@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/redux-actions/-/redux-actions-3.0.0.tgz#3c14f32ab27b87ba771b3691bee31c7e0513742d"
+  integrity sha512-5r+G8JizsTfyfWolVDkCLL2SpZA0Sk9ao2MXwfdXkG5+72s0PcO9qEqpo51D2o8dZY2gXLjNmY5yoRB+BuizRw==
+  dependencies:
+    just-curry-it "5.3.0"
+    reduce-reducers "1.0.4"
 
 redux@^4.0.0, redux@^4.0.4:
   version "4.2.0"
@@ -9296,6 +9342,11 @@ spdx-license-ids@^3.0.0:
   version "3.0.12"
   resolved "https://registry.yarnpkg.com/spdx-license-ids/-/spdx-license-ids-3.0.12.tgz#69077835abe2710b65f03969898b6637b505a779"
   integrity sha512-rr+VVSXtRhO4OHbXUiAF7xW3Bo9DuuF6C5jH+q/x15j2jniycgKbxU09Hr0WqlSLUs4i4ltHGXqTe7VHclYWyA==
+
+sprintf-js@^1.1.3:
+  version "1.1.3"
+  resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.1.3.tgz#4914b903a2f8b685d17fdf78a70e917e872e444a"
+  integrity sha512-Oo+0REFV59/rz3gfJNKQiBlwfHaSESl1pcGyABQsnnIfWOFt6JNj5gCog2U6MLZ//IGYD+nA8nI+mTShREReaA==
 
 sprintf-js@~1.0.2:
   version "1.0.3"
@@ -10016,6 +10067,11 @@ use-memo-one@^1.1.1:
   version "1.1.3"
   resolved "https://registry.yarnpkg.com/use-memo-one/-/use-memo-one-1.1.3.tgz#2fd2e43a2169eabc7496960ace8c79efef975e99"
   integrity sha512-g66/K7ZQGYrI6dy8GLpVcMsBp4s17xNkYJVSMvTEevGy3nDxHOfE6z8BVE22+5G5x7t3+bhzrlTDB7ObrEE0cQ==
+
+use-sync-external-store@^1.0.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/use-sync-external-store/-/use-sync-external-store-1.2.0.tgz#7dbefd6ef3fe4e767a0cf5d7287aacfb5846928a"
+  integrity sha512-eEgnFxGQ1Ife9bzYs6VLi8/4X6CObHMw9Qr9tPY43iKwsPw8xE8+EFsf/2cFZ5S3esXgpWgtSCtLNS41F+sKPA==
 
 util-deprecate@^1.0.2, util-deprecate@~1.0.1:
   version "1.0.2"

@@ -18,6 +18,7 @@ import { runMainAgent } from "../../core/agents/main-agent";
 import { transcribe } from "../../api/chatbot-api";
 import { Dashboard } from "../../commons/types/dashboard-manager";
 import MinimizeIcon from "img/icons/chevron-down.svg";
+import InfoIcon from "img/icons/info-icon.svg";
 import {
   DeltaEvent,
   ErrorEvent,
@@ -29,10 +30,12 @@ import {
 import { MessageViewer } from "./message-viewer/MessageViewer";
 import { MessageViewerViewModel } from "./message-viewer/MessageViewerViewModel";
 import { useDebugCommand } from "../../debug/use-debug-command";
-import "./chat-bot.scss";
 import { TimeoutError } from "../../commons/errors/timeout-error";
 import { MaxTurnExceededError } from "../../core/orchestration/llm-errors";
 import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
+import { useDispatch } from "react-redux";
+import { AddTrace } from "../../store/actions";
+import "./chat-bot.scss";
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE;
@@ -50,9 +53,16 @@ interface Props {
   onToggleNodes: (node: TreeNodeData[]) => void;
   dashboard: Dashboard;
   onToggleVisibility: () => void;
+  toggleInfoPanelVisible: () => void;
 }
 
-export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggleVisibility }: Props) => {
+export const ChatMessagePanel = ({
+  assetTree,
+  onToggleNodes,
+  dashboard,
+  onToggleVisibility,
+  toggleInfoPanelVisible,
+}: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
@@ -63,6 +73,7 @@ export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggle
     stopRecording,
     resetRecording,
   } = useVoiceRecorder();
+  const dispatch = useDispatch();
 
   /** States and Refs */
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -248,6 +259,7 @@ export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggle
               },
               onTrace: (trace: LlmTrace) => {
                 console.log("Trace", trace);
+                dispatch(AddTrace(trace));
               },
             },
           },
@@ -272,7 +284,7 @@ export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggle
         setChatbotStatus(null);
       }
     },
-    [addChatChunkReceived, dashboard, assetTree, onToggleNodes]
+    [assetTree, dashboard, onToggleNodes, addChatChunkReceived, dispatch]
   );
 
   const handleNewUserMessage = useCallback(async () => {
@@ -287,7 +299,7 @@ export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggle
     const messageId = uniqueId("text_message_");
     addMessageToChatContent(text, messageId, "parent", CHATBOT_ROLE.USER, true, true);
     await runAgents(getBotMessages(text, CHATBOT_ROLE.USER), messageId);
-  }, [addMessageToChatContent, dashboard, runAgents, getBotMessages, isCommand, processCommand, text]);
+  }, [isCommand, text, addMessageToChatContent, runAgents, getBotMessages, processCommand, dashboard, assetTree]);
 
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {
@@ -373,6 +385,13 @@ export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggle
             imageSize={12}
             onClick={onToggleVisibility}
           />
+          <Button
+            title="Info"
+            displayTitle={false}
+            imageSource={InfoIcon}
+            imageSize={12}
+            onClick={toggleInfoPanelVisible}
+          />
         </div>
       </div>
       <div className={classNames("ChatBot-chatPanel")} ref={chatContentRef}>
@@ -391,7 +410,8 @@ export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggle
                 <MessageViewer
                   key={id}
                   viewModel={viewModel}
-                  isChatbotBusy={isChatbotBusy && index === self.length - 1}
+                  isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
+                  isDeleteMessageDisabled={isChatbotBusy}
                   onDelete={onDeleteMessage}
                 />
               );

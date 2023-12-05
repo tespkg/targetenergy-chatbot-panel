@@ -5,6 +5,8 @@ import { css, cx } from "@emotion/css";
 import { locationService } from "@grafana/runtime";
 import { PanelProps } from "@grafana/data";
 import { Alert, useStyles2 } from "@grafana/ui";
+import { Provider as ReduxProvider } from "react-redux";
+import store from "../store/store";
 import { Button } from "./button/Button";
 import { ChatMessagePanel } from "components/chat-bot/ChatMessagePanel";
 import * as Handlebars from "handlebars";
@@ -14,6 +16,7 @@ import { TreeNodeData } from "commons/types/tree-node-data";
 import { MatchSearch } from "commons/enums/MatchSearch";
 import ChatIcon from "img/icons/chat.svg";
 import { Dashboard } from "commons/types/dashboard-manager";
+import { InfoPanel } from "./info-panel/InfoPanel";
 import "./style.css";
 
 // let renderCount = 0
@@ -214,39 +217,65 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
     }
   }, [isOpen]);
 
+  /** Chatbot info-panel button stuff*/
+  const [isInfoPanelVisible, setInfoPanelVisible] = useState(false);
+  //
+  const toggleInfoPanelVisible = () => {
+    let newInfoPanelVisibilityState = !isInfoPanelVisible;
+    setInfoPanelVisible((prev) => !prev);
+    const node = document.querySelector(".react-grid-item:has(.chatbotPanel)");
+    if (node) {
+      let currentClassNames = node.className;
+
+      currentClassNames = currentClassNames.replace("infoPanelContainer", "");
+      node.className = `${currentClassNames} ${newInfoPanelVisibilityState ? "infoPanelContainer" : ""}`;
+
+      const firstChildren = node.firstElementChild;
+      if (firstChildren) {
+        let currentClassNames = firstChildren.className;
+        currentClassNames = currentClassNames.replace("infoPanelContainer", "");
+        firstChildren.className = `${currentClassNames} ${newInfoPanelVisibilityState ? "infoPanelContainer" : ""}`;
+      }
+    }
+  };
+
   /** Renderer */
   return (
-    <div
-      className={cx(
-        "chatbotPanel",
-        styles.wrapper,
-        isOpen
-          ? css`
-              width: ${width}px;
-              height: ${height}px;
-              padding: 4px;
-            `
-          : ""
-      )}
-    >
-      {isOpen ? (
-        <ChatMessagePanel
-          assetTree={assetTree}
-          onToggleNodes={handleSelectNodes}
-          dashboard={dashboard}
-          onToggleVisibility={onToggleVisibility}
-        />
-      ) : (
-        <Button
-          className="chatbotPanel-chatOpenButton"
-          title={"Open Chatbot"}
-          displayTitle={false}
-          imageSource={ChatIcon}
-          imageSize={72}
-          onClick={onToggleVisibility}
-        />
-      )}
-    </div>
+    <ReduxProvider store={store}>
+      <div
+        className={cx(
+          "chatbotPanel",
+          styles.wrapper,
+          isOpen
+            ? css`
+                width: ${width}px;
+                height: ${height}px;
+                padding: 4px;
+              `
+            : ""
+        )}
+      >
+        {isOpen ? (
+          <ChatMessagePanel
+            assetTree={assetTree}
+            onToggleNodes={handleSelectNodes}
+            dashboard={dashboard}
+            onToggleVisibility={onToggleVisibility}
+            toggleInfoPanelVisible={toggleInfoPanelVisible}
+          />
+        ) : (
+          <Button
+            className="chatbotPanel-chatOpenButton"
+            title={"Open Chatbot"}
+            displayTitle={false}
+            imageSource={ChatIcon}
+            imageSize={72}
+            onClick={onToggleVisibility}
+          />
+        )}
+        {isInfoPanelVisible && <InfoPanel onClose={toggleInfoPanelVisible} />}
+      </div>
+    </ReduxProvider>
   );
 };
 

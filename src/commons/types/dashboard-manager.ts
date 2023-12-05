@@ -222,6 +222,7 @@ class SubPanel {
         const data = frame.data.values;
         let rows = data[0].map((_: any, rowIndex: number) => data.map((col: any) => col[rowIndex]).map(toCsvCell));
 
+        // TODO: this needs to be generalized but for now simply down-sample the data to 100 records
         const MAX_ROWS = 100;
         let shouldDownSample = rows.length > MAX_ROWS && rows[0].every((cell: any) => typeof cell === "number");
         if (shouldDownSample) {

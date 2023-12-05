@@ -48,7 +48,7 @@ export class LlmAgentExecutor {
     if (systemMessage) {
       messages.unshift({
         role: "system",
-        content: systemMessage,
+        content: systemMessage.trim(),
       });
     }
     this.messages = messages;

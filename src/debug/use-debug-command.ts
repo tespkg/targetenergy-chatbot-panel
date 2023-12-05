@@ -1,9 +1,11 @@
 import { Dashboard } from "../commons/types/dashboard-manager";
 import { useCallback } from "react";
 import { debugCommands } from "./debug-commands";
+import { AssetTree } from "../commons/types/asset-tree";
 
 interface Props {
   dashboard: Dashboard;
+  assetTree: AssetTree;
 }
 
 function parseCommand(input: string): { commandName: string; commandArgs: Record<string, string | number> } {

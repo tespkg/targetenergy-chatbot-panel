@@ -46,13 +46,13 @@ interface ChatBotMessage {
 }
 
 interface Props {
-  nodes: AssetTree;
+  assetTree: AssetTree;
   onToggleNodes: (node: TreeNodeData[]) => void;
   dashboard: Dashboard;
   onToggleVisibility: () => void;
 }
 
-export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisibility }: Props) => {
+export const ChatMessagePanel = ({ assetTree, onToggleNodes, dashboard, onToggleVisibility }: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
@@ -220,7 +220,7 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
       try {
         await runMainAgent(messages, {
           app: {
-            assetTree: nodes,
+            assetTree: assetTree,
             dashboard: dashboard,
             toggleAssetNodes: onToggleNodes,
           },
@@ -272,13 +272,14 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
         setChatbotStatus(null);
       }
     },
-    [addChatChunkReceived, dashboard, nodes, onToggleNodes]
+    [addChatChunkReceived, dashboard, assetTree, onToggleNodes]
   );
 
   const handleNewUserMessage = useCallback(async () => {
     if (isCommand(text)) {
       await processCommand(text, {
         dashboard,
+        assetTree: assetTree,
       });
       return;
     }

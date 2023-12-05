@@ -13,9 +13,9 @@ export function formatTemplatedString(templatedString: string, variables: any) {
   return templatedString;
 }
 
-export function toCsvCell(value: any): string {
+export function toCsvCell(value: any): any {
   if (isNumber(value)) {
-    return `${toFixed(value, 1)}`;
+    return toFixed(value, 1);
   }
   return `${value}`;
 }

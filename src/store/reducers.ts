@@ -18,6 +18,17 @@ export default handleActions<StoreType, any>(
         },
       });
     },
+    [Actions.SetInoPanelMessageId.toString()](
+      state = initialState,
+      { payload }: ReturnType<typeof Actions.SetInoPanelMessageId>
+    ) {
+      const { messageId } = payload;
+      return update(state, {
+        infoPanelMessageId: {
+          $set: messageId,
+        },
+      });
+    },
   },
   initialState
 );

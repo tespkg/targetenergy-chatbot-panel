@@ -18,7 +18,6 @@ import { runMainAgent } from "../../core/agents/main-agent";
 import { transcribe } from "../../api/chatbot-api";
 import { Dashboard } from "../../commons/types/dashboard-manager";
 import MinimizeIcon from "img/icons/chevron-down.svg";
-import InfoIcon from "img/icons/info-icon.svg";
 import {
   DeltaEvent,
   ErrorEvent,
@@ -34,7 +33,7 @@ import { TimeoutError } from "../../commons/errors/timeout-error";
 import { MaxTurnExceededError } from "../../core/orchestration/llm-errors";
 import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
 import { useDispatch } from "react-redux";
-import { AddTrace } from "../../store/actions";
+import { AddTrace, SetInoPanelMessageId } from "../../store/actions";
 import "./chat-bot.scss";
 
 interface ChatBotMessage {
@@ -259,7 +258,7 @@ export const ChatMessagePanel = ({
               },
               onTrace: (trace: LlmTrace) => {
                 console.log("Trace", trace);
-                dispatch(AddTrace(trace));
+                dispatch(AddTrace({ ...trace, parentId: parentMessageId }));
               },
             },
           },
@@ -338,6 +337,11 @@ export const ChatMessagePanel = ({
     });
   };
   //
+  const onMessageInfo = (messageId: string, parentMessageId: string) => {
+    dispatch(SetInoPanelMessageId(parentMessageId));
+    toggleInfoPanelVisible();
+  };
+  //
   const initializeChatContext = useCallback(() => {
     setChatContent(undefined);
     const messageId = uniqueId("text_message_");
@@ -385,13 +389,6 @@ export const ChatMessagePanel = ({
             imageSize={12}
             onClick={onToggleVisibility}
           />
-          <Button
-            title="Info"
-            displayTitle={false}
-            imageSource={InfoIcon}
-            imageSize={12}
-            onClick={toggleInfoPanelVisible}
-          />
         </div>
       </div>
       <div className={classNames("ChatBot-chatPanel")} ref={chatContentRef}>
@@ -413,6 +410,7 @@ export const ChatMessagePanel = ({
                   isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
                   isDeleteMessageDisabled={isChatbotBusy}
                   onDelete={onDeleteMessage}
+                  onInfo={onMessageInfo}
                 />
               );
             })}

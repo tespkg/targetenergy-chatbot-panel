@@ -4,7 +4,7 @@ import { StoreType } from "./types/general-state-types";
 
 export function configureStore(initialState?: StoreType) {
   if (process.env.NODE_ENV === "production") {
-    return compose()(createStore)(reducer, initialState);
+    return createStore(reducer, initialState);
   } else {
     let store: any;
     try {
@@ -14,7 +14,7 @@ export function configureStore(initialState?: StoreType) {
           window.__REDUX_DEVTOOLS_EXTENSION__()
       )(createStore)(reducer, initialState);
     } catch (error) {
-      store = compose()(createStore)(reducer, initialState);
+      store = createStore(reducer, initialState);
     }
 
     return store;

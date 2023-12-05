@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { Fragment, useMemo, useState } from "react";
 import classNames from "classnames";
 import "./trace.scss";
 import { LlmTrace } from "../../core/orchestration/llm-callbacks";
@@ -12,7 +12,7 @@ interface Props {
 }
 export const Trace = ({ trace }: Props) => {
   /** Extract properties */
-  const { startTime, endTime, name, promptTokens, completionTokens, totalPrice, type, subTraces } = trace;
+  const { startTime, endTime, name, promptTokens, completionTokens, totalTokens, totalPrice, type, subTraces } = trace;
 
   /** States */
   const [isCollapsed, setCollapsed] = useState(false);
@@ -27,13 +27,42 @@ export const Trace = ({ trace }: Props) => {
   const typeIcon = useMemo(() => {
     switch (type) {
       case "agent":
-        return <AgentIcon />;
+        return (
+          <Fragment>
+            <AgentIcon />
+            <div className="trace-header-type-text">Agent</div>
+          </Fragment>
+        );
       case "tool":
-        return <ToolIcon />;
+        return (
+          <Fragment>
+            <ToolIcon />
+            <div className="trace-header-type-text">Tool</div>
+          </Fragment>
+        );
       default:
         return type;
     }
   }, [type]);
+  //
+  const totalCumulativeCost = useMemo(() => {
+    let totalCost = totalPrice;
+    subTraces.forEach(({ totalPrice: _totalCost }) => {
+      totalCost += _totalCost;
+    });
+
+    return totalCost;
+  }, [totalPrice, subTraces]);
+  //
+  const totalCumulativeTokenConsumption = useMemo(() => {
+    let _totalTokens = totalTokens;
+    subTraces.forEach(({ totalTokens: subTraceTotalTokens }) => {
+      _totalTokens += subTraceTotalTokens;
+    });
+
+    return _totalTokens;
+  }, [totalPrice, subTraces]);
+
   /** Renderer */
   return (
     <div className={classNames("trace")}>
@@ -50,9 +79,14 @@ export const Trace = ({ trace }: Props) => {
           <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
         </div>
         <div className="trace-header-tokens">{`${promptTokens} -> ${completionTokens} Tokens`}</div>
+        <div className="trace-header-tokens">{`${totalCumulativeTokenConsumption} Total Tokens`}</div>
         <div className="trace-header-cost">
+          <span className="trace-header-cost-text">{`Price ${totalPrice.toFixed(3)}`}</span>
           <DollarIcon color={"rgba(150, 205,150, 1)"} />
-          <span className="trace-header-cost-text">{` ${totalPrice.toFixed(3)}$`}</span>
+        </div>
+        <div className="trace-header-cost">
+          <span className="trace-header-cost-text">{`Total Trace Price ${totalCumulativeCost.toFixed(3)}`}</span>
+          <DollarIcon color={"rgba(150, 205,150, 1)"} />
         </div>
       </div>
       {subTraces.length > 0 && !isCollapsed && (

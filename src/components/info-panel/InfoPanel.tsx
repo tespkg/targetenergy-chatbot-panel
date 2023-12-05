@@ -1,10 +1,10 @@
 import React from "react";
 import MinimizeIcon from "../../img/icons/chevron-down.svg";
 import { Button } from "../button/Button";
-import "./info-panel.scss";
 import { useSelector } from "react-redux";
 import { getInfoPanelTraces } from "../../store/queries";
 import { Trace } from "../trace/Trace";
+import "./info-panel.scss";
 
 interface Props {
   onClose: () => void;

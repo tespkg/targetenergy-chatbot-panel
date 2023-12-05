@@ -30,10 +30,12 @@ import {
 import { MessageViewer } from "./message-viewer/MessageViewer";
 import { MessageViewerViewModel } from "./message-viewer/MessageViewerViewModel";
 import { useDebugCommand } from "../../debug/use-debug-command";
-import "./chat-bot.scss";
 import { TimeoutError } from "../../commons/errors/timeout-error";
 import { MaxTurnExceededError } from "../../core/orchestration/llm-errors";
 import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
+import { useDispatch } from "react-redux";
+import { AddTrace } from "../../store/actions";
+import "./chat-bot.scss";
 
 interface ChatBotMessage {
   role: CHATBOT_ROLE;
@@ -71,6 +73,7 @@ export const ChatMessagePanel = ({
     stopRecording,
     resetRecording,
   } = useVoiceRecorder();
+  const dispatch = useDispatch();
 
   /** States and Refs */
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -256,6 +259,7 @@ export const ChatMessagePanel = ({
               },
               onTrace: (trace: LlmTrace) => {
                 console.log("Trace", trace);
+                dispatch(AddTrace(trace));
               },
             },
           },

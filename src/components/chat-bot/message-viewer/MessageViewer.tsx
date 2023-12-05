@@ -9,6 +9,7 @@ import { StreamingAudioPlayer } from "../../audio-player/StreamingAudioPlayer";
 import { Button } from "../../button/Button";
 import { DeleteIcon } from "../../icons/DeleteIcon";
 import "./message-viewer.scss";
+import InfoIcon from "../../../img/icons/info-icon.svg";
 
 interface Props {
   className?: string;
@@ -16,6 +17,7 @@ interface Props {
   isTextToSpeechDisabled: boolean;
   viewModel: MessageViewerViewModel;
   onDelete: (messageId: string, parentMessageId: string) => void;
+  onInfo: (messageId: string, parentMessageId: string) => void;
 }
 
 export const MessageViewer = ({
@@ -24,6 +26,7 @@ export const MessageViewer = ({
   isTextToSpeechDisabled,
   viewModel,
   onDelete,
+  onInfo,
 }: Props) => {
   /** Extract Properties from view model */
   const { message, audio, role, id, parentMessageId, type } = viewModel;
@@ -63,6 +66,7 @@ export const MessageViewer = ({
             isTextToSpeechDisabled={isTextToSpeechDisabled}
             isDeleteMessageDisabled={isDeleteMessageDisabled}
             onDelete={onDelete}
+            onInfo={onInfo}
           />
         )}
       </div>
@@ -97,6 +101,7 @@ const TextMessageViewer = ({
   isTextToSpeechDisabled,
   isDeleteMessageDisabled,
   onDelete,
+  onInfo,
 }: {
   message: string;
   role: CHATBOT_ROLE;
@@ -105,6 +110,7 @@ const TextMessageViewer = ({
   parentId: string;
   id: string;
   onDelete: (id: string, parentId: string) => void;
+  onInfo: (id: string, parentId: string) => void;
 }) => {
   /** Renderer */
   return (
@@ -135,6 +141,18 @@ const TextMessageViewer = ({
               }}
             />
           </div>
+        )}
+        {role === CHATBOT_ROLE.ASSISTANT && (
+          <Button
+            title="Info"
+            frame={false}
+            displayTitle={false}
+            imageSource={InfoIcon}
+            imageSize={16}
+            onClick={() => {
+              onInfo(id, parentId);
+            }}
+          />
         )}
       </div>
     </Fragment>

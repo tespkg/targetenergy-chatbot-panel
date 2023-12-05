@@ -3,7 +3,7 @@ import MinimizeIcon from "../../img/icons/chevron-down.svg";
 import { Button } from "../button/Button";
 import "./info-panel.scss";
 import { useSelector } from "react-redux";
-import { getTraces } from "../../store/queries";
+import { getInfoPanelTraces } from "../../store/queries";
 import { Trace } from "../trace/Trace";
 
 interface Props {
@@ -11,7 +11,7 @@ interface Props {
 }
 export const InfoPanel = ({ onClose }: Props) => {
   /** Selectors */
-  const traces = useSelector(getTraces);
+  const traces = useSelector(getInfoPanelTraces);
 
   /** Renderer */
   return (

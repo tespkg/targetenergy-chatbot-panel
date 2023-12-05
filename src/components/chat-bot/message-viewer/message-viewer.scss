@@ -59,7 +59,11 @@
       justify-content: flex-end;
       position: absolute;
       bottom: 0;
-      right: 0;
+      right: 5px;
+      .buttonWrapper-button.icon {
+        min-width: 16px;
+        max-width: 16px;
+      }
 
       &-playButton {
       }
@@ -71,7 +75,7 @@
 
   &-message.assistant {
     background-color: rgba(0, 0, 0, 0.05);
-    padding-right: 32px;
+    padding-right: 48px;
   }
 
   &-message.user {

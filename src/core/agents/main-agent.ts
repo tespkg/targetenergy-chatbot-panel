@@ -2,7 +2,7 @@ import { BotMessage } from "../../api/chatbot-types";
 import { assetTreeManagerAgent } from "./asset-tree-manager-agent";
 import { MAIN_AGENT_NAME } from "../orchestration/llm-callbacks";
 import { panelManagerAgent } from "./panel-manager-agent";
-import { FunctionContext, LLMAgent } from "../orchestration/llm-function";
+import { FunctionContext, LlmAgent } from "../orchestration/llm-function";
 import { LlmAgentExecutor } from "../orchestration/llm-agent-executor";
 import { prettifyPlugin } from "../orchestration/llm-utils";
 
@@ -39,7 +39,7 @@ Here are the list of agents that you can use to interact with the application:
 ${pluging.map((p) => prettifyPlugin(p).trim()).join("\n")}
 `;
 
-export const mainAgent: LLMAgent = {
+export const mainAgent: LlmAgent = {
   type: "agent",
   name: MAIN_AGENT_NAME,
   title: "Main",

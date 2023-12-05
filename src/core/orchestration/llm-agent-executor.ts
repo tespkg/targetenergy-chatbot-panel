@@ -4,12 +4,11 @@ import {
   BotMessage,
   ChatCompletionMessageToolCall,
 } from "../../api/chatbot-types";
-import { FunctionContext, LLMAgent } from "./llm-function";
+import { FunctionContext, LlmAgent, PluginOptions } from "./llm-function";
 import { LlmCallbackManager, LlmTrace } from "./llm-callbacks";
 import { PluginSet } from "./llm-function-set";
 import { v4 as uuidv4 } from "uuid";
 import { generate } from "../../api/chatbot-api";
-import { PluginOptions } from "@babel/core";
 import { MaxTurnExceededError } from "./llm-errors";
 
 import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
@@ -24,7 +23,7 @@ const DEFAULT_CONTEXT: FunctionContext = {
 };
 
 export class LlmAgentExecutor {
-  private agent: LLMAgent;
+  private agent: LlmAgent;
   private readonly messages: BotMessage[];
   private readonly plugins: PluginSet;
   private readonly callbackManager: LlmCallbackManager;
@@ -34,12 +33,12 @@ export class LlmAgentExecutor {
   private readonly parentId?: string;
   private readonly options: PluginOptions;
 
-  static async execute(messages: BotMessage[], agent: LLMAgent, context?: FunctionContext): Promise<BotMessage> {
+  static async execute(messages: BotMessage[], agent: LlmAgent, context?: FunctionContext): Promise<BotMessage> {
     const executor = new LlmAgentExecutor(messages, agent, { ...DEFAULT_CONTEXT, ...(context ?? {}) });
     return executor.run();
   }
 
-  private constructor(messages: BotMessage[], agent: LLMAgent, context: FunctionContext) {
+  private constructor(messages: BotMessage[], agent: LlmAgent, context: FunctionContext) {
     const { options } = context;
     const { maxTurns = DEFAULT_MAX_TURNS, abortSignal } = options;
 

@@ -40,7 +40,7 @@ export type ErrorEvent = CommonEventData & ErrorEventData;
 
 export interface SuccessEventData {
   message: string;
-  turn: number;
+  turn?: number;
   params: any;
   result: any;
 }

@@ -1,6 +1,6 @@
-import { LLMAgent, LlmTool } from "../orchestration/llm-function";
+import { LlmAgent, Tool } from "../orchestration/llm-function";
 
-const selectAssetTool: LlmTool = {
+const selectAssetTool: Tool = {
   type: "tool",
   name: "select_asset",
   title: "Select Asset",
@@ -42,7 +42,7 @@ const selectAssetTool: LlmTool = {
   },
 };
 
-const unselectAssetTool: LlmTool = {
+const unselectAssetTool: Tool = {
   type: "tool",
   name: "unselect_asset",
   title: "Unselect Asset",
@@ -84,7 +84,7 @@ const unselectAssetTool: LlmTool = {
   },
 };
 
-const listAssetsTool: LlmTool = {
+const listAssetsTool: Tool = {
   type: "tool",
   name: "list_assets",
   title: "List Assets",
@@ -109,7 +109,7 @@ You are a helpful chatbot.
 You can answer questions about the asset tree including listing the assets and selecting or unselecting them. Assets include companies, continents, counties, regions, blocks, stations, fields and reservoirs
 `;
 
-export const assetTreeManagerAgent: LLMAgent = {
+export const assetTreeManagerAgent: LlmAgent = {
   type: "agent",
   name: "asset_tree_manager",
   title: "Asset Tree Manager",

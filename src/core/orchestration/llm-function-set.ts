@@ -1,7 +1,8 @@
 import { LlmCallbackManager } from "./llm-callbacks";
 import { BotFunctionDefinition, BotMessage } from "../../api/chatbot-types";
-import { FunctionContext, LLMAgent, LlmPlugin } from "./llm-function";
+import { FunctionContext, LlmAgent, Plugin } from "./llm-function";
 import { LlmAgentExecutor } from "./llm-agent-executor";
+import { LlmToolExecutor } from "./llm-tool-executor";
 
 export const DEFAULT_AGENT_PARAMETERS = {
   type: "object",
@@ -15,11 +16,11 @@ export const DEFAULT_AGENT_PARAMETERS = {
 };
 
 export class PluginSet {
-  plugins: LlmPlugin[] = [];
+  plugins: Plugin[] = [];
   callbackManager: LlmCallbackManager;
   abortSignal?: AbortSignal;
 
-  constructor(plugins: LlmPlugin[] = [], callbackManager: LlmCallbackManager, abortSignal?: AbortSignal) {
+  constructor(plugins: Plugin[] = [], callbackManager: LlmCallbackManager, abortSignal?: AbortSignal) {
     this.plugins = plugins;
     this.callbackManager = callbackManager;
     this.abortSignal = abortSignal;
@@ -41,12 +42,12 @@ export class PluginSet {
     return this.plugins.map((plugin) => this.getPluginDefinition(plugin, context));
   }
 
-  private runPlugin(plugin: LlmPlugin) {
+  private runPlugin(plugin: Plugin) {
     return (context: FunctionContext, args: any) => {
       switch (plugin.type) {
         case "agent":
           const { question } = args;
-          const agent = plugin as LLMAgent;
+          const agent = plugin as LlmAgent;
           const messages: BotMessage[] = [
             {
               role: "user",
@@ -63,11 +64,13 @@ export class PluginSet {
           });
         case "tool":
           return plugin.run(context, args, this.abortSignal, this.callbackManager);
+        case "llm-tool":
+          return LlmToolExecutor.execute(plugin, context, args);
       }
     };
   }
 
-  private getPluginDefinition(plugin: LlmPlugin, context: FunctionContext) {
+  private getPluginDefinition(plugin: Plugin, context: FunctionContext) {
     switch (plugin.type) {
       case "agent":
         return {
@@ -76,6 +79,7 @@ export class PluginSet {
           parameters: DEFAULT_AGENT_PARAMETERS,
         };
       case "tool":
+      case "llm-tool":
         return {
           name: plugin.name,
           description: plugin.description(context),

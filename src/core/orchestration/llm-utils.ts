@@ -1,6 +1,6 @@
-import { LlmPlugin } from "./llm-function";
+import { Plugin } from "./llm-function";
 
-export const prettifyPlugin = (plugin: LlmPlugin, indent = "", isLast = true): string => {
+export const prettifyPlugin = (plugin: Plugin, indent = "", isLast = true): string => {
   let isRoot = indent.length === 0;
   let prefix = isRoot ? "" : isLast ? "└─ " : "├─ ";
   let result = indent + prefix + `${plugin.title} (${plugin.type})\n`;

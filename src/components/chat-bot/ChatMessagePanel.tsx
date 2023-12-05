@@ -48,7 +48,7 @@ interface ChatBotMessage {
 }
 
 interface Props {
-  nodes: AssetTree;
+  assetTree: AssetTree;
   onToggleNodes: (node: TreeNodeData[]) => void;
   dashboard: Dashboard;
   onToggleVisibility: () => void;
@@ -56,7 +56,7 @@ interface Props {
 }
 
 export const ChatMessagePanel = ({
-  nodes,
+  assetTree,
   onToggleNodes,
   dashboard,
   onToggleVisibility,
@@ -230,7 +230,7 @@ export const ChatMessagePanel = ({
       try {
         await runMainAgent(messages, {
           app: {
-            assetTree: nodes,
+            assetTree: assetTree,
             dashboard: dashboard,
             toggleAssetNodes: onToggleNodes,
           },
@@ -283,13 +283,14 @@ export const ChatMessagePanel = ({
         setChatbotStatus(null);
       }
     },
-    [addChatChunkReceived, dashboard, nodes, onToggleNodes]
+    [assetTree, dashboard, onToggleNodes, addChatChunkReceived, dispatch]
   );
 
   const handleNewUserMessage = useCallback(async () => {
     if (isCommand(text)) {
       await processCommand(text, {
         dashboard,
+        assetTree: assetTree,
       });
       return;
     }
@@ -297,7 +298,7 @@ export const ChatMessagePanel = ({
     const messageId = uniqueId("text_message_");
     addMessageToChatContent(text, messageId, "parent", CHATBOT_ROLE.USER, true, true);
     await runAgents(getBotMessages(text, CHATBOT_ROLE.USER), messageId);
-  }, [addMessageToChatContent, dashboard, runAgents, getBotMessages, isCommand, processCommand, text]);
+  }, [isCommand, text, addMessageToChatContent, runAgents, getBotMessages, processCommand, dashboard, assetTree]);
 
   const handleNewUserVoiceMessage = useCallback(
     async (voice: Blob) => {

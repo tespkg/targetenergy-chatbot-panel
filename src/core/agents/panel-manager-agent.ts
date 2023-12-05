@@ -1,6 +1,6 @@
-import { LLMAgent, LlmTool } from "../orchestration/llm-function";
+import { LlmAgent, Tool } from "../orchestration/llm-function";
 
-const listPanelsFunction: LlmTool = {
+const listPanelsFunction: Tool = {
   type: "tool",
   name: "list_panels",
   title: "List Panels",
@@ -22,7 +22,7 @@ const listPanelsFunction: LlmTool = {
   },
 };
 
-const listSubPanelsFunction: LlmTool = {
+const listSubPanelsFunction: Tool = {
   type: "tool",
   name: "list_sub_panels",
   title: "List Sub Panels",
@@ -59,7 +59,7 @@ const listSubPanelsFunction: LlmTool = {
   },
 };
 
-const togglePanelFunction: LlmTool = {
+const togglePanelFunction: Tool = {
   type: "tool",
   name: "toggle_panel",
   title: "Toggle Panel",
@@ -94,7 +94,49 @@ const togglePanelFunction: LlmTool = {
   },
 };
 
-const fetchPanelData: LlmTool = {
+// const findPanelTool: LlmTool = {
+//   type: "llm-tool",
+//   name: "find_panel",
+//   title: "Find Panel",
+//   description: (_) => "Finds the panel in the application based on a query",
+//   parameters: (_) => ({
+//     type: "object",
+//     properties: {
+//       query: {
+//         type: "string",
+//         description: "Query to find the panel",
+//       },
+//     },
+//     required: ["query"],
+//   }),
+//   getMessages: async (context, args) => {
+//     const { query } = args;
+//     const { dashboard } = context.app;
+//
+//     console.log("Inside the find panel tool");
+//
+//     if (!dashboard) {
+//       throw new Error("Dashboard is not defined");
+//     }
+//
+//     dashboard.toMarkdown();
+//
+//     return [
+//       {
+//         role: "system",
+//         content:
+//           "You are a helpful chatbot. Your goal is to find a the related panel to user query." +
+//           `\n\nThe panels are: ${dashboard.toMarkdown(2)}`,
+//       },
+//       {
+//         role: "user",
+//         content: `Query: ${query}`,
+//       },
+//     ];
+//   },
+// };
+
+const fetchPanelData: Tool = {
   type: "tool",
   name: "fetch_panel_data",
   title: "Fetch Panel Data",
@@ -163,12 +205,18 @@ The list of panels and sub panels are:
 \${panels}
 `;
 
-export const panelManagerAgent: LLMAgent = {
+export const panelManagerAgent: LlmAgent = {
   type: "agent",
   name: "panel_manager",
   title: "Panel Manager",
   description: (_) =>
     "Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.",
   systemMessage: SYSTEM_MESSAGE_TEMPLATE,
-  plugins: [listPanelsFunction, listSubPanelsFunction, togglePanelFunction, fetchPanelData],
+  plugins: [
+    listPanelsFunction,
+    listSubPanelsFunction,
+    togglePanelFunction,
+    //findPanelTool,
+    fetchPanelData,
+  ],
 };

@@ -3,6 +3,7 @@ import { TreeNodeData } from "./tree-node-data";
 interface MarkdownOptions {
   includeIds?: boolean;
   includeSelected?: boolean;
+  includeType?: boolean;
 }
 
 export type FilterCriteria = {
@@ -32,7 +33,10 @@ export class AssetTree {
   };
 
   toMarkdown = (options: MarkdownOptions): string => {
-    let markdown = "";
+    let markdown =
+      "The assets form a hierarchical tree structure. Therefore the data are presented in a tree format. " +
+      "For each assets the data are provided in `id - name - (type) - selected/unselected ` format. " +
+      "The following is the list of assets:\n\n";
     for (let node of this.nodes) {
       markdown += this.nodeToMarkdown(node, options);
       markdown += "\n";
@@ -46,11 +50,15 @@ export class AssetTree {
       data.push(`${node.id}`);
     }
     data.push(`${node.name}`);
+    if (options.includeType) {
+      data.push(`(${node.type.replace(/_id$/, "")})`);
+    }
     if (options.includeSelected && node.selected) {
       data.push(`selected`);
+    } else {
+      data.push(`unselected`);
     }
-
-    let markdown = `${"  ".repeat(depth)}- ${data.join(" - ")}\n`;
+    let markdown = `${"  ".repeat(depth)}* ${data.join(" - ")}\n`;
     if (node.children && node.children.length > 0) {
       node.children.forEach((child) => {
         markdown += this.nodeToMarkdown(child, options, depth + 1);

@@ -1,3 +1,4 @@
+import { LTTB } from "downsample/methods/LTTB";
 import { getTemplateSrv } from "@grafana/runtime";
 import { TimeRange } from "@grafana/data";
 import { repeat } from "lodash";
@@ -194,7 +195,7 @@ class SubPanel {
           queryType: target.queryType,
           rawSql: this.getSqlQuery(target.rawSql),
           refId: target.refId,
-          // maxDataPoints: 10,
+          maxDataPoints: 20,
         })),
         range: this.timeRange,
         from: `${this.timeRange.from.unix() * 1000}`,
@@ -219,7 +220,14 @@ class SubPanel {
         const headers = fields.map((field: any) => field.name);
 
         const data = frame.data.values;
-        const rows = data[0].map((_: any, rowIndex: number) => data.map((col: any) => col[rowIndex]).map(toCsvCell));
+        let rows = data[0].map((_: any, rowIndex: number) => data.map((col: any) => col[rowIndex]).map(toCsvCell));
+
+        // TODO: this needs to be generalized but for now simply down-sample the data to 100 records
+        const MAX_ROWS = 100;
+        let shouldDownSample = rows.length > MAX_ROWS && rows[0].every((cell: any) => typeof cell === "number");
+        if (shouldDownSample) {
+          rows = LTTB(rows, 100);
+        }
 
         let csvContent = headers.join(",") + "\n"; // Add headers
         rows.forEach((row: any) => {

@@ -65,9 +65,9 @@ export interface LlmFunction {
 }
 
 /**
- * Represents a tool that can be executed by the LLM.
+ * Represents a tool that can be executed.
  */
-export interface LlmTool extends LlmFunction {
+export interface Tool extends LlmFunction {
   type: "tool";
   parameters?: (context: FunctionContext) => any;
   run: (
@@ -79,12 +79,21 @@ export interface LlmTool extends LlmFunction {
 }
 
 /**
- * Represents an agent that can be executed by the LLM.
+ * Represents a tool that can be executed by the LLM.
  */
-export interface LLMAgent extends LlmFunction {
-  type: "agent";
-  systemMessage?: string;
-  plugins: LlmPlugin[];
+export interface LlmTool extends LlmFunction {
+  type: "llm-tool";
+  parameters?: (context: FunctionContext) => any;
+  getMessages: (context: FunctionContext, args: any) => Promise<BotMessage[]>;
 }
 
-export type LlmPlugin = LlmTool | LLMAgent;
+/**
+ * Represents an agent that can be executed by the LLM.
+ */
+export interface LlmAgent extends LlmFunction {
+  type: "agent";
+  systemMessage?: string;
+  plugins: Plugin[];
+}
+
+export type Plugin = Tool | LlmTool | LlmAgent;

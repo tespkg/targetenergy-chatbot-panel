@@ -173,7 +173,7 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
     }
   };
 
-  const assetNodes = new AssetTree(tree);
+  const assetTree = new AssetTree(tree);
   const [dashboard, setDashboard] = useState<Dashboard>(null!);
 
   useEffect(() => {
@@ -257,7 +257,7 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
       >
         {isOpen ? (
           <ChatMessagePanel
-            nodes={assetNodes}
+            assetTree={assetTree}
             onToggleNodes={handleSelectNodes}
             dashboard={dashboard}
             onToggleVisibility={onToggleVisibility}

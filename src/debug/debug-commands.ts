@@ -2,6 +2,7 @@ import { DebugCommand } from "./debug-command";
 import { getTemplateSrv } from "@grafana/runtime";
 import { mainAgent } from "../core/agents/main-agent";
 import { prettifyPlugin } from "../core/orchestration/llm-utils";
+import { AssetTree } from "../commons/types/asset-tree";
 
 export const findPanel: DebugCommand = {
   name: "find_panel",
@@ -27,6 +28,21 @@ export const printGlobalVars: DebugCommand = {
   execute: async (args: any) => {
     const variables = getTemplateSrv().getVariables();
     console.log(variables);
+  },
+};
+
+export const printAssetTree: DebugCommand = {
+  name: "print_asset_tree",
+  execute: async (args: any) => {
+    const { assetTree } = args;
+    console.log(
+      "Asset Tree Markdown\n",
+      (assetTree as AssetTree).toMarkdown({
+        includeIds: true,
+        includeSelected: true,
+        includeType: true,
+      })
+    );
   },
 };
 
@@ -72,4 +88,4 @@ export const toggleRow: DebugCommand = {
   },
 };
 
-export const debugCommands = [findPanel, printGlobalVars, printDashboard, printAgents, toggleRow];
+export const debugCommands = [findPanel, printGlobalVars, printDashboard, printAssetTree, printAgents, toggleRow];

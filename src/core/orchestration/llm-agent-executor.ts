@@ -13,7 +13,7 @@ import { MaxTurnExceededError } from "./llm-errors";
 
 import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
 
-const DEFAULT_MAX_TURNS = 5;
+const DEFAULT_MAX_TURNS = 10;
 
 const DEFAULT_CONTEXT: FunctionContext = {
   app: {},

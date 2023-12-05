@@ -1,0 +1,28 @@
+.infoPanel {
+  position: fixed;
+  left: 56px;
+  top: 0;
+  background-color:#ffffff;
+  z-index:1000;
+  width: calc(100vw - 56px);
+  height: 100vh;
+  padding: 16px;
+
+  &-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-direction: row;
+    width: 100%;
+    height: 56px;
+    border-bottom: solid 1px #eaeaea;
+  }
+
+  &-body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: calc(100% - 56px - 1px);
+  }
+}

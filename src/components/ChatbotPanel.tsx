@@ -14,6 +14,7 @@ import { TreeNodeData } from "commons/types/tree-node-data";
 import { MatchSearch } from "commons/enums/MatchSearch";
 import ChatIcon from "img/icons/chat.svg";
 import { Dashboard } from "commons/types/dashboard-manager";
+import { InfoPanel } from "./info-panel/InfoPanel";
 import "./style.css";
 
 // let renderCount = 0
@@ -214,6 +215,28 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
     }
   }, [isOpen]);
 
+  /** Chatbot info-panel button stuff*/
+  const [isInfoPanelVisible, setInfoPanelVisible] = useState(false);
+  //
+  const toggleInfoPanelVisible = () => {
+    let newInfoPanelVisibilityState = !isInfoPanelVisible;
+    setInfoPanelVisible((prev) => !prev);
+    const node = document.querySelector(".react-grid-item:has(.chatbotPanel)");
+    if (node) {
+      let currentClassNames = node.className;
+
+      currentClassNames = currentClassNames.replace("infoPanelContainer", "");
+      node.className = `${currentClassNames} ${newInfoPanelVisibilityState ? "infoPanelContainer" : ""}`;
+
+      const firstChildren = node.firstElementChild;
+      if (firstChildren) {
+        let currentClassNames = firstChildren.className;
+        currentClassNames = currentClassNames.replace("infoPanelContainer", "");
+        firstChildren.className = `${currentClassNames} ${newInfoPanelVisibilityState ? "infoPanelContainer" : ""}`;
+      }
+    }
+  };
+
   /** Renderer */
   return (
     <div
@@ -235,6 +258,7 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
           onToggleNodes={handleSelectNodes}
           dashboard={dashboard}
           onToggleVisibility={onToggleVisibility}
+          toggleInfoPanelVisible={toggleInfoPanelVisible}
         />
       ) : (
         <Button
@@ -246,6 +270,7 @@ export const ChatbotPanel = ({ options, data, width, height, replaceVariables, t
           onClick={onToggleVisibility}
         />
       )}
+      {isInfoPanelVisible && <InfoPanel onClose={toggleInfoPanelVisible} />}
     </div>
   );
 };

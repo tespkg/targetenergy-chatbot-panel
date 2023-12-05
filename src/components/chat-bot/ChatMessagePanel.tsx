@@ -18,6 +18,7 @@ import { runMainAgent } from "../../core/agents/main-agent";
 import { transcribe } from "../../api/chatbot-api";
 import { Dashboard } from "../../commons/types/dashboard-manager";
 import MinimizeIcon from "img/icons/chevron-down.svg";
+import InfoIcon from "img/icons/info-icon.svg";
 import {
   DeltaEvent,
   ErrorEvent,
@@ -50,9 +51,16 @@ interface Props {
   onToggleNodes: (node: TreeNodeData[]) => void;
   dashboard: Dashboard;
   onToggleVisibility: () => void;
+  toggleInfoPanelVisible: () => void;
 }
 
-export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisibility }: Props) => {
+export const ChatMessagePanel = ({
+  nodes,
+  onToggleNodes,
+  dashboard,
+  onToggleVisibility,
+  toggleInfoPanelVisible,
+}: Props) => {
   /** Hooks */
   const {
     audioUrl: recordedVoiceUrl,
@@ -371,6 +379,13 @@ export const ChatMessagePanel = ({ nodes, onToggleNodes, dashboard, onToggleVisi
             imageSource={MinimizeIcon}
             imageSize={12}
             onClick={onToggleVisibility}
+          />
+          <Button
+            title="Info"
+            displayTitle={false}
+            imageSource={InfoIcon}
+            imageSize={12}
+            onClick={toggleInfoPanelVisible}
           />
         </div>
       </div>

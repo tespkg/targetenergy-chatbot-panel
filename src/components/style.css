@@ -105,3 +105,12 @@
     right: 0 !important;
     bottom: 0 !important;
 }
+
+.infoPanelContainer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    transform: revert !important;
+}

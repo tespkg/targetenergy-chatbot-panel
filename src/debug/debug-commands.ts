@@ -3,6 +3,7 @@ import { getTemplateSrv } from "@grafana/runtime";
 import { mainAgent } from "../core/agents/main-agent";
 import { prettifyPlugin } from "../core/orchestration/llm-utils";
 import { AssetTree } from "../commons/types/asset-tree";
+import { Dashboard } from "../commons/types/dashboard-manager";
 
 export const findPanel: DebugCommand = {
   name: "find_panel",
@@ -50,7 +51,19 @@ export const printDashboard: DebugCommand = {
   name: "print_dashboard",
   execute: async (args: any) => {
     const { dashboard } = args;
-    console.log("Dashboard Markdown\n", dashboard.toMarkdown(2));
+    console.log(
+      "Dashboard Markdown\n",
+      // (dashboard as Dashboard).toMarkdown(2, {
+      //   includeDescription: true,
+      //   includeGroups: false,
+      //   includeType: true,
+      // })
+      (dashboard as Dashboard).toMarkdown(2, {
+        includeDescription: false,
+        includeGroups: true,
+        includeType: true,
+      })
+    );
   },
 };
 

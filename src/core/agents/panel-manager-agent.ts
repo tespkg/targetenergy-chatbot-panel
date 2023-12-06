@@ -5,7 +5,7 @@ const listPanelsFunction: Tool = {
   name: "list_panels",
   title: "List Panels",
   description: (_) =>
-    "Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.",
+    "Lists the panels in the dashboard. It includes the panel rows and panels and whether the panel row is expanded or not.",
   run: async (context, _) => {
     const { dashboard } = context.app;
 
@@ -13,84 +13,46 @@ const listPanelsFunction: Tool = {
       throw new Error("Dashboard is not defined");
     }
 
-    const panelInfos = dashboard.panels.map((p) => ({
-      title: p.title,
-      collapsed: p.isCollapsed(),
-    }));
-
-    return JSON.stringify(panelInfos, null, 2);
+    return dashboard.toMarkdown(2, {
+      includeDescription: false,
+      includeGroups: true,
+      includeType: true,
+    });
   },
 };
 
-const listSubPanelsFunction: Tool = {
+const togglePanelRowFunction: Tool = {
   type: "tool",
-  name: "list_sub_panels",
-  title: "List Sub Panels",
-  description: (_) =>
-    "Lists the panels in the dashboard. It includes the panel and whether the panel is expanded or not.",
+  name: "toggle_panel_row",
+  title: "Toggle Panel Row",
+  description: (_) => "Toggles (expands or collapses) the panel row",
   parameters: (_) => ({
     type: "object",
     properties: {
-      panel_name: {
-        type: "string",
-        description: "Panel name to list sub panels",
-      },
-    },
-    required: ["panel_name"],
-  }),
-  run: async (context, args) => {
-    const { panel_name } = args;
-    const { dashboard } = context.app;
-
-    if (!dashboard) {
-      throw new Error("Dashboard is not defined");
-    }
-
-    const panelGroup = dashboard.panels.find((pg) => pg.title.includes(panel_name));
-    if (!panelGroup) {
-      throw new Error(`Panel group with name ${panel_name} not found`);
-    }
-
-    const subPanelNames = panelGroup.panels.map((p) => ({
-      title: p.title,
-    }));
-
-    return `Sub Panels for ${panel_name}:\n${JSON.stringify(subPanelNames, null, 2)}`;
-  },
-};
-
-const togglePanelFunction: Tool = {
-  type: "tool",
-  name: "toggle_panel",
-  title: "Toggle Panel",
-  description: (_) => "Toggles (expands or collapses) the panel",
-  parameters: (_) => ({
-    type: "object",
-    properties: {
-      panel_name: {
+      panel_row_name: {
         type: "string",
         description: "Panel name to toggle",
       },
     },
-    required: ["panel_name"],
+    required: ["panel_row_name"],
   }),
   run: async (context, args) => {
-    const { panel_name } = args;
+    const { panel_row_name } = args;
     const { dashboard } = context.app;
 
     if (!dashboard) {
       throw new Error("Dashboard is not defined");
     }
 
-    const panels = dashboard.panels;
-    const panel = panels.find((p) => p.title.includes(panel_name));
+    const panelsGroups = dashboard.panelGroups;
+    const panel = panelsGroups.find((p) => p.title.includes(panel_row_name));
     if (!panel) {
-      throw new Error(`Panel with name ${panel_name} not found`);
+      throw new Error(`Panel with name ${panel_row_name} not found`);
     }
 
     panel.toggle();
 
-    return panel.isCollapsed() ? `Collapsed panel ${panel_name}.` : `Expanded panel ${panel_name}.`;
+    return panel.isCollapsed() ? `Collapsed panel ${panel_row_name}.` : `Expanded panel ${panel_row_name}.`;
   },
 };
 
@@ -189,33 +151,20 @@ const fetchPanelData: Tool = {
   },
 };
 
-const SYSTEM_MESSAGE_TEMPLATE = `You are helpful chatbot designed to help users interact Dashboard Panels in the Portfolio Manager application.
-
-## INSTRUCTIONS
-
-Your task is to generate function calls to achieve user's objectives.
-If the value for a required function parameter is missing ask the user to provide the value.
-
-# DASHBOARD STRUCTURE
-
-The dashboard is consisted of panels and sub panels. Panels are a group of sub panels and the actual tables, visualizations and charts reside in sub panels.
-
-The list of panels and sub panels are:
-
-\${panels}
-`;
+const SYSTEM_MESSAGE_TEMPLATE = `
+You are helpful chatbot designed to help users interact Dashboard Panels in the Portfolio Manager application. 
+The dashboard has been written in Grafana so it consists of panel rows and panels. 
+Panel rows are a groups of panel and the actual tables, visualizations and charts reside in panels.`;
 
 export const panelManagerAgent: LlmAgent = {
   type: "agent",
   name: "panel_manager",
   title: "Panel Manager",
-  description: (_) =>
-    "Can answer questions about dashboard panels. Can list the panels and interact with them. Panels can have sub panels.",
+  description: (_) => "Can answer questions about dashboard panels. Can list the panels and interact with them.",
   systemMessage: SYSTEM_MESSAGE_TEMPLATE,
   plugins: [
     listPanelsFunction,
-    listSubPanelsFunction,
-    togglePanelFunction,
+    togglePanelRowFunction,
     //findPanelTool,
     fetchPanelData,
   ],

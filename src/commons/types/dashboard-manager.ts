@@ -4,11 +4,17 @@ import { TimeRange } from "@grafana/data";
 import { repeat } from "lodash";
 import { toCsvCell } from "../utils/string-utils";
 
+interface MarkdownOptions {
+  includeType: boolean;
+  includeGroups: boolean;
+  includeDescription: boolean;
+}
+
 export class Dashboard {
   id: number;
   title: string;
   uid: string;
-  panels: Panel[];
+  panelGroups: PanelGroup[];
   timeRange: TimeRange;
 
   constructor(jsonModel: any, timeRange: TimeRange) {
@@ -19,36 +25,37 @@ export class Dashboard {
     this.id = dashboardModel.id;
     this.title = dashboardModel.title;
     this.uid = dashboardModel.uid;
-    this.panels = [];
+    this.panelGroups = [];
     this.timeRange = timeRange;
 
     if (dashboardModel.panels && Array.isArray(dashboardModel.panels)) {
-      this.panels = dashboardModel.panels
+      this.panelGroups = dashboardModel.panels
         .filter((panel: any) => panel.type === "row")
         .filter((panel: any) => panel.title)
-        .map((panel: any) => this.createPanel(panel));
+        .map((panel: any) => this.createPanelGroup(panel));
     }
   }
 
-  private createPanel = (panelGroupJson: any) => {
-    let panels: SubPanel[] = [];
+  private createPanelGroup = (panelGroupJson: any) => {
+    let panels: Panel[] = [];
     if (panelGroupJson.panels && Array.isArray(panelGroupJson.panels)) {
       panels = panelGroupJson.panels
         .filter((panel: any) => panel.title)
-        .map((subPanel: any) => this.createSubPanel(subPanel));
+        .map((subPanel: any) => this.createPanel(subPanel));
     }
 
-    return new Panel(panelGroupJson.title, panelGroupJson.type, panels);
+    return new PanelGroup(panelGroupJson.title, panelGroupJson.type, panels);
   };
 
-  private createSubPanel = (panelJson: any) => {
-    let panels: SubPanel[] = [];
+  private createPanel = (panelJson: any) => {
+    let panels: Panel[] = [];
     if (panelJson.panels && Array.isArray(panelJson.panels)) {
-      panels = panelJson.panels.map((subPanel: any) => this.createSubPanel(subPanel));
+      panels = panelJson.panels.map((subPanel: any) => this.createPanel(subPanel));
     }
 
-    return new SubPanel(
+    return new Panel(
       panelJson.title,
+      panelJson.description,
       panelJson.type,
       panelJson.datasource,
       this.timeRange,
@@ -58,7 +65,11 @@ export class Dashboard {
   };
 
   findPanel = (title: string) => {
-    for (let panelGroup of this.panels) {
+    for (let panelGroup of this.panelGroups) {
+      if (panelGroup.shouldSkip()) {
+        continue;
+      }
+
       const panel = panelGroup.findPanel(title);
       if (panel) {
         return panel;
@@ -68,23 +79,28 @@ export class Dashboard {
     return undefined;
   };
 
-  toMarkdown = (maxDepth = 2) => {
+  toMarkdown = (
+    maxDepth = 2,
+    opts: MarkdownOptions = { includeDescription: false, includeGroups: true, includeType: true }
+  ) => {
     let markdown = "";
-    for (const panel of this.panels) {
-      markdown += panel.toMarkdown(maxDepth);
-      markdown += "\n";
+    for (const panelGroup of this.panelGroups) {
+      const panelsMarkdown = panelGroup.toMarkdown(maxDepth, opts);
+      if (panelsMarkdown) {
+        markdown += panelsMarkdown + "\n";
+      }
     }
 
     return markdown.trimEnd();
   };
 }
 
-class Panel {
+class PanelGroup {
   title: string;
   type: string;
-  panels: SubPanel[];
+  panels: Panel[];
 
-  constructor(title: string, type: string, panels: SubPanel[]) {
+  constructor(title: string, type: string, panels: Panel[]) {
     this.title = title;
     this.type = type;
     this.panels = panels;
@@ -114,8 +130,12 @@ class Panel {
     return panelElement.classList.contains("dashboard-row--collapsed");
   };
 
-  findPanel = (title: string): SubPanel | undefined => {
+  findPanel = (title: string): Panel | undefined => {
     for (let panel of this.panels) {
+      if (panel.shouldSkip()) {
+        continue;
+      }
+
       if (panel.title === title) {
         return panel;
       }
@@ -129,36 +149,56 @@ class Panel {
     return undefined;
   };
 
-  toMarkdown(maxDepth: number) {
-    const depth = 1;
+  toMarkdown(maxDepth: number, opts: MarkdownOptions) {
+    if (this.shouldSkip()) {
+      return "";
+    }
+
+    const depth = opts.includeGroups ? 1 : 0;
     let markdown = "";
-    markdown += `- ${this.title} - isOpen: ${!this.isCollapsed()}\n`;
+    if (opts.includeGroups) {
+      markdown += `* ${this.title}`;
+    }
+    if (opts.includeType) {
+      markdown += ` (panel_row)`;
+    }
+    markdown += ` - isOpen: ${!this.isCollapsed()}`;
+    markdown += "\n";
     for (const panel of this.panels) {
-      markdown += panel.toMarkdown(depth + 1, maxDepth);
-      markdown += "\n";
+      const panelMarkdown = panel.toMarkdown(depth + 1, maxDepth, opts);
+      if (panelMarkdown) {
+        markdown += panelMarkdown + "\n";
+      }
     }
 
     return markdown.trimEnd();
   }
+
+  shouldSkip = () => {
+    return this.panels.every((p) => p.shouldSkip());
+  };
 }
 
-class SubPanel {
+class Panel {
   title: string;
+  description: string;
   type: string;
   datasource?: DataSource;
   targets?: PanelTarget[];
-  panels: SubPanel[];
+  panels: Panel[];
   timeRange: TimeRange;
 
   constructor(
     title: string,
+    description: string,
     type: string,
     datasource: DataSource,
     timeRange: TimeRange,
     targets: PanelTarget[],
-    panels: SubPanel[]
+    panels: Panel[]
   ) {
     this.title = title;
+    this.description = description;
     this.type = type;
     this.datasource = datasource;
     this.timeRange = timeRange;
@@ -166,7 +206,7 @@ class SubPanel {
     this.panels = panels;
   }
 
-  findPanel = (title: string): SubPanel | undefined => {
+  findPanel = (title: string): Panel | undefined => {
     // look through panels recursively to find the panel with matching title
     for (let panel of this.panels) {
       if (panel.title === title) {
@@ -258,9 +298,20 @@ class SubPanel {
     return rawSql;
   };
 
-  toMarkdown(depth: number, maxDepth: number) {
+  toMarkdown(depth: number, maxDepth: number, opts: MarkdownOptions) {
+    if (this.shouldSkip()) {
+      return "";
+    }
+
     let markdown = "";
-    markdown += `${repeat("  ", depth - 1)}- ${this.title}\n`;
+    markdown += `${repeat("  ", depth - 1)}* ${this.title}`;
+    if (opts.includeType) {
+      markdown += ` (panel)`;
+    }
+    if (opts.includeDescription && this.description) {
+      markdown += `: ${this.description}`;
+    }
+    markdown += "\n";
     depth += 1;
 
     if (depth > maxDepth) {
@@ -268,12 +319,16 @@ class SubPanel {
     }
 
     for (const panel of this.panels) {
-      markdown += panel.toMarkdown(depth, maxDepth - 1);
+      markdown += panel.toMarkdown(depth, maxDepth - 1, opts);
       markdown += "\n";
     }
 
     return markdown.trimEnd();
   }
+
+  shouldSkip = () => {
+    return !Boolean(this.description);
+  };
 }
 
 interface DataSource {

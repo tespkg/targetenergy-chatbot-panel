@@ -17,7 +17,8 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
   const { id, startTime, endTime, name, tokenUsage, aggregatedTokenUsage, type, subTraces } = trace;
 
   /** States */
-  const [isCollapsed, setCollapsed] = useState(false);
+  const [isCollapsed, setCollapsed] = useState(true);
+
   /** Memos */
   const durationSeconds = useMemo(() => {
     const startTimeMillis = new Date(startTime).getTime();
@@ -78,8 +79,8 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
           <DollarIcon color={"rgba(150, 205,150, 1)"} />
         </div>
       </div>
-      {subTraces.length > 0 && !isCollapsed && (
-        <div className="trace-body">
+      {subTraces.length > 0 && (
+        <div className={classNames("trace-body", { collapsed: isCollapsed })}>
           <div className="trace-body-subTracesContainer">
             {subTraces.map((subTrace) => (
               <div className="trace-body-subTracesContainer-subTrace" key={subTrace.id}>

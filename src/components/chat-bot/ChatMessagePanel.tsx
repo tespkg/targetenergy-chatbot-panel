@@ -4,6 +4,7 @@ import TrashBin from "img/icons/trashbin.svg";
 import ClearHistoryIcon from "img/icons/clear-history.svg";
 import RecordIcon from "img/icons/record.svg";
 import StopIcon from "img/icons/stop-circle.svg";
+import { DeleteIcon } from "components/icons/DeleteIcon";
 import LoadingIcon from "img/icons/animated-loading.svg";
 import SendMessage from "img/icons/send-message.svg";
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
@@ -457,7 +458,7 @@ export const ChatMessagePanel = ({
                   className="ChatBot-inputContainer-buttonContainer send"
                   title={"Cancel"}
                   displayTitle={false}
-                  imageSource={StopIcon}
+                  icon={<DeleteIcon width={16} height={16} color={"#ff0000"} />}
                   imageSize={16}
                   onClick={cancelAgent}
                 />

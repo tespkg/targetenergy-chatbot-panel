@@ -120,6 +120,7 @@ export class LlmCallbackManager {
       return;
     }
 
+    this.calculateAggregateTokenUsage(trace);
     await this.callbacks?.onTrace?.(trace);
   };
 
@@ -135,12 +136,6 @@ export class LlmCallbackManager {
         break;
       }
 
-      // Aggregate the token consumption with parents
-      parent.aggregatedTokenUsage.promptTokens += trace.tokenUsage.promptTokens;
-      parent.aggregatedTokenUsage.completionTokens += trace.tokenUsage.completionTokens;
-      parent.aggregatedTokenUsage.totalTokens += trace.tokenUsage.totalTokens;
-      parent.aggregatedTokenUsage.totalPrice += trace.tokenUsage.totalPrice;
-
       // Update the parent end time
       parent.endTime = trace.endTime;
 
@@ -151,6 +146,21 @@ export class LlmCallbackManager {
       }
 
       trace = parent;
+    }
+  };
+
+  private calculateAggregateTokenUsage = (trace: LlmTrace) => {
+    trace.aggregatedTokenUsage.promptTokens = trace.tokenUsage.promptTokens;
+    trace.aggregatedTokenUsage.completionTokens = trace.tokenUsage.completionTokens;
+    trace.aggregatedTokenUsage.totalTokens = trace.tokenUsage.totalTokens;
+    trace.aggregatedTokenUsage.totalPrice = trace.tokenUsage.totalPrice;
+
+    for (let subTrace of trace.subTraces) {
+      this.calculateAggregateTokenUsage(subTrace);
+      trace.aggregatedTokenUsage.promptTokens += subTrace.aggregatedTokenUsage.promptTokens;
+      trace.aggregatedTokenUsage.completionTokens += subTrace.aggregatedTokenUsage.completionTokens;
+      trace.aggregatedTokenUsage.totalTokens += subTrace.aggregatedTokenUsage.totalTokens;
+      trace.aggregatedTokenUsage.totalPrice += subTrace.aggregatedTokenUsage.totalPrice;
     }
   };
 

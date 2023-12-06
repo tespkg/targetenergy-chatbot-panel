@@ -1,8 +1,9 @@
 import { LlmCallbackManager } from "./llm-callbacks";
 import { BotFunctionDefinition, BotMessage } from "../../api/chatbot-types";
 import { FunctionContext, LlmAgent, Plugin } from "./llm-function";
-import { LlmAgentExecutor } from "./llm-agent-executor";
-import { LlmToolExecutor } from "./llm-tool-executor";
+import { LlmAgentExecutor } from "./executors/llm-agent-executor";
+import { LlmToolExecutor } from "./executors/llm-tool-executor";
+import { ToolExecutor } from "./executors/tool-executor";
 
 export const DEFAULT_AGENT_PARAMETERS = {
   type: "object",
@@ -63,7 +64,18 @@ export class PluginSet {
             },
           });
         case "tool":
-          return plugin.run(context, args, this.abortSignal, this.callbackManager);
+          return ToolExecutor.execute(
+            plugin,
+            {
+              ...context,
+              options: {
+                ...context.options,
+                callbacks: this.callbackManager,
+                abortSignal: this.abortSignal,
+              },
+            },
+            args
+          );
         case "llm-tool":
           return LlmToolExecutor.execute(
             plugin,

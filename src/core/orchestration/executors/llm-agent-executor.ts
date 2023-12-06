@@ -3,15 +3,15 @@ import {
   BotGenerateResponse,
   BotMessage,
   ChatCompletionMessageToolCall,
-} from "../../api/chatbot-types";
-import { FunctionContext, LlmAgent, PluginOptions } from "./llm-function";
-import { LlmCallbackManager, LlmTrace } from "./llm-callbacks";
-import { PluginSet } from "./llm-function-set";
+} from "../../../api/chatbot-types";
+import { FunctionContext, LlmAgent, PluginOptions } from "../llm-function";
+import { LlmCallbackManager, LlmTrace } from "../llm-callbacks";
+import { PluginSet } from "../llm-function-set";
 import { v4 as uuidv4 } from "uuid";
-import { generate } from "../../api/chatbot-api";
-import { MaxTurnExceededError } from "./llm-errors";
+import { generate } from "../../../api/chatbot-api";
+import { MaxTurnExceededError } from "../llm-errors";
 
-import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
+import { OperationCancelledError } from "../../../commons/errors/operation-cancelled-error";
 
 const DEFAULT_MAX_TURNS = 10;
 
@@ -192,14 +192,14 @@ export class LlmAgentExecutor {
       const plugin = this.plugins.get(pluginName);
       const pluginArgs = JSON.parse(toolCall.function.arguments);
 
-      const pluginTrace = this.newPluginTrace(parentId, plugin.type === "agent", plugin.title, pluginArgs);
+      // const pluginTrace = this.newPluginTrace(parentId, plugin.type === "agent", plugin.title, pluginArgs);
 
       const functionCtx: FunctionContext = {
         app: {
           ...this.context.app,
           messages: this.messages,
         },
-        options: { ...this.options, parentId: pluginTrace.id },
+        options: { ...this.options, parentId: parentId },
       };
 
       this.callbackManager.emitWorking?.({
@@ -221,7 +221,7 @@ export class LlmAgentExecutor {
           result: pluginResult,
           turn: turn,
         });
-        this.updateToolTrace(pluginTrace, pluginResult);
+        // this.updateToolTrace(pluginTrace, pluginResult);
       } catch (e: any) {
         this.callbackManager.emitError?.({
           message:
@@ -237,7 +237,7 @@ export class LlmAgentExecutor {
           tool_call_id: toolCall.id,
           content: `Error calling function ${toolCall?.function?.name}: ${e.message}`,
         });
-        this.errorToolTrace(pluginTrace, e);
+        // this.errorToolTrace(pluginTrace, e);
         continue;
       }
 
@@ -285,57 +285,7 @@ export class LlmAgentExecutor {
     trace.tokenUsage.completionTokens = assistantMessage.tokenUsage?.completion_tokens ?? 0;
     trace.tokenUsage.totalTokens = assistantMessage.tokenUsage?.total_tokens ?? 0;
     trace.tokenUsage.totalPrice = assistantMessage.tokenUsage?.total_price ?? 0;
-    trace.aggregatedTokenUsage.promptTokens = trace.tokenUsage.promptTokens;
-    trace.aggregatedTokenUsage.completionTokens = trace.tokenUsage.completionTokens;
-    trace.aggregatedTokenUsage.totalTokens = trace.tokenUsage.totalTokens;
-    trace.aggregatedTokenUsage.totalPrice = trace.tokenUsage.totalPrice;
     this.callbackManager.updateTrace(trace);
-  };
-
-  private newPluginTrace = (parentId: string, isAgent: boolean, pluginName: string, args: any) => {
-    const trace = {
-      id: uuidv4(),
-      parentId: parentId,
-      name: isAgent ? `${pluginName} Agent` : `${pluginName} Tool`,
-      type: "tool",
-      startTime: new Date(),
-      inputs: args,
-      subTraces: [] as LlmTrace[],
-      tokenUsage: {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        totalPrice: 0,
-      },
-      aggregatedTokenUsage: {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        totalPrice: 0,
-      },
-    } as LlmTrace;
-    this.callbackManager.addTrace(trace);
-    return trace;
-  };
-
-  private updateToolTrace = (trace: LlmTrace, pluginResult: any) => {
-    trace.outputs = pluginResult;
-    trace.endTime = new Date();
-    // trace.tokenUsage.promptTokens = pluginResult?.tokenUsage?.prompt_tokens ?? 0;
-    // trace.tokenUsage.completionTokens = pluginResult?.tokenUsage?.completion_tokens ?? 0;
-    // trace.tokenUsage.totalTokens = pluginResult?.tokenUsage?.total_tokens ?? 0;
-    // trace.tokenUsage.totalPrice = pluginResult?.tokenUsage?.total_price ?? 0;
-    // trace.aggregatedTokenUsage.promptTokens = trace.tokenUsage.promptTokens;
-    // trace.aggregatedTokenUsage.completionTokens = trace.tokenUsage.completionTokens;
-    // trace.aggregatedTokenUsage.totalTokens = trace.tokenUsage.totalTokens;
-    // trace.aggregatedTokenUsage.totalPrice = trace.tokenUsage.totalPrice;
-
-    this.callbackManager.updateTrace(trace);
-  };
-
-  private errorToolTrace = (trace: LlmTrace, error: any) => {
-    trace.endTime = new Date();
-    trace.error = error;
   };
 
   private checkAbortSignal = () => {

@@ -1,8 +1,8 @@
-import { FunctionContext, LlmTool, PluginOptions } from "./llm-function";
-import { LlmCallbackManager, LlmTrace } from "./llm-callbacks";
-import { BotGenerateResponse, BotMessage, TokenUsage } from "../../api/chatbot-types";
-import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
-import { generate } from "../../api/chatbot-api";
+import { FunctionContext, LlmTool, PluginOptions } from "../llm-function";
+import { LlmCallbackManager, LlmTrace } from "../llm-callbacks";
+import { BotGenerateResponse, BotMessage } from "../../../api/chatbot-types";
+import { OperationCancelledError } from "../../../commons/errors/operation-cancelled-error";
+import { generate } from "../../../api/chatbot-api";
 import { v4 as uuidv4 } from "uuid";
 
 export class LlmToolExecutor {
@@ -93,12 +93,12 @@ export class LlmToolExecutor {
       result: assistantMessage,
     });
 
-    this.newToolTrace(this.parentId!, assistantMessage.tokenUsage!, this.tool.name, this.args);
+    this.newToolTrace(this.parentId!, this.tool.name, this.args, assistantMessage);
 
     return assistantMessage;
   }
 
-  private newToolTrace = (parentId: string, tokenUsage: TokenUsage, pluginName: string, args: any) => {
+  private newToolTrace = (parentId: string, pluginName: string, args: any, result: BotMessage) => {
     const trace = {
       id: uuidv4(),
       parentId: parentId,
@@ -106,18 +106,19 @@ export class LlmToolExecutor {
       type: "tool",
       startTime: new Date(),
       inputs: args,
+      outputs: result,
       subTraces: [] as LlmTrace[],
       tokenUsage: {
-        promptTokens: tokenUsage.prompt_tokens,
-        completionTokens: tokenUsage.completion_tokens,
-        totalTokens: tokenUsage.total_tokens,
-        totalPrice: tokenUsage.total_price,
+        promptTokens: result.tokenUsage?.prompt_tokens,
+        completionTokens: result.tokenUsage?.completion_tokens,
+        totalTokens: result.tokenUsage?.total_tokens,
+        totalPrice: result.tokenUsage?.total_price,
       },
       aggregatedTokenUsage: {
-        promptTokens: tokenUsage.prompt_tokens,
-        completionTokens: tokenUsage.completion_tokens,
-        totalTokens: tokenUsage.total_tokens,
-        totalPrice: tokenUsage.total_price,
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        totalPrice: 0,
       },
     } as LlmTrace;
     this.callbackManager.addTrace(trace);

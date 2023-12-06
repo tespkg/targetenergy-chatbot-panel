@@ -3,7 +3,7 @@ import { assetTreeManagerAgent } from "./asset-tree-manager-agent";
 import { MAIN_AGENT_NAME } from "../orchestration/llm-callbacks";
 import { panelManagerAgent } from "./panel-manager-agent";
 import { FunctionContext, LlmAgent, LlmTool, Tool } from "../orchestration/llm-function";
-import { LlmAgentExecutor } from "../orchestration/llm-agent-executor";
+import { LlmAgentExecutor } from "../orchestration/executors/llm-agent-executor";
 import { prettifyPlugin } from "../orchestration/llm-utils";
 
 const applicationDescriptionTool: Tool = {

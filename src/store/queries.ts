@@ -18,3 +18,7 @@ export const getInfoPanelTraces = (state: StoreType) => {
     return [] as LlmTrace[];
   }
 };
+
+export const getChatContent = (state: StoreType) => {
+  return state.chatContent;
+};

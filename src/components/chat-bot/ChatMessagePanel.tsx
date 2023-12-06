@@ -10,7 +10,7 @@ import SendMessage from "img/icons/send-message.svg";
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
 import { Input } from "@grafana/ui";
 import { Button } from "components/button/Button";
-import { last, uniqueId } from "lodash";
+import { uniqueId } from "lodash";
 import { BotMessage } from "../../api/chatbot-types";
 import { AssetTree } from "../../commons/types/asset-tree";
 import { TreeNodeData } from "../../commons/types/tree-node-data";
@@ -33,20 +33,11 @@ import { useDebugCommand } from "../../debug/use-debug-command";
 import { TimeoutError } from "../../commons/errors/timeout-error";
 import { MaxTurnExceededError } from "../../core/orchestration/llm-errors";
 import { OperationCancelledError } from "../../commons/errors/operation-cancelled-error";
-import { useDispatch } from "react-redux";
-import { AddTrace, SetInoPanelMessageId } from "../../store/actions";
+import { useDispatch, useSelector } from "react-redux";
+import * as Actions from "store/actions";
+import { getChatContent } from "../../store/queries";
+import { ChatBotMessage } from "../../commons/types/ChatMessagePanelTypes";
 import "./chat-bot.scss";
-
-interface ChatBotMessage {
-  role: CHATBOT_ROLE;
-  message: string;
-  audio?: Blob;
-  type: SUPPORTED_MESSAGE_TYPE;
-  id: string;
-  parentMessageId?: string | "parent";
-  includeInContextHistory: boolean;
-  includeInChatPanel: boolean;
-}
 
 interface Props {
   assetTree: AssetTree;
@@ -78,13 +69,16 @@ export const ChatMessagePanel = ({
   /** States and Refs */
   const abortControllerRef = useRef<AbortController | null>(null);
   const [text, setText] = useState("");
-  const [chatContent, setChatContent] = useState<undefined | ChatBotMessage[]>(undefined);
   const chatContentRef = useRef(null);
   const textInputRef = useRef(null);
   const [chatbotStatus, setChatbotStatus] = useState<string | null>(null);
   const [isChatbotBusy, setChatbotBusy] = useState(false);
   const { isCommand, processCommand } = useDebugCommand();
 
+  /** Selectors */
+  const chatContent = useSelector(getChatContent);
+
+  /** Callbacks and functions */
   const addMessageToChatContent = useCallback(
     (
       text: string,
@@ -95,9 +89,8 @@ export const ChatMessagePanel = ({
       includeInChatPanel: boolean
     ) => {
       if (text) {
-        setChatContent((prev) => {
-          return [
-            ...(prev || []),
+        dispatch(
+          Actions.AddChatbotMessage([
             {
               id: messageId,
               parentMessageId: parentMessageId,
@@ -106,73 +99,54 @@ export const ChatMessagePanel = ({
               includeInContextHistory: includeInContextHistory,
               includeInChatPanel: includeInChatPanel,
               type: SUPPORTED_MESSAGE_TYPE.TEXT,
-            },
-          ];
-        });
+            } as ChatBotMessage,
+          ])
+        );
       }
       setText("");
     },
-    []
+    [dispatch]
   );
-  const addVoiceToChatContent = useCallback((audio: Blob, messageId: string) => {
-    if (audio) {
-      setChatContent((prev) => {
-        return [
-          ...(prev || []),
-          {
-            id: messageId,
-            parentMessageId: "parent",
-            message: "",
-            audio: audio,
-            role: CHATBOT_ROLE.USER,
-            includeInContextHistory: true,
-            includeInChatPanel: true,
-            type: SUPPORTED_MESSAGE_TYPE.AUDIO,
-          },
-          {
-            id: uniqueId("text_message_"),
-            parentMessageId: messageId,
-            message: "Trying to convert the voice to text...",
-            role: CHATBOT_ROLE.ASSISTANT,
-            includeInContextHistory: false,
-            includeInChatPanel: true,
-            type: SUPPORTED_MESSAGE_TYPE.TEXT,
-          },
-        ];
-      });
-    }
-  }, []);
-
-  const addChatChunkReceived = useCallback((text: string, parentMessageId?: string) => {
-    if (!text) {
-      return;
-    }
-
-    setChatContent((prev) => {
-      if (prev) {
-        const lastMessage = last(prev)!;
-        if (lastMessage.role === CHATBOT_ROLE.ASSISTANT) {
-          lastMessage.message = lastMessage.message + text;
-          return [...prev.slice(0, prev.length - 1), lastMessage];
-        } else {
-          return [
-            ...prev,
+  const addVoiceToChatContent = useCallback(
+    (audio: Blob, messageId: string) => {
+      if (audio) {
+        dispatch(
+          Actions.AddChatbotMessage([
             {
-              id: uniqueId("text_message"),
-              parentMessageId: parentMessageId,
-              role: CHATBOT_ROLE.ASSISTANT,
-              message: text,
+              id: messageId,
+              parentMessageId: "parent",
+              message: "",
+              audio: audio,
+              role: CHATBOT_ROLE.USER,
               includeInContextHistory: true,
+              includeInChatPanel: true,
+              type: SUPPORTED_MESSAGE_TYPE.AUDIO,
+            } as ChatBotMessage,
+            {
+              id: uniqueId("text_message_"),
+              parentMessageId: messageId,
+              message: "Trying to convert the voice to text...",
+              role: CHATBOT_ROLE.ASSISTANT,
+              includeInContextHistory: false,
               includeInChatPanel: true,
               type: SUPPORTED_MESSAGE_TYPE.TEXT,
             } as ChatBotMessage,
-          ];
-        }
-      } else {
-        return prev;
+          ])
+        );
       }
-    });
-  }, []);
+    },
+    [dispatch]
+  );
+
+  const addChatChunkReceived = useCallback(
+    (text: string, parentMessageId: string) => {
+      if (!text) {
+        return;
+      }
+      dispatch(Actions.UpdateChatbotMessage(text, parentMessageId));
+    },
+    [dispatch]
+  );
 
   const getBotMessages = useCallback(
     (text: string, role: string) => {
@@ -259,7 +233,7 @@ export const ChatMessagePanel = ({
               },
               onTrace: (trace: LlmTrace) => {
                 console.log("Trace", trace);
-                dispatch(AddTrace({ ...trace, parentId: parentMessageId }));
+                dispatch(Actions.AddTrace({ ...trace, parentId: parentMessageId }));
               },
             },
           },
@@ -316,38 +290,19 @@ export const ChatMessagePanel = ({
   /** Callbacks */
   const onDeleteMessage = (messageId: string, parentMessageId: string) => {
     console.log("Going to delete message with id: ", messageId);
-    setChatContent((prevMessages) => {
-      if (!prevMessages) {
-        return prevMessages;
-      }
-
-      const deletedMessage = prevMessages.find((message) => message.id === messageId);
-      if (deletedMessage) {
-        if (deletedMessage.parentMessageId === "parent") {
-          // If the deleted message is parent itself, we need to delete it and all messages which their parent is currently deleted message.
-          return prevMessages.filter((message) => message.id !== messageId && message.parentMessageId !== messageId);
-        } else {
-          // If the deleted message is child, we need to delete it, the parent and all messages which a mutual parent message.
-          return prevMessages.filter(
-            (message) =>
-              message.id !== messageId && message.id !== parentMessageId && message.parentMessageId !== parentMessageId
-          );
-        }
-      }
-      return prevMessages;
-    });
+    dispatch(Actions.DeleteChatbotMessage(messageId, parentMessageId));
   };
   //
   const onMessageInfo = (messageId: string, parentMessageId: string) => {
-    dispatch(SetInoPanelMessageId(parentMessageId));
+    dispatch(Actions.SetInoPanelMessageId(parentMessageId));
     toggleInfoPanelVisible();
   };
   //
   const initializeChatContext = useCallback(() => {
-    setChatContent(undefined);
+    dispatch(Actions.ResetChatbotMessage());
     const messageId = uniqueId("text_message_");
     addMessageToChatContent(`How can I help you?`, messageId, "parent", CHATBOT_ROLE.ASSISTANT, false, true);
-  }, [addMessageToChatContent]);
+  }, [addMessageToChatContent, dispatch]);
   //
   useEffect(() => {
     if (chatContent === undefined) {

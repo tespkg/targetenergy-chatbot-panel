@@ -48,7 +48,7 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
       default:
         return type;
     }
-  }, [type]);
+  }, [subTraces, type]);
 
   /** Renderer */
   return (

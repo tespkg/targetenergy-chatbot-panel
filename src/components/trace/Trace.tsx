@@ -33,14 +33,16 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
         return (
           <Fragment>
             <AgentIcon />
-            <div className="trace-header-type-text">Agent</div>
+            <span className="trace-header-type-text">Agent</span>
+            {subTraces.length > 0 && <span className="trace-header-type-text">{`(${subTraces.length})`}</span>}
           </Fragment>
         );
       case "tool":
         return (
           <Fragment>
             <ToolIcon />
-            <div className="trace-header-type-text">Tool</div>
+            <span className="trace-header-type-text">Tool</span>
+            {subTraces.length > 0 && <span className="trace-header-type-text">{`(${subTraces.length})`}</span>}
           </Fragment>
         );
       default:

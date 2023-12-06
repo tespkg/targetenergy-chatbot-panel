@@ -14,7 +14,7 @@ interface Props {
 }
 export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
   /** Extract properties */
-  const { id, startTime, endTime, name, promptTokens, completionTokens, totalPrice, type, subTraces } = trace;
+  const { id, startTime, endTime, name, tokenUsage, aggregatedTokenUsage, type, subTraces } = trace;
 
   /** States */
   const [isCollapsed, setCollapsed] = useState(false);
@@ -71,9 +71,10 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
           <ClockIcon />
           <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
         </div>
-        <div className="trace-header-tokens">{`${promptTokens} -> ${completionTokens} Tokens`}</div>
+        <div className="trace-header-tokens">{`${tokenUsage.promptTokens} -> ${tokenUsage.completionTokens} Tokens`}</div>
+        <div className="trace-header-tokens">{`${aggregatedTokenUsage.promptTokens} -> ${aggregatedTokenUsage.completionTokens} Tokens`}</div>
         <div className="trace-header-cost">
-          <span className="trace-header-cost-text">{`Price ${totalPrice.toFixed(3)}`}</span>
+          <span className="trace-header-cost-text">{`Price ${tokenUsage.totalPrice.toFixed(3)}`}</span>
           <DollarIcon color={"rgba(150, 205,150, 1)"} />
         </div>
       </div>

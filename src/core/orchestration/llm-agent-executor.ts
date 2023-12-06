@@ -192,7 +192,7 @@ export class LlmAgentExecutor {
       const plugin = this.plugins.get(pluginName);
       const pluginArgs = JSON.parse(toolCall.function.arguments);
 
-      const pluginTrace = this.newToolTrace(parentId, plugin.title, pluginArgs);
+      const pluginTrace = this.newPluginTrace(parentId, plugin.type === "agent", plugin.title, pluginArgs);
 
       const functionCtx: FunctionContext = {
         app: {
@@ -261,10 +261,18 @@ export class LlmAgentExecutor {
       startTime: new Date(),
       inputs: generateReq, // TODO: needs better formatting
       subTraces: [] as LlmTrace[],
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0,
-      totalPrice: 0,
+      tokenUsage: {
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        totalPrice: 0,
+      },
+      aggregatedTokenUsage: {
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        totalPrice: 0,
+      },
     } as LlmTrace;
     this.callbackManager.addTrace(trace);
     return trace;
@@ -273,26 +281,38 @@ export class LlmAgentExecutor {
   private updateAgentTrace = (trace: LlmTrace, assistantMessage: BotMessage) => {
     trace.outputs = assistantMessage;
     trace.endTime = new Date();
-    trace.promptTokens += assistantMessage.tokenUsage?.prompt_tokens ?? 0;
-    trace.completionTokens += assistantMessage.tokenUsage?.completion_tokens ?? 0;
-    trace.totalTokens += assistantMessage.tokenUsage?.total_tokens ?? 0;
-    trace.totalPrice += assistantMessage.tokenUsage?.total_price ?? 0;
+    trace.tokenUsage.promptTokens = assistantMessage.tokenUsage?.prompt_tokens ?? 0;
+    trace.tokenUsage.completionTokens = assistantMessage.tokenUsage?.completion_tokens ?? 0;
+    trace.tokenUsage.totalTokens = assistantMessage.tokenUsage?.total_tokens ?? 0;
+    trace.tokenUsage.totalPrice = assistantMessage.tokenUsage?.total_price ?? 0;
+    trace.aggregatedTokenUsage.promptTokens = trace.tokenUsage.promptTokens;
+    trace.aggregatedTokenUsage.completionTokens = trace.tokenUsage.completionTokens;
+    trace.aggregatedTokenUsage.totalTokens = trace.tokenUsage.totalTokens;
+    trace.aggregatedTokenUsage.totalPrice = trace.tokenUsage.totalPrice;
     this.callbackManager.updateTrace(trace);
   };
 
-  private newToolTrace = (parentId: string, pluginName: string, args: any) => {
+  private newPluginTrace = (parentId: string, isAgent: boolean, pluginName: string, args: any) => {
     const trace = {
       id: uuidv4(),
       parentId: parentId,
-      name: `${pluginName} Tool`,
+      name: isAgent ? `${pluginName} Agent` : `${pluginName} Tool`,
       type: "tool",
       startTime: new Date(),
       inputs: args,
       subTraces: [] as LlmTrace[],
-      promptTokens: 0,
-      completionTokens: 0,
-      totalTokens: 0,
-      totalPrice: 0,
+      tokenUsage: {
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        totalPrice: 0,
+      },
+      aggregatedTokenUsage: {
+        promptTokens: 0,
+        completionTokens: 0,
+        totalTokens: 0,
+        totalPrice: 0,
+      },
     } as LlmTrace;
     this.callbackManager.addTrace(trace);
     return trace;
@@ -301,10 +321,15 @@ export class LlmAgentExecutor {
   private updateToolTrace = (trace: LlmTrace, pluginResult: any) => {
     trace.outputs = pluginResult;
     trace.endTime = new Date();
-    trace.promptTokens += pluginResult?.tokenUsage?.prompt_tokens ?? 0;
-    trace.completionTokens += pluginResult?.tokenUsage?.completion_tokens ?? 0;
-    trace.totalTokens += pluginResult?.tokenUsage?.total_tokens ?? 0;
-    trace.totalPrice += pluginResult?.tokenUsage?.total_price ?? 0;
+    // trace.tokenUsage.promptTokens = pluginResult?.tokenUsage?.prompt_tokens ?? 0;
+    // trace.tokenUsage.completionTokens = pluginResult?.tokenUsage?.completion_tokens ?? 0;
+    // trace.tokenUsage.totalTokens = pluginResult?.tokenUsage?.total_tokens ?? 0;
+    // trace.tokenUsage.totalPrice = pluginResult?.tokenUsage?.total_price ?? 0;
+    // trace.aggregatedTokenUsage.promptTokens = trace.tokenUsage.promptTokens;
+    // trace.aggregatedTokenUsage.completionTokens = trace.tokenUsage.completionTokens;
+    // trace.aggregatedTokenUsage.totalTokens = trace.tokenUsage.totalTokens;
+    // trace.aggregatedTokenUsage.totalPrice = trace.tokenUsage.totalPrice;
+
     this.callbackManager.updateTrace(trace);
   };
 

@@ -1,4 +1,5 @@
 import { StoreType } from "./types/general-state-types";
+import { LlmTrace } from "../core/orchestration/llm-callbacks";
 
 export const getAllTraces = (state: StoreType) => {
   return state.traces;
@@ -14,6 +15,6 @@ export const getInfoPanelTraces = (state: StoreType) => {
     const allTraces = getAllTraces(state);
     return allTraces.filter(({ parentId }) => parentId === messageId);
   } else {
-    return [];
+    return [] as LlmTrace[];
   }
 };

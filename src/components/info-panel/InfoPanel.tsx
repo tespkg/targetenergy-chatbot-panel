@@ -23,7 +23,7 @@ export const InfoPanel = ({ onClose }: Props) => {
   const totalPrice = useMemo(() => {
     let total = 0;
     traces.forEach((trace) => {
-      total += trace.totalPrice;
+      total += trace.aggregatedTokenUsage.totalPrice;
     });
     return total.toFixed(3);
   }, [traces]);
@@ -31,7 +31,7 @@ export const InfoPanel = ({ onClose }: Props) => {
   const totalTokenConsumption = useMemo(() => {
     let total = 0;
     traces.forEach((trace) => {
-      total += trace.totalTokens;
+      total += trace.aggregatedTokenUsage.totalTokens;
     });
     return total;
   }, [traces]);

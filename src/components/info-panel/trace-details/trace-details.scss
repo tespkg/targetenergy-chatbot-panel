@@ -64,12 +64,10 @@
 
         }
         &-content {
-          display: flex;
-          align-items: flex-start;
           justify-content: center;
           width: calc(100% - 48px - 96px);
           height: 100%;
-          font-family: monospace;
+          //font-family: monospace;
           padding: 2px 5px;
         }
       }

@@ -54,10 +54,18 @@ export interface LlmTrace {
   type: "agent" | "tool";
   startTime: Date;
   endTime: Date;
-  promptTokens: number;
-  completionTokens: number;
-  totalTokens: number;
-  totalPrice: number;
+  tokenUsage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    totalPrice: number;
+  };
+  aggregatedTokenUsage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    totalPrice: number;
+  };
   inputs: any;
   outputs: any;
   meta: any;
@@ -128,10 +136,10 @@ export class LlmCallbackManager {
       }
 
       // Aggregate the token consumption with parents
-      parent.promptTokens += trace.promptTokens;
-      parent.completionTokens += trace.completionTokens;
-      parent.totalTokens += trace.totalTokens;
-      parent.totalPrice += trace.totalPrice;
+      parent.aggregatedTokenUsage.promptTokens += trace.tokenUsage.promptTokens;
+      parent.aggregatedTokenUsage.completionTokens += trace.tokenUsage.completionTokens;
+      parent.aggregatedTokenUsage.totalTokens += trace.tokenUsage.totalTokens;
+      parent.aggregatedTokenUsage.totalPrice += trace.tokenUsage.totalPrice;
 
       // Update the parent end time
       parent.endTime = trace.endTime;

@@ -2,6 +2,8 @@ import React, { useMemo } from "react";
 import "./trace-details.scss";
 import { LlmTrace } from "../../../core/orchestration/llm-callbacks";
 import { CHATBOT_ROLE } from "../../../commons/enums/Chatbot";
+import { hashString } from "../../../commons/utils/string-utils";
+import Markdown from "markdown-to-jsx";
 
 interface Props {
   trace: LlmTrace;
@@ -11,7 +13,7 @@ export const TraceDetails = ({ trace }: Props) => {
   const { inputs, outputs, type } = trace;
 
   /** Memos */
-  const inputItems: { title: string; content: string }[] = useMemo(() => {
+  const inputItems: Array<{ title: string; content: string }> = useMemo(() => {
     if (inputs) {
       if (type === "agent") {
         const { messages } = inputs;
@@ -49,7 +51,7 @@ export const TraceDetails = ({ trace }: Props) => {
     } else {
       return [];
     }
-  }, [inputs]);
+  }, [inputs, type]);
   //
   const outputItem = useMemo(() => {
     if (type === "agent") {
@@ -73,34 +75,38 @@ export const TraceDetails = ({ trace }: Props) => {
         return { title: "Output", content: outputs.content || "" };
       }
     } else if (type === "tool") {
-      const { role } = outputs;
-      if (role) {
-        if (role === CHATBOT_ROLE.USER || role === CHATBOT_ROLE.SYSTEM) {
-          // Message must have a content, let's return it
-          return { title: role === CHATBOT_ROLE.USER ? "User" : "System", content: outputs.content };
-        } else if (role === CHATBOT_ROLE.ASSISTANT) {
-          if (outputs.content) {
-            // it is an assistant message
-            return { title: "Assistant", content: outputs.content };
+      if (typeof outputs === "string") {
+        return { title: "Tool", content: outputs };
+      } else {
+        const { role } = outputs;
+        if (role) {
+          if (role === CHATBOT_ROLE.USER || role === CHATBOT_ROLE.SYSTEM) {
+            // Message must have a content, let's return it
+            return { title: role === CHATBOT_ROLE.USER ? "User" : "System", content: outputs.content };
+          } else if (role === CHATBOT_ROLE.ASSISTANT) {
+            if (outputs.content) {
+              // it is an assistant message
+              return { title: "Assistant", content: outputs.content };
+            } else {
+              // it is a tool call
+              const { tool_calls } = outputs;
+              return {
+                title: "Tool Call",
+                content: tool_calls.map((toolCall: any) => toolCall.function.name).join(", "),
+              };
+            }
           } else {
-            // it is a tool call
-            const { tool_calls } = outputs;
-            return {
-              title: "Tool Call",
-              content: tool_calls.map((toolCall: any) => toolCall.function.name).join(", "),
-            };
+            return { title: "Output", content: outputs.content || "" };
           }
         } else {
-          return { title: "Output", content: outputs.content || "" };
+          // the output is a string
+          return { title: "Tool", content: outputs };
         }
-      } else {
-        // the output is a string
-        return { title: "Tool", content: outputs };
       }
     } else {
       return { title: "Output", content: outputs.content || "" };
     }
-  }, [outputs]);
+  }, [outputs, type]);
 
   /** Renderer */
   return (
@@ -111,10 +117,11 @@ export const TraceDetails = ({ trace }: Props) => {
         </div>
         <div className="traceDetails-inputs-body">
           {inputItems.map(({ content, title }, index) => (
-            <div className="traceDetails-inputs-body-inputItem">
+            <div className="traceDetails-inputs-body-inputItem" key={hashString(content)}>
               <div className="traceDetails-inputs-body-inputItem-index">{index + 1}</div>
               <div className="traceDetails-inputs-body-inputItem-title">{title}</div>
-              <div className="traceDetails-inputs-body-inputItem-content">{content}</div>
+              {/*<div className="traceDetails-inputs-body-inputItem-content">{content}</div>*/}
+              <Markdown className="traceDetails-inputs-body-inputItem-content">{content}</Markdown>
             </div>
           ))}
         </div>

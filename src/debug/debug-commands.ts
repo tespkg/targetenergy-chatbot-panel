@@ -53,16 +53,16 @@ export const printDashboard: DebugCommand = {
     const { dashboard } = args;
     console.log(
       "Dashboard Markdown\n",
-      // (dashboard as Dashboard).toMarkdown(2, {
-      //   includeDescription: true,
-      //   includeGroups: false,
-      //   includeType: true,
-      // })
       (dashboard as Dashboard).toMarkdown(2, {
-        includeDescription: false,
-        includeGroups: true,
+        includeDescription: true,
+        includeGroups: false,
         includeType: true,
       })
+      // (dashboard as Dashboard).toMarkdown(2, {
+      //   includeDescription: false,
+      //   includeGroups: true,
+      //   includeType: true,
+      // })
     );
   },
 };

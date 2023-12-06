@@ -65,7 +65,18 @@ export class PluginSet {
         case "tool":
           return plugin.run(context, args, this.abortSignal, this.callbackManager);
         case "llm-tool":
-          return LlmToolExecutor.execute(plugin, context, args);
+          return LlmToolExecutor.execute(
+            plugin,
+            {
+              ...context,
+              options: {
+                ...context.options,
+                callbacks: this.callbackManager,
+                abortSignal: this.abortSignal,
+              },
+            },
+            args
+          );
       }
     };
   }

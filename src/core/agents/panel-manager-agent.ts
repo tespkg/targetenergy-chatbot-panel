@@ -56,48 +56,6 @@ const togglePanelRowFunction: Tool = {
   },
 };
 
-// const findPanelTool: LlmTool = {
-//   type: "llm-tool",
-//   name: "find_panel",
-//   title: "Find Panel",
-//   description: (_) => "Finds the panel in the application based on a query",
-//   parameters: (_) => ({
-//     type: "object",
-//     properties: {
-//       query: {
-//         type: "string",
-//         description: "Query to find the panel",
-//       },
-//     },
-//     required: ["query"],
-//   }),
-//   getMessages: async (context, args) => {
-//     const { query } = args;
-//     const { dashboard } = context.app;
-//
-//     console.log("Inside the find panel tool");
-//
-//     if (!dashboard) {
-//       throw new Error("Dashboard is not defined");
-//     }
-//
-//     dashboard.toMarkdown();
-//
-//     return [
-//       {
-//         role: "system",
-//         content:
-//           "You are a helpful chatbot. Your goal is to find a the related panel to user query." +
-//           `\n\nThe panels are: ${dashboard.toMarkdown(2)}`,
-//       },
-//       {
-//         role: "user",
-//         content: `Query: ${query}`,
-//       },
-//     ];
-//   },
-// };
-
 const fetchPanelData: Tool = {
   type: "tool",
   name: "fetch_panel_data",

@@ -52,6 +52,7 @@
       flex-direction: row;
       column-gap: 2px;
       cursor: pointer;
+      min-width: 100px;
 
       &-text {
         font-weight: 700;

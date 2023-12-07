@@ -44,7 +44,9 @@ export class LlmToolExecutor {
 
     this.callbackManager.emitWorking?.({
       message: `Calling ${this.tool.title} agent.`,
+      tool: this.tool.title,
       params: generateRequest,
+      isAgent: false,
     });
 
     let assistantMessage: BotMessage = { role: "assistant", content: "", tool_calls: [] };

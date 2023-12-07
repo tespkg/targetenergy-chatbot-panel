@@ -104,6 +104,7 @@ export class LlmAgentExecutor {
       message: `Talking to ${this.agent.title} agent. Turn: ${turn}`,
       params: generateRequest,
       turn: turn,
+      isAgent: true,
     });
 
     const agentTrace = this.newAgentTrace(generateRequest, runId, turn);
@@ -204,8 +205,10 @@ export class LlmAgentExecutor {
 
       this.callbackManager.emitWorking?.({
         turn: turn,
-        message: plugin.type === "agent" ? `Talking to agent ${plugin.title}` : `Calling tool ${plugin.title}`,
+        message: plugin.type === "agent" ? `Talking to agent1 ${plugin.title}` : `Calling tool1 ${plugin.title}`,
         params: pluginArgs,
+        isAgent: plugin.type === "agent",
+        tool: plugin.type === "tool" ? plugin.title : undefined,
       });
 
       let pluginResult: any;

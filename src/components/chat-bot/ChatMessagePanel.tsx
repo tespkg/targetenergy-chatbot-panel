@@ -37,6 +37,7 @@ import { useDispatch, useSelector } from "react-redux";
 import * as Actions from "store/actions";
 import { getChatContent } from "../../store/queries";
 import { ChatBotMessage } from "../../commons/types/ChatMessagePanelTypes";
+import { ChatMessagePanelUtils } from "./Utils";
 import "./chat-bot.scss";
 
 interface Props {
@@ -172,22 +173,31 @@ export const ChatMessagePanel = ({
   );
 
   const updateChatbotStatus = (eventData: SuccessEvent | DeltaEvent | ErrorEvent | WorkingEvent) => {
-    const { type, message } = eventData;
+    const { type, agent } = eventData;
     switch (type) {
       case "success":
+        if (agent === "main") {
+          setChatbotBusy(false);
+        }
+        break;
       case "error":
         setChatbotBusy(false);
-        setChatbotStatus(null);
         break;
       case "working":
         setChatbotBusy(true);
-        setChatbotStatus(message);
         break;
       case "delta":
         setChatbotBusy(true);
-        setChatbotStatus(message);
         break;
     }
+    setChatbotStatus((prev) => {
+      const newChatStatus = ChatMessagePanelUtils.generateChatStatus(eventData);
+      if (newChatStatus === undefined) {
+        return prev;
+      } else {
+        return newChatStatus;
+      }
+    });
   };
 
   const cancelAgent = useCallback(() => {
@@ -213,7 +223,7 @@ export const ChatMessagePanel = ({
             abortSignal: abortController.signal,
             callbacks: {
               onSuccess: (eventData: SuccessEvent) => {
-                console.log(eventData);
+                console.log("onSuccess:", eventData);
                 updateChatbotStatus(eventData);
               },
               onDelta: (eventData: DeltaEvent) => {
@@ -221,14 +231,14 @@ export const ChatMessagePanel = ({
                 if (agent === MAIN_AGENT_NAME) {
                   addChatChunkReceived(message, parentMessageId);
                 }
-                // updateChatbotStatus(eventData)
+                updateChatbotStatus(eventData);
               },
               onError: (eventData: ErrorEvent) => {
-                console.log(eventData);
+                console.log("onError:", eventData);
                 updateChatbotStatus(eventData);
               },
               onWorking: (eventData: WorkingEvent) => {
-                console.log(eventData);
+                console.log("onWorking:", eventData);
                 updateChatbotStatus(eventData);
               },
               onTrace: (trace: LlmTrace) => {
@@ -272,6 +282,7 @@ export const ChatMessagePanel = ({
 
     const messageId = uniqueId("text_message_");
     addMessageToChatContent(text, messageId, "parent", CHATBOT_ROLE.USER, true, true);
+    setChatbotStatus("Calling Portfolio Management Assistant");
     await runAgents(getBotMessages(text, CHATBOT_ROLE.USER), messageId);
   }, [isCommand, text, addMessageToChatContent, runAgents, getBotMessages, processCommand, dashboard, assetTree]);
 
@@ -282,6 +293,7 @@ export const ChatMessagePanel = ({
       const transcription = await transcribe(voice);
       const transcriptionMessageId = uniqueId("text_message_");
       addMessageToChatContent(transcription, transcriptionMessageId, messageId, CHATBOT_ROLE.USER, true, true);
+      setChatbotStatus("Calling Portfolio Management Assistant");
       await runAgents(getBotMessages(transcription, CHATBOT_ROLE.USER), messageId);
     },
     [addMessageToChatContent, addVoiceToChatContent, runAgents, getBotMessages]

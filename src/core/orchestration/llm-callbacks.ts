@@ -21,9 +21,11 @@ export type DeltaEvent = CommonEventData & DeltaEventData;
 
 export interface WorkingEventData {
   message: string;
+  isAgent: boolean;
   func?: string;
   params?: any;
   turn?: number;
+  tool?: string;
 }
 
 export type WorkingEvent = CommonEventData & WorkingEventData;

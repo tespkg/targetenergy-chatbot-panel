@@ -124,17 +124,22 @@ const TextMessageViewer = ({
       >
         {message}
       </Markdown>
-      <div className={"messageViewer-message-actionsContainer"}>
+      <div
+        className={classNames("messageViewer-message-actionsContainer", {
+          user: role === CHATBOT_ROLE.USER,
+          assistant: role === CHATBOT_ROLE.ASSISTANT,
+        })}
+      >
         {role === CHATBOT_ROLE.ASSISTANT && (
           <StreamingAudioPlayer text={message} id={id} disabled={isTextToSpeechDisabled} />
         )}
         {role === CHATBOT_ROLE.USER && (
-          <div className="deleteButtonContainer">
+          <div className={classNames({ autoHideButtonContainer: role === CHATBOT_ROLE.USER })}>
             <Button
               title="Clear"
               displayTitle={false}
               frame={false}
-              icon={<DeleteIcon width={16} height={16} />}
+              icon={<DeleteIcon width={16} height={16} color={"#1e90ff"} />}
               imageSize={16}
               disabled={isDeleteMessageDisabled}
               onClick={() => {
@@ -160,7 +165,7 @@ const TextMessageViewer = ({
             title="Copy"
             displayTitle={false}
             frame={false}
-            icon={<CopyIcon width={16} height={16} color={role === CHATBOT_ROLE.USER ? "#ffffff" : "#1c274c"} />}
+            icon={<CopyIcon width={16} height={16} color={role === CHATBOT_ROLE.USER ? "#1e90ff" : "#1c274c"} />}
             imageSize={16}
             onClick={() => {
               navigator.clipboard.writeText(message);
@@ -197,7 +202,7 @@ const AudioMessageViewer = ({
         controlsList="nodownload"
       />
       {role === CHATBOT_ROLE.USER && (
-        <div className="deleteButtonContainer">
+        <div className={classNames({ autoHideButtonContainer: role === CHATBOT_ROLE.USER })}>
           <Button
             title="Clear"
             displayTitle={false}

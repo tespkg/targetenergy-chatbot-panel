@@ -6,6 +6,7 @@
   height: fit-content;
   padding: 2px 5px;
   position: relative;
+  margin-bottom: 24px;
 
   &-avatar {
     display: flex;
@@ -32,7 +33,6 @@
   }
 
   &-message {
-    position: relative;
     width: fit-content;
     min-width: 64px;
     height: fit-content;
@@ -53,13 +53,12 @@
       color: #000;
     }
 
-    &-actionsContainer {
+  &-actionsContainer {
       display: flex;
       align-items: center;
       justify-content: flex-end;
       position: absolute;
-      bottom: 0;
-      right: 5px;
+      bottom: -26px;
       column-gap: 5px;
       .buttonWrapper-button.icon {
         min-width: 16px;
@@ -70,17 +69,21 @@
 
       &-playButton {
       }
+      &.user {
+        right: calc(5px + 36px + 12px + 12px);
+      }
+      &.assistant {
+        left: calc(5px + 36px + 12px + 12px);
+      }
     }
   }
 
   &-message.assistant {
     background-color: rgba(0, 0, 0, 0.05);
-    padding-right: 64px;
   }
 
   &-message.user {
     background-color: #1e90ff;
-    padding-right: 48px;
   }
 
   &-message.user.audio {
@@ -96,15 +99,6 @@
     }
   }
 
-  .deleteButtonContainer {
-    display: none;
-  }
-
-  &:hover {
-    .deleteButtonContainer {
-      display: block;
-    }
-  }
   .autoHideButtonContainer {
     display: none;
   }

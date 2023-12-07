@@ -74,8 +74,8 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
           <ClockIcon />
           <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
         </div>
-        <div className="trace-header-tokens">{`${tokenUsage.promptTokens} -> ${tokenUsage.completionTokens} Tokens`}</div>
-        <div className="trace-header-tokens">{`${aggregatedTokenUsage.promptTokens} -> ${aggregatedTokenUsage.completionTokens} Tokens`}</div>
+        {/*<div className="trace-header-tokens">{`${tokenUsage.promptTokens} → ${tokenUsage.completionTokens} Tokens`}</div>*/}
+        <div className="trace-header-tokens">{`${aggregatedTokenUsage.promptTokens} → ${aggregatedTokenUsage.completionTokens} Tokens`}</div>
         <div className="trace-header-cost">
           <span className="trace-header-cost-text">{`Price ${tokenUsage.totalPrice.toFixed(3)}`}</span>
           <DollarIcon color={"rgba(150, 205,150, 1)"} />

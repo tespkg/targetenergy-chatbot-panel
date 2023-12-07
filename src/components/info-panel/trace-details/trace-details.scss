@@ -61,6 +61,7 @@
           height: 100%;
           border-right: solid 1px #888888;
           border-left: solid 1px #888888;
+          padding-top: 2px;
 
         }
         &-content {
@@ -112,16 +113,16 @@
 
         &-title {
           display: flex;
-          align-items: flex-start;
-          justify-content: center;
+          align-items: center;
+          justify-content: flex-start;
           width: 96px;
           height: 100%;
           border-right: solid 1px #888888;
         }
         &-content {
           display: flex;
-          align-items: flex-start;
-          justify-content: center;
+          align-items: center;
+          justify-content: flex-start;
           width: calc(100% - 96px);
           height: 100%;
           font-family: monospace;

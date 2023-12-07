@@ -4,6 +4,8 @@ import { LlmTrace } from "../../../core/orchestration/llm-callbacks";
 import { CHATBOT_ROLE } from "../../../commons/enums/Chatbot";
 import { hashString } from "../../../commons/utils/string-utils";
 import Markdown from "markdown-to-jsx";
+import { Button } from "../../button/Button";
+import { CopyIcon } from "../../icons/CopyIcon";
 
 interface Props {
   trace: LlmTrace;
@@ -121,7 +123,17 @@ export const TraceDetails = ({ trace }: Props) => {
               <div className="traceDetails-inputs-body-inputItem-index">{index + 1}</div>
               <div className="traceDetails-inputs-body-inputItem-title">{title}</div>
               {/*<div className="traceDetails-inputs-body-inputItem-content">{content}</div>*/}
-              <Markdown className="traceDetails-inputs-body-inputItem-content">{content}</Markdown>
+              <Markdown className="traceDetails-inputs-body-inputItem-content markdown-html">{content}</Markdown>
+              <Button
+                title="Copy Content"
+                displayTitle={false}
+                frame={false}
+                icon={<CopyIcon width={32} height={32} />}
+                imageSize={16}
+                onClick={() => {
+                  navigator.clipboard.writeText(content);
+                }}
+              />
             </div>
           ))}
         </div>
@@ -133,7 +145,19 @@ export const TraceDetails = ({ trace }: Props) => {
         <div className="traceDetails-outputs-body">
           <div className="traceDetails-outputs-body-outputItem">
             <div className="traceDetails-outputs-body-outputItem-title">{outputItem.title}</div>
-            <div className="traceDetails-outputs-body-outputItem-content">{outputItem.content}</div>
+            <div className="traceDetails-outputs-body-outputItem-content">
+              <span>{outputItem.content}</span>
+              <Button
+                title="Copy Content"
+                displayTitle={false}
+                frame={false}
+                icon={<CopyIcon width={32} height={32} />}
+                imageSize={16}
+                onClick={() => {
+                  navigator.clipboard.writeText(outputItem.content);
+                }}
+              />
+            </div>
           </div>
         </div>
       </div>

@@ -1,31 +1,31 @@
-import { FunctionContext, Tool } from "../llm-function";
+import { FunctionContext, PluginResult, Tool } from "../llm-function";
 import { BotMessage } from "../../../api/chatbot-types";
 import { BaseExecutor } from "./base-executor";
 
 export class ToolExecutor extends BaseExecutor {
-  private tool: Tool;
-  private args: any;
+  private readonly tool: Tool;
+  private readonly args: any;
 
-  static execute(tool: Tool, context: FunctionContext, args: any): Promise<string | BotMessage> {
-    const executor = new ToolExecutor(tool, context, args);
+  static execute(context: FunctionContext, tool: Tool, args: any): Promise<PluginResult> {
+    const executor = new ToolExecutor(context, tool, args);
     return executor.run();
   }
 
-  private constructor(tool: Tool, context: FunctionContext, args: any) {
-    super(context);
+  constructor(context: FunctionContext, tool: Tool, args: any) {
+    super(context, tool);
     this.tool = tool;
     this.args = args;
   }
 
-  private async run(): Promise<string | BotMessage> {
-    const trace = this.newPluginTrace(this.parentId, false, this.tool.name, this.args);
+  protected async run(): Promise<string | BotMessage> {
+    const trace = this.newTrace(this.args);
 
     try {
       const result = await this.tool.run(this.context, this.args, this.abortSignal, this.callbackManager);
-      this.updateToolTrace(trace, result);
+      this.updateTrace(trace, result);
       return result;
     } catch (err) {
-      this.errorToolTrace(trace, err);
+      this.errorTrace(trace, err);
       throw err;
     }
   }

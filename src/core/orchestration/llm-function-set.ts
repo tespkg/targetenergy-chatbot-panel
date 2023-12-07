@@ -65,7 +65,6 @@ export class PluginSet {
           });
         case "tool":
           return ToolExecutor.execute(
-            plugin,
             {
               ...context,
               options: {
@@ -74,11 +73,11 @@ export class PluginSet {
                 abortSignal: this.abortSignal,
               },
             },
+            plugin,
             args
           );
         case "llm-tool":
           return LlmToolExecutor.execute(
-            plugin,
             {
               ...context,
               options: {
@@ -87,6 +86,7 @@ export class PluginSet {
                 abortSignal: this.abortSignal,
               },
             },
+            plugin,
             args
           );
       }

@@ -97,3 +97,12 @@ export interface LlmAgent extends LlmFunction {
 }
 
 export type Plugin = Tool | LlmTool | LlmAgent;
+
+export type PluginResult = string | BotMessage;
+
+export function stringPluginResult(result: PluginResult): string {
+  if (typeof result === "string") {
+    return result;
+  }
+  return result.content;
+}

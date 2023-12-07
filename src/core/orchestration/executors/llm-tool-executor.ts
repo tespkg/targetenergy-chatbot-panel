@@ -1,36 +1,24 @@
-import { FunctionContext, LlmTool, PluginOptions } from "../llm-function";
-import { LlmCallbackManager, LlmTrace } from "../llm-callbacks";
+import { FunctionContext, LlmTool, PluginResult } from "../llm-function";
 import { BotGenerateResponse, BotMessage } from "../../../api/chatbot-types";
-import { OperationCancelledError } from "../../../commons/errors/operation-cancelled-error";
 import { generate } from "../../../api/chatbot-api";
-import { v4 as uuidv4 } from "uuid";
+import { BaseExecutor } from "./base-executor";
 
-export class LlmToolExecutor {
-  private tool: LlmTool;
-  private context: FunctionContext;
-  private args: any;
-  private callbackManager: LlmCallbackManager;
-  private options: PluginOptions;
-  private parentId: string;
-  private abortSignal?: AbortSignal;
+export class LlmToolExecutor extends BaseExecutor {
+  private readonly tool: LlmTool;
+  private readonly args: any;
 
-  static execute(tool: LlmTool, context: FunctionContext, args: any): Promise<BotMessage> {
-    const executor = new LlmToolExecutor(tool, context, args);
+  static execute(context: FunctionContext, tool: LlmTool, args: any): Promise<PluginResult> {
+    const executor = new LlmToolExecutor(context, tool, args);
     return executor.run();
   }
 
-  private constructor(tool: LlmTool, context: FunctionContext, args: any) {
+  constructor(context: FunctionContext, tool: LlmTool, args: any) {
+    super(context, tool);
     this.tool = tool;
-    this.context = context;
     this.args = args;
-
-    this.options = context.options;
-    this.callbackManager = context.options.callbacks as LlmCallbackManager;
-    this.parentId = this.options.parentId!;
-    this.abortSignal = this.options.abortSignal;
   }
 
-  private async run(): Promise<BotMessage> {
+  protected async run(): Promise<PluginResult> {
     const messages = await this.tool.getMessages(this.context, this.args);
 
     if (messages.length === 0) {
@@ -41,6 +29,8 @@ export class LlmToolExecutor {
       messages: [...messages],
       functions: [],
     };
+
+    const trace = this.newTrace(this.args);
 
     this.callbackManager.emitWorking?.({
       message: `Calling ${this.tool.title} agent.`,
@@ -57,6 +47,7 @@ export class LlmToolExecutor {
     } catch (error) {
       // If the request was cancelled because of the abortSignal, `checkAbortSignal` will throw a custom exception
       // Otherwise we rethrow the original error
+      this.errorTrace(trace, error);
       this.checkAbortSignal();
       throw error;
     }
@@ -95,41 +86,8 @@ export class LlmToolExecutor {
       result: assistantMessage,
     });
 
-    this.newToolTrace(this.parentId!, this.tool.name, this.args, assistantMessage);
+    this.updateTrace(trace, assistantMessage);
 
     return assistantMessage;
   }
-
-  private newToolTrace = (parentId: string, pluginName: string, args: any, result: BotMessage) => {
-    const trace = {
-      id: uuidv4(),
-      parentId: parentId,
-      name: `${pluginName} Tool`,
-      type: "tool",
-      startTime: new Date(),
-      inputs: args,
-      outputs: result,
-      subTraces: [] as LlmTrace[],
-      tokenUsage: {
-        promptTokens: result.tokenUsage?.prompt_tokens,
-        completionTokens: result.tokenUsage?.completion_tokens,
-        totalTokens: result.tokenUsage?.total_tokens,
-        totalPrice: result.tokenUsage?.total_price,
-      },
-      aggregatedTokenUsage: {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        totalPrice: 0,
-      },
-    } as LlmTrace;
-    this.callbackManager.addTrace(trace);
-    return trace;
-  };
-
-  private checkAbortSignal = () => {
-    if (this.abortSignal?.aborted) {
-      throw new OperationCancelledError("the agent was cancelled");
-    }
-  };
 }

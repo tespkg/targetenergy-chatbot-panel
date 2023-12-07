@@ -2,10 +2,10 @@ import React, { useMemo } from "react";
 import { Button } from "../button/Button";
 import PlayIcon from "img/icons/play-icon.svg";
 import PauseIcon from "img/icons/pause-icon.svg";
-import TextTpSpeechIcon from "img/icons/text-to-speech-icon.svg";
 import TextTpSpeechConvertIcon from "img/icons/text-to-speech-in-progress-icon.svg";
 import { STREAMING_AUDIO_PLAYER_STATE } from "./constants";
 import { useStreamingAudioPlayer } from "../../hooks/use-voice-recorder/useStreamingAudioPlayer";
+import { TextToSpeechIcon } from "../icons/TextToSpeechIcon";
 
 interface Props {
   text: string;
@@ -51,7 +51,7 @@ export const StreamingAudioPlayer = ({ text, id, disabled }: Props) => {
           }}
           displayTitle={false}
           frame={false}
-          imageSource={TextTpSpeechIcon}
+          icon={<TextToSpeechIcon />}
           disabled={disabled}
         />
       )}

@@ -10,6 +10,7 @@ import { Button } from "../../button/Button";
 import { DeleteIcon } from "../../icons/DeleteIcon";
 import "./message-viewer.scss";
 import InfoIcon from "../../../img/icons/info-icon.svg";
+import { CopyIcon } from "../../icons/CopyIcon";
 
 interface Props {
   className?: string;
@@ -154,6 +155,18 @@ const TextMessageViewer = ({
             }}
           />
         )}
+        <div className={classNames({ autoHideButtonContainer: role === CHATBOT_ROLE.USER })}>
+          <Button
+            title="Copy"
+            displayTitle={false}
+            frame={false}
+            icon={<CopyIcon width={16} height={16} color={role === CHATBOT_ROLE.USER ? "#ffffff" : "#1c274c"} />}
+            imageSize={16}
+            onClick={() => {
+              navigator.clipboard.writeText(message);
+            }}
+          />
+        </div>
       </div>
     </Fragment>
   );

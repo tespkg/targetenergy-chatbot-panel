@@ -60,6 +60,7 @@
       position: absolute;
       bottom: 0;
       right: 5px;
+      column-gap: 5px;
       .buttonWrapper-button.icon {
         min-width: 16px;
         max-width: 16px;
@@ -74,12 +75,12 @@
 
   &-message.assistant {
     background-color: rgba(0, 0, 0, 0.05);
-    padding-right: 48px;
+    padding-right: 64px;
   }
 
   &-message.user {
     background-color: #1e90ff;
-    padding-right: 32px;
+    padding-right: 48px;
   }
 
   &-message.user.audio {
@@ -101,6 +102,15 @@
 
   &:hover {
     .deleteButtonContainer {
+      display: block;
+    }
+  }
+  .autoHideButtonContainer {
+    display: none;
+  }
+
+  &:hover {
+    .autoHideButtonContainer {
       display: block;
     }
   }

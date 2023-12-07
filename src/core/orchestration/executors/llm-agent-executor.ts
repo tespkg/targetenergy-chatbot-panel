@@ -4,14 +4,12 @@ import {
   BotMessage,
   ChatCompletionMessageToolCall,
 } from "../../../api/chatbot-types";
-import { FunctionContext, LlmAgent, PluginOptions } from "../llm-function";
-import { LlmCallbackManager, LlmTrace } from "../llm-callbacks";
+import { FunctionContext, LlmAgent, PluginResult, stringPluginResult } from "../llm-function";
 import { PluginSet } from "../llm-function-set";
-import { v4 as uuidv4 } from "uuid";
 import { generate } from "../../../api/chatbot-api";
 import { MaxTurnExceededError } from "../llm-errors";
 
-import { OperationCancelledError } from "../../../commons/errors/operation-cancelled-error";
+import { BaseExecutor } from "./base-executor";
 
 const DEFAULT_MAX_TURNS = 10;
 
@@ -22,27 +20,27 @@ const DEFAULT_CONTEXT: FunctionContext = {
   },
 };
 
-export class LlmAgentExecutor {
+export class LlmAgentExecutor extends BaseExecutor {
   private agent: LlmAgent;
   private readonly messages: BotMessage[];
   private readonly plugins: PluginSet;
-  private readonly callbackManager: LlmCallbackManager;
   private readonly maxTurns: number;
-  private readonly context: FunctionContext;
-  private readonly abortSignal?: AbortSignal;
-  private readonly parentId?: string;
-  private readonly options: PluginOptions;
 
-  static async execute(messages: BotMessage[], agent: LlmAgent, context?: FunctionContext): Promise<BotMessage> {
+  static async execute(messages: BotMessage[], agent: LlmAgent, context?: FunctionContext): Promise<PluginResult> {
     const executor = new LlmAgentExecutor(messages, agent, { ...DEFAULT_CONTEXT, ...(context ?? {}) });
     return executor.run();
   }
 
   private constructor(messages: BotMessage[], agent: LlmAgent, context: FunctionContext) {
+    super(context, agent);
     const { options } = context;
-    const { maxTurns = DEFAULT_MAX_TURNS, abortSignal } = options;
+    const { maxTurns = DEFAULT_MAX_TURNS } = options;
 
     this.agent = agent;
+    this.plugins = new PluginSet(agent.plugins, this.callbackManager, this.abortSignal);
+    this.parentId = options.parentId;
+    this.maxTurns = maxTurns;
+
     const systemMessage = agent.systemMessage ?? options.systemMessage;
     if (systemMessage) {
       messages.unshift({
@@ -51,21 +49,9 @@ export class LlmAgentExecutor {
       });
     }
     this.messages = messages;
-
-    this.callbackManager =
-      options.callbacks instanceof LlmCallbackManager
-        ? options.callbacks
-        : new LlmCallbackManager(agent.name, options.callbacks);
-    this.plugins = new PluginSet(agent.plugins, this.callbackManager, abortSignal);
-
-    this.options = options;
-    this.parentId = options.parentId;
-    this.maxTurns = maxTurns;
-    this.abortSignal = abortSignal;
-    this.context = context;
   }
 
-  async run(): Promise<BotMessage> {
+  protected async run(): Promise<PluginResult> {
     let turn = 1;
     while (turn < this.maxTurns) {
       const result = await this.runTurn(turn);
@@ -85,28 +71,27 @@ export class LlmAgentExecutor {
       functions: this.plugins.getDefinitions(this.context),
     };
 
-    const runId = uuidv4();
-    const { result, trace } = await this.generate(generateRequest, runId, turn);
+    const { result, trace } = await this.generate(generateRequest, turn);
     if (!result.tool_calls?.length) {
       await this.callbackManager.emitTrace(trace);
       return result;
     }
 
-    await this.processToolCalls(result.tool_calls, runId, turn);
+    await this.processToolCalls(result.tool_calls, trace.id, turn);
 
     this.callbackManager.emitTrace?.(trace);
 
     return undefined;
   };
 
-  private generate = async (generateRequest: BotGenerateRequest, runId: string, turn: number) => {
+  private generate = async (generateRequest: BotGenerateRequest, turn: number) => {
     this.callbackManager.emitWorking?.({
       message: `Talking to ${this.agent.title} agent. Turn: ${turn}`,
       params: generateRequest,
       turn: turn,
     });
 
-    const agentTrace = this.newAgentTrace(generateRequest, runId, turn);
+    const trace = this.newTrace(generateRequest, turn);
 
     let assistantMessage: BotMessage = { role: "assistant", content: "", tool_calls: [] };
     let toolCalls: ChatCompletionMessageToolCall[] = [];
@@ -171,13 +156,13 @@ export class LlmAgentExecutor {
       params: generateRequest,
       result: assistantMessage,
     });
-    this.updateAgentTrace(agentTrace, assistantMessage);
+    this.updateTrace(trace, assistantMessage);
 
     this.messages.push(assistantMessage);
 
     return {
       result: assistantMessage,
-      trace: agentTrace,
+      trace: trace,
     };
   };
 
@@ -208,7 +193,7 @@ export class LlmAgentExecutor {
         params: pluginArgs,
       });
 
-      let pluginResult: any;
+      let pluginResult: PluginResult;
       try {
         pluginResult = await plugin.run(functionCtx, pluginArgs);
         this.callbackManager.emitSuccess?.({
@@ -245,52 +230,10 @@ export class LlmAgentExecutor {
       const toolMessage: BotMessage = {
         role: "tool",
         tool_call_id: toolCall.id,
-        content: pluginResult.content ?? pluginResult,
+        content: stringPluginResult(pluginResult),
       };
 
       this.messages.push(toolMessage);
-    }
-  };
-
-  private newAgentTrace = (generateReq: BotGenerateRequest, runId: string, turn: number) => {
-    const trace = {
-      id: runId,
-      parentId: this.parentId,
-      name: `${this.agent.title} - Turn ${turn}`,
-      type: "agent",
-      startTime: new Date(),
-      inputs: generateReq, // TODO: needs better formatting
-      subTraces: [] as LlmTrace[],
-      tokenUsage: {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        totalPrice: 0,
-      },
-      aggregatedTokenUsage: {
-        promptTokens: 0,
-        completionTokens: 0,
-        totalTokens: 0,
-        totalPrice: 0,
-      },
-    } as LlmTrace;
-    this.callbackManager.addTrace(trace);
-    return trace;
-  };
-
-  private updateAgentTrace = (trace: LlmTrace, assistantMessage: BotMessage) => {
-    trace.outputs = assistantMessage;
-    trace.endTime = new Date();
-    trace.tokenUsage.promptTokens = assistantMessage.tokenUsage?.prompt_tokens ?? 0;
-    trace.tokenUsage.completionTokens = assistantMessage.tokenUsage?.completion_tokens ?? 0;
-    trace.tokenUsage.totalTokens = assistantMessage.tokenUsage?.total_tokens ?? 0;
-    trace.tokenUsage.totalPrice = assistantMessage.tokenUsage?.total_price ?? 0;
-    this.callbackManager.updateTrace(trace);
-  };
-
-  private checkAbortSignal = () => {
-    if (this.abortSignal?.aborted) {
-      throw new OperationCancelledError("the agent was cancelled");
     }
   };
 }

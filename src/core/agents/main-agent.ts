@@ -2,7 +2,7 @@ import { BotMessage } from "../../api/chatbot-types";
 import { assetTreeManagerAgent } from "./asset-tree-manager-agent";
 import { MAIN_AGENT_NAME } from "../orchestration/llm-callbacks";
 import { panelManagerAgent } from "./panel-manager-agent";
-import { FunctionContext, LlmAgent, LlmTool, Tool } from "../orchestration/llm-function";
+import { FunctionContext, LlmAgent, LlmTool, stringPluginResult, Tool } from "../orchestration/llm-function";
 import { LlmAgentExecutor } from "../orchestration/executors/llm-agent-executor";
 import { prettifyPlugin } from "../orchestration/llm-utils";
 
@@ -104,5 +104,5 @@ export const mainAgent: LlmAgent = {
 
 export async function runMainAgent(messages: BotMessage[], context: FunctionContext) {
   const result = await LlmAgentExecutor.execute(messages, mainAgent, context);
-  return result.content;
+  return stringPluginResult(result);
 }

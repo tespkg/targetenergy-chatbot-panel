@@ -6,6 +6,7 @@ import { ClockIcon } from "../icons/ClockIcon";
 import { DollarIcon } from "../icons/DollarIcon";
 import { ToolIcon } from "../icons/ToolIcon";
 import { AgentIcon } from "../icons/AgentIcon";
+import { InfoPanelUtils } from "../info-panel/infoPanelUtils";
 
 interface Props {
   trace: LlmTrace;
@@ -70,15 +71,31 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
         >
           {name}
         </div>
-        <div className="trace-header-duration">
-          <ClockIcon />
+        <div className={classNames("trace-header-duration", InfoPanelUtils.getDurationOrder(durationSeconds))}>
+          <ClockIcon
+            color={
+              InfoPanelUtils.getDurationOrder(durationSeconds) === "low"
+                ? "#50bb50"
+                : InfoPanelUtils.getDurationOrder(durationSeconds) === "normal"
+                ? "#FFC61B"
+                : "#ff0000"
+            }
+          />
           <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
         </div>
         {/*<div className="trace-header-tokens">{`${tokenUsage.promptTokens} → ${tokenUsage.completionTokens} Tokens`}</div>*/}
         <div className="trace-header-tokens">{`${aggregatedTokenUsage.promptTokens} → ${aggregatedTokenUsage.completionTokens} Tokens`}</div>
-        <div className="trace-header-cost">
+        <div className={classNames("trace-header-cost", InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice))}>
           <span className="trace-header-cost-text">{`Price ${tokenUsage.totalPrice.toFixed(3)}`}</span>
-          <DollarIcon color={"rgba(150, 205,150, 1)"} />
+          <DollarIcon
+            color={
+              InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice) === "low"
+                ? "#50bb50"
+                : InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice) === "normal"
+                ? "#FFC61B"
+                : "#ff0000"
+            }
+          />
         </div>
       </div>
       {subTraces.length > 0 && (

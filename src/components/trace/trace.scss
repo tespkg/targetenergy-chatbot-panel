@@ -35,8 +35,15 @@
       align-items: center;
       flex-direction: row;
       column-gap: 2px;
-      &-text {
+
+      &.high &-text {
+        color : #ff0000;
+      }
+      &.normal &-text {
         color : #FFC61B;
+      }
+      &.low &-text {
+        color : #50bb50;
       }
     }
 
@@ -66,8 +73,14 @@
       align-items: center;
       flex-direction: row;
       column-gap: 2px;
-      &-text {
-        color: rgba(150, 205,150, 1);
+      &.high &-text {
+        color : #ff0000;
+      }
+      &.normal &-text {
+        color : #FFC61B;
+      }
+      &.low &-text {
+        color : #50bb50;
       }
     }
   }

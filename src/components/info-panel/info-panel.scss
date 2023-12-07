@@ -24,7 +24,15 @@
       justify-content: center;
       &-price {
         font-family: monospace;
-        color: rgba(150, 205,150, 1);
+      }
+      &.high &-price {
+        color : #ff0000;
+      }
+      &.normal &-price {
+        color : #FFC61B;
+      }
+      &.low &-price {
+        color : #50bb50;
       }
     }
 

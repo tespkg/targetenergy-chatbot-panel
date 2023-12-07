@@ -1,4 +1,4 @@
-import React, { Fragment } from "react";
+import React, { Fragment, useMemo, useState } from "react";
 import classNames from "classnames";
 import Markdown from "markdown-to-jsx";
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
@@ -8,9 +8,15 @@ import UserAvatar from "img/icons/user_avatar.svg";
 import { StreamingAudioPlayer } from "../../audio-player/StreamingAudioPlayer";
 import { Button } from "../../button/Button";
 import { DeleteIcon } from "../../icons/DeleteIcon";
-import "./message-viewer.scss";
+import PauseIcon from "img/icons/pause-icon.svg";
+import PlayIcon from "img/icons/play-icon.svg";
+import StopIcon from "img/icons/stop-circle.svg";
+import MuteIcon from "img/icons/mute-icon.svg";
+import UnmuteIcon from "img/icons/unmute-icon.svg";
 import InfoIcon from "../../../img/icons/info-icon.svg";
 import { CopyIcon } from "../../icons/CopyIcon";
+import { Howl } from "howler";
+import "./message-viewer.scss";
 
 interface Props {
   className?: string;
@@ -49,9 +55,9 @@ export const MessageViewer = ({
           audio: type === SUPPORTED_MESSAGE_TYPE.AUDIO,
         })}
       >
-        {type === SUPPORTED_MESSAGE_TYPE.AUDIO ? (
+        {type === SUPPORTED_MESSAGE_TYPE.AUDIO && audio ? (
           <AudioMessageViewer
-            audio={audio}
+            url={URL.createObjectURL(audio)}
             id={id}
             parentId={parentMessageId}
             onDelete={onDelete}
@@ -181,26 +187,100 @@ const AudioMessageViewer = ({
   id,
   parentId,
   role,
-  audio,
+  url,
   onDelete,
   isDeleteMessageDisabled,
 }: {
-  audio?: Blob;
+  url: string;
   role: CHATBOT_ROLE;
   id: string;
   parentId: string;
   isDeleteMessageDisabled: boolean;
   onDelete: (id: string, parentId: string) => void;
 }) => {
+  /** States */
+  const [isPlaying, setPlaying] = useState(false);
+  const [isMuted, setMuted] = useState(false);
+  const [soundId, setSounId] = useState<number | undefined>(undefined);
+
+  /** Sound stuff */
+  const sound = useMemo(() => {
+    return new Howl({
+      src: [url],
+      format: ["ogg"],
+      preload: true,
+      html5: true,
+      onend: () => {
+        setPlaying(false);
+      },
+    });
+  }, [url]);
+
+  const play = () => {
+    console.log("Playing the sound.");
+    sound.play();
+    setPlaying(true);
+    setSounId(soundId);
+  };
+  const pause = () => {
+    console.log("Pausing the sound.", soundId);
+    sound.pause();
+    setPlaying(false);
+  };
+  const stop = () => {
+    console.log("Stopping the sound.");
+    sound.stop();
+    setPlaying(false);
+  };
+  //
+  const toggleMute = () => {
+    console.log("Toggle mute.");
+    sound.mute(!isMuted);
+    setMuted((prev) => !prev);
+  };
+
   /** Renderer */
-  return audio ? (
+  return url ? (
     <Fragment>
-      <audio
-        className="messageViewer-message-messageVoice"
-        src={URL.createObjectURL(audio)}
-        controls
-        controlsList="nodownload"
-      />
+      <div className={classNames("audioMessageViewer")}>
+        <div className={classNames("audioMessageViewer-actionsContainer")}>
+          <Button
+            title="Play"
+            displayTitle={false}
+            frame={false}
+            imageSource={PlayIcon}
+            imageSize={16}
+            disabled={isPlaying}
+            onClick={play}
+          />
+          <Button
+            title="Pause"
+            displayTitle={false}
+            frame={false}
+            imageSource={PauseIcon}
+            imageSize={16}
+            disabled={!isPlaying}
+            onClick={pause}
+          />
+          <Button
+            title="Stop"
+            displayTitle={false}
+            frame={false}
+            imageSource={StopIcon}
+            imageSize={16}
+            disabled={!isPlaying}
+            onClick={stop}
+          />
+          <Button
+            title={isMuted ? "Unmute" : "Mute"}
+            displayTitle={false}
+            frame={false}
+            imageSource={isMuted ? UnmuteIcon : MuteIcon}
+            imageSize={16}
+            onClick={toggleMute}
+          />
+        </div>
+      </div>
       {role === CHATBOT_ROLE.USER && (
         <div className={classNames({ autoHideButtonContainer: role === CHATBOT_ROLE.USER })}>
           <Button

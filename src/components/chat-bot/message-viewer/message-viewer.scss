@@ -113,3 +113,35 @@
 .messageViewer.user {
   flex-direction: row-reverse;
 }
+
+.audioMessageViewer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  width: 250px;
+  height: 64px;
+  padding: 5px 12px;
+  border-radius: 32px;
+  overflow-x: auto;
+  background-color: rgba(50, 100, 200, 0.25);
+  &-waveContainer {
+
+  }
+  &-actionsContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    width: 100%;
+    height: 16px;
+    column-gap: 5px;
+    .buttonWrapper-button.icon {
+      min-width: 16px;
+      max-width: 16px;
+      width: 16px;
+      height: 16px;
+      padding: 0;
+    }
+  }
+}

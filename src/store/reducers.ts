@@ -114,6 +114,7 @@ export default handleActions<StoreType, any>(
               includeInContextHistory: true,
               includeInChatPanel: true,
               type: SUPPORTED_MESSAGE_TYPE.TEXT,
+              time: new Date().getTime(),
             } as ChatBotMessage,
           ];
           return update(state, { chatContent: { $set: newMessages } });

@@ -10,4 +10,5 @@ export type ChatBotMessage = {
   parentMessageId?: string | "parent";
   includeInContextHistory: boolean;
   includeInChatPanel: boolean;
+  time?: number;
 };

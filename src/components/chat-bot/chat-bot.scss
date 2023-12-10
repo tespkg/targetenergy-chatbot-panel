@@ -62,6 +62,14 @@ $input-vertical-margin: 8px;
     border-left: solid 1px #669;
     background-color: #fff;
 
+    &-messageGroup {
+        border-radius: 12px;
+      margin-bottom: 5px;
+      &:hover {
+        box-shadow:  2px 2px 2px 2px #666699
+      }
+    }
+
     &-commandButtonWrapper {
       width: fit-content;
       margin-right: 5px;

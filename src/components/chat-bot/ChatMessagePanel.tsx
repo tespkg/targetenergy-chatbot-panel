@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import classNames from "classnames";
 import TrashBin from "img/icons/trashbin.svg";
 import ClearHistoryIcon from "img/icons/clear-history.svg";
@@ -10,7 +10,7 @@ import SendMessage from "img/icons/send-message.svg";
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
 import { Input } from "@grafana/ui";
 import { Button } from "components/button/Button";
-import { uniqueId } from "lodash";
+import { get, groupBy, uniqueId } from "lodash";
 import { BotMessage } from "../../api/chatbot-types";
 import { AssetTree } from "../../commons/types/asset-tree";
 import { TreeNodeData } from "../../commons/types/tree-node-data";
@@ -80,6 +80,27 @@ export const ChatMessagePanel = ({
   /** Selectors */
   const chatContent = useSelector(getChatContent);
 
+  /** Memos */
+  const messageGroups = useMemo(() => {
+    if (chatContent) {
+      const messages = chatContent.filter(({ includeInChatPanel }) => includeInChatPanel);
+      const groups = groupBy(messages, (message) =>
+        message.parentMessageId === "parent" ? message.id : message.parentMessageId
+      );
+      const groupsList = Object.keys(groups)
+        .map((key) => ({
+          messages: get(groups, key),
+          referenceMessage: messages.find((message) => message.parentMessageId === "parent"),
+        }))
+        .sort((group1, group2) => {
+          return (group1.referenceMessage?.time || 0) <= (group2.referenceMessage?.time || 0) ? 1 : -1;
+        });
+      return groupsList.map((group) => ({ ...group, id: uniqueId("groupMessage_") }));
+    } else {
+      return undefined;
+    }
+  }, [chatContent]);
+
   /** Callbacks and functions */
   const addMessageToChatContent = useCallback(
     (
@@ -101,6 +122,7 @@ export const ChatMessagePanel = ({
               includeInContextHistory: includeInContextHistory,
               includeInChatPanel: includeInChatPanel,
               type: SUPPORTED_MESSAGE_TYPE.TEXT,
+              time: new Date().getTime(),
             } as ChatBotMessage,
           ])
         );
@@ -125,6 +147,7 @@ export const ChatMessagePanel = ({
               includeInContextHistory: true,
               includeInChatPanel: true,
               type: SUPPORTED_MESSAGE_TYPE.AUDIO,
+              time: new Date().getTime(),
             } as ChatBotMessage,
             {
               id: uniqueId("text_message_"),
@@ -134,6 +157,7 @@ export const ChatMessagePanel = ({
               includeInContextHistory: false,
               includeInChatPanel: true,
               type: SUPPORTED_MESSAGE_TYPE.TEXT,
+              time: new Date().getTime(),
             } as ChatBotMessage,
           ])
         );
@@ -363,29 +387,33 @@ export const ChatMessagePanel = ({
         </div>
       </div>
       <div className={classNames("ChatBot-chatPanel")} ref={chatContentRef}>
-        {chatContent &&
-          chatContent
-            .filter(({ includeInChatPanel }) => includeInChatPanel)
-            .map(({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {
-              const viewModel = new MessageViewerViewModel();
-              viewModel.message = message;
-              viewModel.type = type;
-              viewModel.audio = audio;
-              viewModel.audioUrl = audioUrl;
-              viewModel.id = id;
-              viewModel.parentMessageId = parentMessageId || "parent";
-              viewModel.role = role;
-              return (
-                <MessageViewer
-                  key={id}
-                  viewModel={viewModel}
-                  isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
-                  isDeleteMessageDisabled={isChatbotBusy}
-                  onDelete={onDeleteMessage}
-                  onInfo={onMessageInfo}
-                />
-              );
-            })}
+        {messageGroups &&
+          messageGroups.map((messageGroup) => (
+            <div className={classNames("ChatBot-chatPanel-messageGroup")} key={messageGroup.id}>
+              {messageGroup.messages.map(
+                ({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {
+                  const viewModel = new MessageViewerViewModel();
+                  viewModel.message = message;
+                  viewModel.type = type;
+                  viewModel.audio = audio;
+                  viewModel.audioUrl = audioUrl;
+                  viewModel.id = id;
+                  viewModel.parentMessageId = parentMessageId || "parent";
+                  viewModel.role = role;
+                  return (
+                    <MessageViewer
+                      key={id}
+                      viewModel={viewModel}
+                      isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
+                      isDeleteMessageDisabled={isChatbotBusy}
+                      onDelete={onDeleteMessage}
+                      onInfo={onMessageInfo}
+                    />
+                  );
+                }
+              )}
+            </div>
+          ))}
       </div>
       {chatbotStatus !== null && (
         <div className="ChatBot-statusContainer">

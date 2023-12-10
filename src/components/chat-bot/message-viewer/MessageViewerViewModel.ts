@@ -7,4 +7,5 @@ export class MessageViewerViewModel {
   parentMessageId = "";
   type: SUPPORTED_MESSAGE_TYPE = SUPPORTED_MESSAGE_TYPE.TEXT;
   audio?: Blob;
+  audioUrl?: string;
 }

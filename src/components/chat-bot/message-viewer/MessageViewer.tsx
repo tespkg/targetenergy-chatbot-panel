@@ -1,4 +1,4 @@
-import React, { Fragment, useMemo, useState } from "react";
+import React, { Fragment } from "react";
 import classNames from "classnames";
 import Markdown from "markdown-to-jsx";
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
@@ -10,12 +10,12 @@ import { Button } from "../../button/Button";
 import { DeleteIcon } from "../../icons/DeleteIcon";
 import PauseIcon from "img/icons/pause-icon.svg";
 import PlayIcon from "img/icons/play-icon.svg";
-import StopIcon from "img/icons/stop-circle.svg";
 import MuteIcon from "img/icons/mute-icon.svg";
 import UnmuteIcon from "img/icons/unmute-icon.svg";
 import InfoIcon from "../../../img/icons/info-icon.svg";
 import { CopyIcon } from "../../icons/CopyIcon";
-import { Howl } from "howler";
+import AudioPlayer from "react-h5-audio-player";
+import "react-h5-audio-player/lib/styles.css";
 import "./message-viewer.scss";
 
 interface Props {
@@ -36,7 +36,7 @@ export const MessageViewer = ({
   onInfo,
 }: Props) => {
   /** Extract Properties from view model */
-  const { message, audio, role, id, parentMessageId, type } = viewModel;
+  const { message, audioUrl, role, id, parentMessageId, type } = viewModel;
 
   /** Renderer */
   return (
@@ -55,9 +55,9 @@ export const MessageViewer = ({
           audio: type === SUPPORTED_MESSAGE_TYPE.AUDIO,
         })}
       >
-        {type === SUPPORTED_MESSAGE_TYPE.AUDIO && audio ? (
+        {type === SUPPORTED_MESSAGE_TYPE.AUDIO && audioUrl ? (
           <AudioMessageViewer
-            url={URL.createObjectURL(audio)}
+            url={audioUrl}
             id={id}
             parentId={parentMessageId}
             onDelete={onDelete}
@@ -198,89 +198,23 @@ const AudioMessageViewer = ({
   isDeleteMessageDisabled: boolean;
   onDelete: (id: string, parentId: string) => void;
 }) => {
-  /** States */
-  const [isPlaying, setPlaying] = useState(false);
-  const [isMuted, setMuted] = useState(false);
-  const [soundId, setSounId] = useState<number | undefined>(undefined);
-
-  /** Sound stuff */
-  const sound = useMemo(() => {
-    return new Howl({
-      src: [url],
-      format: ["ogg"],
-      preload: true,
-      html5: true,
-      onend: () => {
-        setPlaying(false);
-      },
-    });
-  }, [url]);
-
-  const play = () => {
-    console.log("Playing the sound.");
-    sound.play();
-    setPlaying(true);
-    setSounId(soundId);
-  };
-  const pause = () => {
-    console.log("Pausing the sound.", soundId);
-    sound.pause();
-    setPlaying(false);
-  };
-  const stop = () => {
-    console.log("Stopping the sound.");
-    sound.stop();
-    setPlaying(false);
-  };
-  //
-  const toggleMute = () => {
-    console.log("Toggle mute.");
-    sound.mute(!isMuted);
-    setMuted((prev) => !prev);
-  };
-
   /** Renderer */
   return url ? (
     <Fragment>
-      <div className={classNames("audioMessageViewer")}>
-        <div className={classNames("audioMessageViewer-actionsContainer")}>
-          <Button
-            title="Play"
-            displayTitle={false}
-            frame={false}
-            imageSource={PlayIcon}
-            imageSize={16}
-            disabled={isPlaying}
-            onClick={play}
-          />
-          <Button
-            title="Pause"
-            displayTitle={false}
-            frame={false}
-            imageSource={PauseIcon}
-            imageSize={16}
-            disabled={!isPlaying}
-            onClick={pause}
-          />
-          <Button
-            title="Stop"
-            displayTitle={false}
-            frame={false}
-            imageSource={StopIcon}
-            imageSize={16}
-            disabled={!isPlaying}
-            onClick={stop}
-          />
-          <Button
-            title={isMuted ? "Unmute" : "Mute"}
-            displayTitle={false}
-            frame={false}
-            imageSource={isMuted ? UnmuteIcon : MuteIcon}
-            imageSize={16}
-            onClick={toggleMute}
-          />
-        </div>
-      </div>
+      <AudioPlayer
+        src={url}
+        preload={"auto"}
+        showJumpControls={false}
+        layout={"horizontal"}
+        customAdditionalControls={[]}
+        timeFormat={"mm:ss"}
+        customIcons={{
+          play: <img style={{ width: 24, height: 24 }} src={PlayIcon} alt={"Play"} />,
+          pause: <img style={{ width: 24, height: 24 }} src={PauseIcon} alt={"Play"} />,
+          volume: <img style={{ width: 18, height: 18 }} src={UnmuteIcon} alt={"Mute"} />,
+          volumeMute: <img style={{ width: 18, height: 18 }} src={MuteIcon} alt={"Unmute"} />,
+        }}
+      />
       {role === CHATBOT_ROLE.USER && (
         <div className={classNames({ autoHideButtonContainer: role === CHATBOT_ROLE.USER })}>
           <Button

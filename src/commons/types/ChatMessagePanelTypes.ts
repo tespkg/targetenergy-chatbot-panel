@@ -4,6 +4,7 @@ export type ChatBotMessage = {
   role: CHATBOT_ROLE;
   message: string;
   audio?: Blob;
+  audioUrl?: string;
   type: SUPPORTED_MESSAGE_TYPE;
   id: string;
   parentMessageId?: string | "parent";

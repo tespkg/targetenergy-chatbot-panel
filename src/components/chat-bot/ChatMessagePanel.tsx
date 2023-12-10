@@ -111,6 +111,7 @@ export const ChatMessagePanel = ({
   const addVoiceToChatContent = useCallback(
     (audio: Blob, messageId: string) => {
       if (audio) {
+        const audioUrl = URL.createObjectURL(audio);
         dispatch(
           Actions.AddChatbotMessage([
             {
@@ -118,6 +119,7 @@ export const ChatMessagePanel = ({
               parentMessageId: "parent",
               message: "",
               audio: audio,
+              audioUrl: audioUrl,
               role: CHATBOT_ROLE.USER,
               includeInContextHistory: true,
               includeInChatPanel: true,
@@ -363,11 +365,12 @@ export const ChatMessagePanel = ({
         {chatContent &&
           chatContent
             .filter(({ includeInChatPanel }) => includeInChatPanel)
-            .map(({ message, type, audio, id, role, parentMessageId }, index, self) => {
+            .map(({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {
               const viewModel = new MessageViewerViewModel();
               viewModel.message = message;
               viewModel.type = type;
               viewModel.audio = audio;
+              viewModel.audioUrl = audioUrl;
               viewModel.id = id;
               viewModel.parentMessageId = parentMessageId || "parent";
               viewModel.role = role;

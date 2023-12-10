@@ -104,7 +104,6 @@ export const ChatMessagePanel = ({
     }
   }, [chatContent]);
 
-  console.log("messageGroups:::::::::::", messageGroups);
   /** Callbacks and functions */
   const addMessageToChatContent = useCallback(
     (
@@ -287,7 +286,11 @@ export const ChatMessagePanel = ({
           dispatch(
             Actions.UpdateChatbotMessage(
               {
-                message: ChatMessagePanelUtils.generateErrorMessage("It was a timeout error.", "#ff0000", false),
+                message: ChatMessagePanelUtils.generateErrorMessage(
+                  "The GPT took too long to respond. Cancelling the operation...",
+                  "#ff0000",
+                  false
+                ),
                 includeInContextHistory: false,
               },
               parentMessageId
@@ -300,7 +303,7 @@ export const ChatMessagePanel = ({
             Actions.UpdateChatbotMessage(
               {
                 message: ChatMessagePanelUtils.generateErrorMessage(
-                  `${anyChunkReceived ? "..." : ""} It was cancelled.`,
+                  `${anyChunkReceived ? "..." : ""} You canceled this operation.`,
                   "#ff0000",
                   anyChunkReceived
                 ),
@@ -315,7 +318,11 @@ export const ChatMessagePanel = ({
           dispatch(
             Actions.UpdateChatbotMessage(
               {
-                message: ChatMessagePanelUtils.generateErrorMessage("It reached its max turns.", "#ff7700", false),
+                message: ChatMessagePanelUtils.generateErrorMessage(
+                  "The orchestration engine reached its max conversation turns without reaching any conclusion.",
+                  "#ff7700",
+                  false
+                ),
                 includeInContextHistory: false,
               },
 

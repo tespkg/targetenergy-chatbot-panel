@@ -40,4 +40,7 @@ const generateChatStatus = (
   return undefined;
 };
 
-export const ChatMessagePanelUtils = { generateChatStatus };
+const generateErrorMessage = (text: string, color: string, prependNewLine: boolean) => {
+  return `${prependNewLine ? "<br />" : ""}<strong style='color: ${color};margin: 0 2px;'>${text}</strong>`;
+};
+export const ChatMessagePanelUtils = { generateChatStatus, generateErrorMessage };

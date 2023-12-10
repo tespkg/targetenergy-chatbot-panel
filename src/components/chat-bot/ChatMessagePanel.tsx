@@ -39,7 +39,6 @@ import { getChatContent } from "../../store/queries";
 import { ChatBotMessage } from "../../commons/types/ChatMessagePanelTypes";
 import { ChatMessagePanelUtils } from "./Utils";
 import { CustomAudio } from "../custom-audio/CustomAudio";
-import { AddErrorToMessage } from "store/actions";
 import "./chat-bot.scss";
 
 interface Props {
@@ -176,7 +175,7 @@ export const ChatMessagePanel = ({
       if (!text) {
         return;
       }
-      dispatch(Actions.UpdateChatbotMessage(text, parentMessageId));
+      dispatch(Actions.UpdateChatbotMessage({ message: text }, parentMessageId));
     },
     [dispatch]
   );
@@ -243,7 +242,7 @@ export const ChatMessagePanel = ({
     async (messages: BotMessage[], parentMessageId: string) => {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
-
+      let anyChunkReceived = false;
       try {
         await runMainAgent(messages, {
           app: {
@@ -259,6 +258,7 @@ export const ChatMessagePanel = ({
                 updateChatbotStatus(eventData);
               },
               onDelta: (eventData: DeltaEvent) => {
+                anyChunkReceived = true;
                 const { message, agent } = eventData;
                 if (agent === MAIN_AGENT_NAME) {
                   addChatChunkReceived(message, parentMessageId);
@@ -283,19 +283,45 @@ export const ChatMessagePanel = ({
       } catch (e) {
         console.error("Main agent errored: ", e);
         if (e instanceof TimeoutError) {
-          // TODO: special handling
           console.log("It was a timeout error");
-          dispatch(AddErrorToMessage(parentMessageId, "It was a timeout error"));
+          dispatch(
+            Actions.UpdateChatbotMessage(
+              {
+                message: ChatMessagePanelUtils.generateErrorMessage("It was a timeout error.", "#ff0000", false),
+                includeInContextHistory: false,
+              },
+              parentMessageId
+            )
+          );
         }
         if (e instanceof OperationCancelledError) {
-          // TODO: special handling
           console.log("It was cancelled");
-          dispatch(AddErrorToMessage(parentMessageId, "It was cancelled"));
+          dispatch(
+            Actions.UpdateChatbotMessage(
+              {
+                message: ChatMessagePanelUtils.generateErrorMessage(
+                  `${anyChunkReceived ? "..." : ""} It was cancelled.`,
+                  "#ff0000",
+                  anyChunkReceived
+                ),
+                includeInContextHistory: false,
+              },
+              parentMessageId
+            )
+          );
         }
         if (e instanceof MaxTurnExceededError) {
-          // TODO: special handling
           console.log("It reached its max turns");
-          dispatch(AddErrorToMessage(parentMessageId, "It reached its max turns"));
+          dispatch(
+            Actions.UpdateChatbotMessage(
+              {
+                message: ChatMessagePanelUtils.generateErrorMessage("It reached its max turns.", "#ff7700", false),
+                includeInContextHistory: false,
+              },
+
+              parentMessageId
+            )
+          );
         }
 
         // TODO: handle the error properly and show it to the user.
@@ -397,13 +423,11 @@ export const ChatMessagePanel = ({
       <div className={classNames("ChatBot-chatPanel")} ref={chatContentRef}>
         {messageGroups &&
           messageGroups.map((messageGroup) => (
-            <Fragment>
-              {" "}
+            <Fragment key={messageGroup.id}>
               <div
                 className={classNames("ChatBot-chatPanel-messageGroup", {
                   error: messageGroup.referenceMessage?.error,
                 })}
-                key={messageGroup.id}
               >
                 {messageGroup.messages.map(
                   ({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {

@@ -93,13 +93,15 @@ export default handleActions<StoreType, any>(
       state = initialState,
       { payload }: ReturnType<typeof Actions.UpdateChatbotMessage>
     ) {
-      const { text, parentMessageId } = payload;
+      const { message, parentMessageId } = payload;
       if (state.chatContent !== undefined) {
         const prevMessages = [...state.chatContent];
         const lastMessage = last(prevMessages)!;
         if (lastMessage.role === CHATBOT_ROLE.ASSISTANT) {
-          lastMessage.message = lastMessage.message + text;
-          const newMessages = [...prevMessages.slice(0, prevMessages.length - 1), lastMessage];
+          const newMessages = [
+            ...prevMessages.slice(0, prevMessages.length - 1),
+            { ...lastMessage, ...message, message: lastMessage.message + message.message } as ChatBotMessage,
+          ];
           return update(state, {
             chatContent: { $set: newMessages },
           });
@@ -110,36 +112,17 @@ export default handleActions<StoreType, any>(
               id: uniqueId("text_message"),
               parentMessageId: parentMessageId,
               role: CHATBOT_ROLE.ASSISTANT,
-              message: text,
               includeInContextHistory: true,
               includeInChatPanel: true,
               type: SUPPORTED_MESSAGE_TYPE.TEXT,
               time: new Date().getTime(),
+              ...message,
             } as ChatBotMessage,
           ];
           return update(state, { chatContent: { $set: newMessages } });
         }
       }
       return state;
-    },
-    [Actions.AddErrorToMessage.toString()](
-      state = initialState,
-      { payload }: ReturnType<typeof Actions.AddErrorToMessage>
-    ) {
-      const { parentMessageId, error } = payload;
-      const messages = state.chatContent;
-      if (messages === undefined) {
-        return state;
-      }
-
-      const newMessages = messages.map((message) => {
-        if (message.id === parentMessageId) {
-          return { ...message, error: error };
-        } else {
-          return message;
-        }
-      });
-      return update(state, { chatContent: { $set: newMessages } });
     },
   },
   initialState

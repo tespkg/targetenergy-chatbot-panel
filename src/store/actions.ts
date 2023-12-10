@@ -28,15 +28,10 @@ export const DeleteChatbotMessage = createAction(
 
 export const UpdateChatbotMessage = createAction(
   sprintf(ACTION_PREFIX, "UPDATE_CHATBOT_MESSAGE"),
-  (text: string, parentMessageId: string) => ({
-    text,
+  (message: Partial<ChatBotMessage>, parentMessageId: string) => ({
+    message,
     parentMessageId,
   })
 );
 
 export const ResetChatbotMessage = createAction(sprintf(ACTION_PREFIX, "RESET_CHATBOT_MESSAGE"), () => ({}));
-
-export const AddErrorToMessage = createAction(
-  sprintf(ACTION_PREFIX, "ADD_ERROR_TO_MESSAGE"),
-  (parentMessageId: string, error: string) => ({ parentMessageId, error })
-);

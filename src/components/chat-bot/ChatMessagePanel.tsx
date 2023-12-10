@@ -258,9 +258,9 @@ export const ChatMessagePanel = ({
                 updateChatbotStatus(eventData);
               },
               onDelta: (eventData: DeltaEvent) => {
-                anyChunkReceived = true;
                 const { message, agent } = eventData;
                 if (agent === MAIN_AGENT_NAME) {
+                  anyChunkReceived = true;
                   addChatChunkReceived(message, parentMessageId);
                 }
                 updateChatbotStatus(eventData);

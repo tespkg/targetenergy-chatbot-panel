@@ -35,3 +35,8 @@ export const UpdateChatbotMessage = createAction(
 );
 
 export const ResetChatbotMessage = createAction(sprintf(ACTION_PREFIX, "RESET_CHATBOT_MESSAGE"), () => ({}));
+
+export const AddErrorToMessage = createAction(
+  sprintf(ACTION_PREFIX, "ADD_ERROR_TO_MESSAGE"),
+  (parentMessageId: string, error: string) => ({ parentMessageId, error })
+);

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import classNames from "classnames";
 import TrashBin from "img/icons/trashbin.svg";
 import ClearHistoryIcon from "img/icons/clear-history.svg";
@@ -39,6 +39,7 @@ import { getChatContent } from "../../store/queries";
 import { ChatBotMessage } from "../../commons/types/ChatMessagePanelTypes";
 import { ChatMessagePanelUtils } from "./Utils";
 import { CustomAudio } from "../custom-audio/CustomAudio";
+import { AddErrorToMessage } from "store/actions";
 import "./chat-bot.scss";
 
 interface Props {
@@ -88,12 +89,15 @@ export const ChatMessagePanel = ({
         message.parentMessageId === "parent" ? message.id : message.parentMessageId
       );
       const groupsList = Object.keys(groups)
-        .map((key) => ({
-          messages: get(groups, key),
-          referenceMessage: messages.find((message) => message.parentMessageId === "parent"),
-        }))
+        .map((key) => {
+          const currentGroupMessages = get(groups, key);
+          return {
+            messages: currentGroupMessages,
+            referenceMessage: currentGroupMessages.find((message) => message.parentMessageId === "parent"),
+          };
+        })
         .sort((group1, group2) => {
-          return (group1.referenceMessage?.time || 0) <= (group2.referenceMessage?.time || 0) ? 1 : -1;
+          return (group1.referenceMessage?.time || 0) > (group2.referenceMessage?.time || 0) ? 1 : -1;
         });
       return groupsList.map((group) => ({ ...group, id: uniqueId("groupMessage_") }));
     } else {
@@ -101,6 +105,7 @@ export const ChatMessagePanel = ({
     }
   }, [chatContent]);
 
+  console.log("messageGroups:::::::::::", messageGroups);
   /** Callbacks and functions */
   const addMessageToChatContent = useCallback(
     (
@@ -280,14 +285,17 @@ export const ChatMessagePanel = ({
         if (e instanceof TimeoutError) {
           // TODO: special handling
           console.log("It was a timeout error");
+          dispatch(AddErrorToMessage(parentMessageId, "It was a timeout error"));
         }
         if (e instanceof OperationCancelledError) {
           // TODO: special handling
           console.log("It was cancelled");
+          dispatch(AddErrorToMessage(parentMessageId, "It was cancelled"));
         }
         if (e instanceof MaxTurnExceededError) {
           // TODO: special handling
           console.log("It reached its max turns");
+          dispatch(AddErrorToMessage(parentMessageId, "It reached its max turns"));
         }
 
         // TODO: handle the error properly and show it to the user.
@@ -389,30 +397,43 @@ export const ChatMessagePanel = ({
       <div className={classNames("ChatBot-chatPanel")} ref={chatContentRef}>
         {messageGroups &&
           messageGroups.map((messageGroup) => (
-            <div className={classNames("ChatBot-chatPanel-messageGroup")} key={messageGroup.id}>
-              {messageGroup.messages.map(
-                ({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {
-                  const viewModel = new MessageViewerViewModel();
-                  viewModel.message = message;
-                  viewModel.type = type;
-                  viewModel.audio = audio;
-                  viewModel.audioUrl = audioUrl;
-                  viewModel.id = id;
-                  viewModel.parentMessageId = parentMessageId || "parent";
-                  viewModel.role = role;
-                  return (
-                    <MessageViewer
-                      key={id}
-                      viewModel={viewModel}
-                      isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
-                      isDeleteMessageDisabled={isChatbotBusy}
-                      onDelete={onDeleteMessage}
-                      onInfo={onMessageInfo}
-                    />
-                  );
-                }
+            <Fragment>
+              {" "}
+              <div
+                className={classNames("ChatBot-chatPanel-messageGroup", {
+                  error: messageGroup.referenceMessage?.error,
+                })}
+                key={messageGroup.id}
+              >
+                {messageGroup.messages.map(
+                  ({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {
+                    const viewModel = new MessageViewerViewModel();
+                    viewModel.message = message;
+                    viewModel.type = type;
+                    viewModel.audio = audio;
+                    viewModel.audioUrl = audioUrl;
+                    viewModel.id = id;
+                    viewModel.parentMessageId = parentMessageId || "parent";
+                    viewModel.role = role;
+                    return (
+                      <MessageViewer
+                        key={id}
+                        viewModel={viewModel}
+                        isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
+                        isDeleteMessageDisabled={isChatbotBusy}
+                        onDelete={onDeleteMessage}
+                        onInfo={onMessageInfo}
+                      />
+                    );
+                  }
+                )}
+              </div>
+              {messageGroup.referenceMessage?.error && (
+                <span className={"ChatBot-chatPanel-messageGroup-errorText"}>
+                  {messageGroup.referenceMessage.error}
+                </span>
               )}
-            </div>
+            </Fragment>
           ))}
       </div>
       {chatbotStatus !== null && (

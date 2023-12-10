@@ -11,4 +11,5 @@ export type ChatBotMessage = {
   includeInContextHistory: boolean;
   includeInChatPanel: boolean;
   time?: number;
+  error?: string;
 };

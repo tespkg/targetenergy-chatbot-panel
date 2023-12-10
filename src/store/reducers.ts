@@ -122,6 +122,25 @@ export default handleActions<StoreType, any>(
       }
       return state;
     },
+    [Actions.AddErrorToMessage.toString()](
+      state = initialState,
+      { payload }: ReturnType<typeof Actions.AddErrorToMessage>
+    ) {
+      const { parentMessageId, error } = payload;
+      const messages = state.chatContent;
+      if (messages === undefined) {
+        return state;
+      }
+
+      const newMessages = messages.map((message) => {
+        if (message.id === parentMessageId) {
+          return { ...message, error: error };
+        } else {
+          return message;
+        }
+      });
+      return update(state, { chatContent: { $set: newMessages } });
+    },
   },
   initialState
 );

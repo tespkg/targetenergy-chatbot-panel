@@ -8,14 +8,9 @@ import UserAvatar from "img/icons/user_avatar.svg";
 import { StreamingAudioPlayer } from "../../audio-player/StreamingAudioPlayer";
 import { Button } from "../../button/Button";
 import { DeleteIcon } from "../../icons/DeleteIcon";
-import PauseIcon from "img/icons/pause-icon.svg";
-import PlayIcon from "img/icons/play-icon.svg";
-import MuteIcon from "img/icons/mute-icon.svg";
-import UnmuteIcon from "img/icons/unmute-icon.svg";
 import InfoIcon from "../../../img/icons/info-icon.svg";
 import { CopyIcon } from "../../icons/CopyIcon";
-import AudioPlayer from "react-h5-audio-player";
-import "react-h5-audio-player/lib/styles.css";
+import { CustomAudio } from "../../custom-audio/CustomAudio";
 import "./message-viewer.scss";
 
 interface Props {
@@ -201,20 +196,7 @@ const AudioMessageViewer = ({
   /** Renderer */
   return url ? (
     <Fragment>
-      <AudioPlayer
-        src={url}
-        preload={"auto"}
-        showJumpControls={false}
-        layout={"horizontal"}
-        customAdditionalControls={[]}
-        timeFormat={"mm:ss"}
-        customIcons={{
-          play: <img style={{ width: 24, height: 24 }} src={PlayIcon} alt={"Play"} />,
-          pause: <img style={{ width: 24, height: 24 }} src={PauseIcon} alt={"Play"} />,
-          volume: <img style={{ width: 18, height: 18 }} src={UnmuteIcon} alt={"Mute"} />,
-          volumeMute: <img style={{ width: 18, height: 18 }} src={MuteIcon} alt={"Unmute"} />,
-        }}
-      />
+      <CustomAudio src={url} preload={"auto"} layout={"horizontal"} />
       {role === CHATBOT_ROLE.USER && (
         <div className={classNames({ autoHideButtonContainer: role === CHATBOT_ROLE.USER })}>
           <Button

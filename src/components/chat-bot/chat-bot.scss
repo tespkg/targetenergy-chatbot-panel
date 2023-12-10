@@ -115,18 +115,6 @@ $input-vertical-margin: 8px;
     border-radius: 0 0 10px 10px;
     background-color: #fff;
 
-    .rhap_container {
-      background-color: rgba(0, 50, 100, 0.1);
-      border-radius: 36px;
-      box-shadow: revert;
-      padding: 0 15px;
-    }
-    .rhap_button-clear {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
     &-voicePlaceHolder {
       height: 36px;
       width: calc(100% - 10px);

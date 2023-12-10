@@ -38,7 +38,13 @@ import * as Actions from "store/actions";
 import { getChatContent } from "../../store/queries";
 import { ChatBotMessage } from "../../commons/types/ChatMessagePanelTypes";
 import { ChatMessagePanelUtils } from "./Utils";
+import AudioPlayer from "react-h5-audio-player";
+import "react-h5-audio-player/lib/styles.css";
 import "./chat-bot.scss";
+import PlayIcon from "../../img/icons/play-icon.svg";
+import PauseIcon from "../../img/icons/pause-icon.svg";
+import UnmuteIcon from "../../img/icons/unmute-icon.svg";
+import MuteIcon from "../../img/icons/mute-icon.svg";
 
 interface Props {
   assetTree: AssetTree;
@@ -394,11 +400,19 @@ export const ChatMessagePanel = ({
       )}
       <div className="ChatBot-inputContainer">
         {recordedVoiceUrl ? (
-          <audio
-            className="ChatBot-inputContainer-voicePlaceHolder"
+          <AudioPlayer
             src={recordedVoiceUrl}
-            controls
-            controlsList="nodownload"
+            preload={"auto"}
+            showJumpControls={false}
+            layout={"horizontal"}
+            customAdditionalControls={[]}
+            timeFormat={"mm:ss"}
+            customIcons={{
+              play: <img style={{ width: 24, height: 24 }} src={PlayIcon} alt={"Play"} />,
+              pause: <img style={{ width: 24, height: 24 }} src={PauseIcon} alt={"Play"} />,
+              volume: <img style={{ width: 18, height: 18 }} src={UnmuteIcon} alt={"Mute"} />,
+              volumeMute: <img style={{ width: 18, height: 18 }} src={MuteIcon} alt={"Unmute"} />,
+            }}
           />
         ) : (
           <Input
@@ -434,9 +448,7 @@ export const ChatMessagePanel = ({
                 />
               )
             }
-          >
-            {/*<div>Hi</div>*/}
-          </Input>
+          ></Input>
         )}
         {!recordedVoiceUrl && (
           <Button

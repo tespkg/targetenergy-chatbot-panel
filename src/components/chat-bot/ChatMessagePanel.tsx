@@ -239,7 +239,7 @@ export const ChatMessagePanel = ({
   }, []);
 
   const runAgents = useCallback(
-    async (messages: BotMessage[], parentMessageId: string) => {
+    async (messages: BotMessage[], sentMessageId: string) => {
       const abortController = new AbortController();
       abortControllerRef.current = abortController;
       let anyChunkReceived = false;
@@ -261,7 +261,7 @@ export const ChatMessagePanel = ({
                 const { message, agent } = eventData;
                 if (agent === MAIN_AGENT_NAME) {
                   anyChunkReceived = true;
-                  addChatChunkReceived(message, parentMessageId);
+                  addChatChunkReceived(message, sentMessageId);
                 }
                 updateChatbotStatus(eventData);
               },
@@ -275,7 +275,7 @@ export const ChatMessagePanel = ({
               },
               onTrace: (trace: LlmTrace) => {
                 console.log("Trace", trace);
-                dispatch(Actions.AddTrace({ ...trace, parentId: parentMessageId }));
+                dispatch(Actions.AddTrace({ ...trace, parentId: sentMessageId }));
               },
             },
           },
@@ -294,7 +294,7 @@ export const ChatMessagePanel = ({
                 ),
                 includeInContextHistory: false,
               },
-              parentMessageId
+              sentMessageId
             )
           );
         }
@@ -310,7 +310,7 @@ export const ChatMessagePanel = ({
                 ),
                 includeInContextHistory: false,
               },
-              parentMessageId
+              sentMessageId
             )
           );
         }
@@ -327,7 +327,7 @@ export const ChatMessagePanel = ({
                 includeInContextHistory: false,
               },
 
-              parentMessageId
+              sentMessageId
             )
           );
         }

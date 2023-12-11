@@ -10,7 +10,7 @@ import SendMessage from "img/icons/send-message.svg";
 import { CHATBOT_ROLE, SUPPORTED_MESSAGE_TYPE } from "commons/enums/Chatbot";
 import { Input } from "@grafana/ui";
 import { Button } from "components/button/Button";
-import { get, groupBy, uniqueId } from "lodash";
+import { get, groupBy, repeat, uniqueId } from "lodash";
 import { BotMessage } from "../../api/chatbot-types";
 import { AssetTree } from "../../commons/types/asset-tree";
 import { TreeNodeData } from "../../commons/types/tree-node-data";
@@ -19,6 +19,7 @@ import { runMainAgent } from "../../core/agents/main-agent";
 import { transcribe } from "../../api/chatbot-api";
 import { Dashboard } from "../../commons/types/dashboard-manager";
 import MinimizeIcon from "img/icons/chevron-down.svg";
+import ExportIcon from "img/icons/export-icon.svg";
 import {
   DeltaEvent,
   ErrorEvent,
@@ -424,6 +425,27 @@ export const ChatMessagePanel = ({
             imageSource={MinimizeIcon}
             imageSize={12}
             onClick={onToggleVisibility}
+          />
+          <Button
+            title={"Export Chat"}
+            displayTitle={false}
+            onClick={async () => {
+              const historyStrings = (messageGroups || [])
+                .map(({ messages }) =>
+                  messages
+                    .map(
+                      ({ message, audio, role }) =>
+                        `${role === CHATBOT_ROLE.USER ? "User" : "Assistant"}: ${
+                          audio ? "<---- VOICE MESSAGE ---->" : message
+                        }`
+                    )
+                    .join("\n")
+                )
+                .join(`\n${repeat("--", 32)}\n${repeat("--", 32)}\n`);
+              await ChatMessagePanelUtils.ExportTextSaveAsDialog(historyStrings, "chat-history");
+            }}
+            imageSource={ExportIcon}
+            imageSize={16}
           />
         </div>
       </div>

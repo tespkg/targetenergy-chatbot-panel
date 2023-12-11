@@ -43,4 +43,38 @@ const generateChatStatus = (
 const generateErrorMessage = (text: string, color: string, prependNewLine: boolean) => {
   return `${prependNewLine ? "<br />" : ""}<strong style='color: ${color};margin: 0 2px;'>${text}</strong>`;
 };
-export const ChatMessagePanelUtils = { generateChatStatus, generateErrorMessage };
+
+const ExportTextSaveAsDialog = async (text: string, suggestedName = "exported-file") => {
+  try {
+    window
+      // @ts-ignore
+      .showSaveFilePicker({
+        mode: "write",
+        startIn: "downloads",
+        suggestedName: suggestedName,
+        types: [
+          {
+            description: "Text file",
+            accept: { "text/plain": [".txt"] },
+          },
+          {
+            description: "Markdown file",
+            accept: { "text/markdown": [".md"] },
+          },
+        ],
+      })
+      .then(async (handler: any) => {
+        const writable = await handler.createWritable();
+        await writable.write(new Blob([text], { type: "text/plain;charset=utf-8" }));
+        await writable.close();
+        return handler;
+      });
+  } catch {
+    // if browser do not support save dialog API, lets download it directly!
+    const anchorElement = document.createElement("a");
+    anchorElement.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" }));
+    anchorElement.download = `${suggestedName}.txt`;
+    anchorElement.click();
+  }
+};
+export const ChatMessagePanelUtils = { generateChatStatus, generateErrorMessage, ExportTextSaveAsDialog };

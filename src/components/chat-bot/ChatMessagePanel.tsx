@@ -1,4 +1,4 @@
-import React, { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import classNames from "classnames";
 import TrashBin from "img/icons/trashbin.svg";
 import ClearHistoryIcon from "img/icons/clear-history.svg";
@@ -450,44 +450,27 @@ export const ChatMessagePanel = ({
         </div>
       </div>
       <div className={classNames("ChatBot-chatPanel")} ref={chatContentRef}>
-        {messageGroups &&
-          messageGroups.map((messageGroup) => (
-            <Fragment key={messageGroup.id}>
-              <div
-                className={classNames("ChatBot-chatPanel-messageGroup", {
-                  error: messageGroup.referenceMessage?.error,
-                })}
-              >
-                {messageGroup.messages.map(
-                  ({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {
-                    const viewModel = new MessageViewerViewModel();
-                    viewModel.message = message;
-                    viewModel.type = type;
-                    viewModel.audio = audio;
-                    viewModel.audioUrl = audioUrl;
-                    viewModel.id = id;
-                    viewModel.parentMessageId = parentMessageId || "parent";
-                    viewModel.role = role;
-                    return (
-                      <MessageViewer
-                        key={id}
-                        viewModel={viewModel}
-                        isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
-                        isDeleteMessageDisabled={isChatbotBusy}
-                        onDelete={onDeleteMessage}
-                        onInfo={onMessageInfo}
-                      />
-                    );
-                  }
-                )}
-              </div>
-              {messageGroup.referenceMessage?.error && (
-                <span className={"ChatBot-chatPanel-messageGroup-errorText"}>
-                  {messageGroup.referenceMessage.error}
-                </span>
-              )}
-            </Fragment>
-          ))}
+        {chatContent &&
+          chatContent.map(({ message, type, audio, audioUrl, id, role, parentMessageId }, index, self) => {
+            const viewModel = new MessageViewerViewModel();
+            viewModel.message = message;
+            viewModel.type = type;
+            viewModel.audio = audio;
+            viewModel.audioUrl = audioUrl;
+            viewModel.id = id;
+            viewModel.parentMessageId = parentMessageId || "parent";
+            viewModel.role = role;
+            return (
+              <MessageViewer
+                key={id}
+                viewModel={viewModel}
+                isTextToSpeechDisabled={isChatbotBusy && index === self.length - 1}
+                isDeleteMessageDisabled={isChatbotBusy}
+                onDelete={onDeleteMessage}
+                onInfo={onMessageInfo}
+              />
+            );
+          })}
       </div>
       {chatbotStatus !== null && (
         <div className="ChatBot-statusContainer">

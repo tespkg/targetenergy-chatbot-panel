@@ -441,7 +441,7 @@ export const ChatMessagePanel = ({
                     )
                     .join("\n")
                 )
-                .join(`\n${repeat("--", 32)}\n${repeat("--", 32)}\n`);
+                .join(`\n\n${repeat("--", 32)}\n\n`);
               await ChatMessagePanelUtils.ExportTextSaveAsDialog(historyStrings, "chat-history");
             }}
             imageSource={ExportIcon}

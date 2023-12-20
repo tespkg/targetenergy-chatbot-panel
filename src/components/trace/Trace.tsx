@@ -12,8 +12,11 @@ interface Props {
   trace: LlmTrace;
   selectedTraceId: string;
   onTraceClick: (trace: LlmTrace) => void;
+  showPrices: boolean;
+  showTokens: boolean;
+  showTimes: boolean;
 }
-export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
+export const Trace = ({ trace, onTraceClick, selectedTraceId, showTokens, showTimes, showPrices }: Props) => {
   /** Extract properties */
   const { id, startTime, endTime, name, tokenUsage, aggregatedTokenUsage, type, subTraces } = trace;
 
@@ -71,34 +74,38 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
         >
           {name}
         </div>
-        <div className={classNames("trace-header-duration", InfoPanelUtils.getDurationOrder(durationSeconds))}>
-          <ClockIcon
-            color={
-              InfoPanelUtils.getDurationOrder(durationSeconds) === "low"
-                ? "#50bb50"
-                : InfoPanelUtils.getDurationOrder(durationSeconds) === "normal"
-                ? "#FFC61B"
-                : "#ff0000"
-            }
-          />
-          <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
-        </div>
+        {showTimes && (
+          <div className={classNames("trace-header-duration", InfoPanelUtils.getDurationOrder(durationSeconds))}>
+            <ClockIcon
+              color={
+                InfoPanelUtils.getDurationOrder(durationSeconds) === "low"
+                  ? "#50bb50"
+                  : InfoPanelUtils.getDurationOrder(durationSeconds) === "normal"
+                  ? "#FFC61B"
+                  : "#ff0000"
+              }
+            />
+            <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
+          </div>
+        )}
         {/*<div className="trace-header-tokens">{`${tokenUsage.promptTokens} → ${tokenUsage.completionTokens} Tokens`}</div>*/}
-        {(aggregatedTokenUsage.promptTokens > 0 || aggregatedTokenUsage.completionTokens > 0) && (
+        {showTokens && (aggregatedTokenUsage.promptTokens > 0 || aggregatedTokenUsage.completionTokens > 0) && (
           <div className="trace-header-tokens">{`${aggregatedTokenUsage.promptTokens} → ${aggregatedTokenUsage.completionTokens} Tokens`}</div>
         )}
-        <div className={classNames("trace-header-cost", InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice))}>
-          <span className="trace-header-cost-text">{`Price ${tokenUsage.totalPrice.toFixed(3)}`}</span>
-          <DollarIcon
-            color={
-              InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice) === "low"
-                ? "#50bb50"
-                : InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice) === "normal"
-                ? "#FFC61B"
-                : "#ff0000"
-            }
-          />
-        </div>
+        {showPrices && (
+          <div className={classNames("trace-header-cost", InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice))}>
+            <span className="trace-header-cost-text">{`Price ${tokenUsage.totalPrice.toFixed(3)}`}</span>
+            <DollarIcon
+              color={
+                InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice) === "low"
+                  ? "#50bb50"
+                  : InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice) === "normal"
+                  ? "#FFC61B"
+                  : "#ff0000"
+              }
+            />
+          </div>
+        )}
       </div>
       {subTraces.length > 0 && (
         <div className={classNames("trace-body", { collapsed: isCollapsed })}>
@@ -106,7 +113,14 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
             {subTraces.map((subTrace) => (
               <div className="trace-body-subTracesContainer-subTrace" key={subTrace.id}>
                 <div className="trace-body-subTracesContainer-subTrace-bodyHeaderConnector"></div>
-                <Trace trace={subTrace} onTraceClick={onTraceClick} selectedTraceId={selectedTraceId} />
+                <Trace
+                  trace={subTrace}
+                  onTraceClick={onTraceClick}
+                  selectedTraceId={selectedTraceId}
+                  showPrices={showPrices}
+                  showTokens={showTokens}
+                  showTimes={showTimes}
+                />
               </div>
             ))}
           </div>

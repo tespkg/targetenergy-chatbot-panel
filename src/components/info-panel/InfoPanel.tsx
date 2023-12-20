@@ -17,7 +17,9 @@ interface Props {
 export const InfoPanel = ({ onClose }: Props) => {
   /** states */
   const [traceInDetailsSection, setTraceInDetailsSection] = useState<LlmTrace | undefined>(undefined);
-
+  const [showTokens, setShowTokens] = useState(true);
+  const [showPrices, setShowPrices] = useState(true);
+  const [showTimes, setShowTimes] = useState(true);
   /** Selectors */
   const traces = useSelector(getInfoPanelTraces);
 
@@ -46,6 +48,27 @@ export const InfoPanel = ({ onClose }: Props) => {
   return (
     <div className="infoPanel">
       <div className="infoPanel-header">
+        <Button
+          title={showPrices ? "Hide Prices" : "Show Prices"}
+          primary={!showPrices}
+          onClick={() => {
+            setShowPrices((prev) => !prev);
+          }}
+        />
+        <Button
+          title={showTokens ? "Hide Tokens" : "Show Tokens"}
+          primary={!showTokens}
+          onClick={() => {
+            setShowTokens((prev) => !prev);
+          }}
+        />
+        <Button
+          title={showTimes ? "Hide Times" : "Show Times"}
+          primary={!showTimes}
+          onClick={() => {
+            setShowTimes((prev) => !prev);
+          }}
+        />
         <div
           className={classNames("infoPanel-header-totalPrice", InfoPanelUtils.getPriceOrder(parseFloat(totalPrice)))}
         >
@@ -73,6 +96,9 @@ export const InfoPanel = ({ onClose }: Props) => {
               trace={trace}
               onTraceClick={onTraceItemClick}
               selectedTraceId={traceInDetailsSection ? traceInDetailsSection.id : ""}
+              showPrices={showPrices}
+              showTokens={showTokens}
+              showTimes={showTimes}
             />
           );
         })}

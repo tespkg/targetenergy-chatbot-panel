@@ -1,11 +1,11 @@
 import React, { useMemo } from "react";
-import "./trace-details.scss";
 import { LlmTrace } from "../../../core/orchestration/llm-callbacks";
 import { CHATBOT_ROLE } from "../../../commons/enums/Chatbot";
 import { hashString } from "../../../commons/utils/string-utils";
 import Markdown from "markdown-to-jsx";
 import { Button } from "../../button/Button";
 import { CopyIcon } from "../../icons/CopyIcon";
+import "./trace-details.scss";
 
 interface Props {
   trace: LlmTrace;
@@ -118,24 +118,38 @@ export const TraceDetails = ({ trace }: Props) => {
           <span className="traceDetails-inputs-header-text">INPUTS</span>
         </div>
         <div className="traceDetails-inputs-body">
-          {inputItems.map(({ content, title }, index) => (
-            <div className="traceDetails-inputs-body-inputItem" key={hashString(content)}>
-              <div className="traceDetails-inputs-body-inputItem-index">{index + 1}</div>
-              <div className="traceDetails-inputs-body-inputItem-title">{title}</div>
-              {/*<div className="traceDetails-inputs-body-inputItem-content">{content}</div>*/}
-              <Markdown className="traceDetails-inputs-body-inputItem-content markdown-html">{content}</Markdown>
-              <Button
-                title="Copy Content"
-                displayTitle={false}
-                frame={false}
-                icon={<CopyIcon width={32} height={32} />}
-                imageSize={16}
-                onClick={() => {
-                  navigator.clipboard.writeText(content);
-                }}
-              />
-            </div>
-          ))}
+          <table className="markdown-html traceDetails-table">
+            <thead>
+              <tr>
+                <th className={"traceDetails-tableCell"}>#</th>
+                <th className={"traceDetails-tableCell"}>Title</th>
+                <th className={"traceDetails-tableCell"}>Content</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inputItems.map(({ content, title }, index) => (
+                <tr key={hashString(content)}>
+                  <td className={"traceDetails-tableCell"}>{index + 1}</td>
+                  <td className={"traceDetails-tableCell"}>{title}</td>
+                  <td className={"traceDetails-tableCell"}>
+                    <div className={"traceDetails-inputs-body-content"}>
+                      <Markdown className="markdown-html">{content}</Markdown>
+                      <Button
+                        title="Copy Content"
+                        displayTitle={false}
+                        frame={false}
+                        icon={<CopyIcon width={32} height={32} />}
+                        imageSize={16}
+                        onClick={() => {
+                          navigator.clipboard.writeText(content);
+                        }}
+                      />
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
       <div className="traceDetails-outputs">
@@ -143,22 +157,34 @@ export const TraceDetails = ({ trace }: Props) => {
           <span className="traceDetails-inputs-header-text">OUTPUTS</span>
         </div>
         <div className="traceDetails-outputs-body">
-          <div className="traceDetails-outputs-body-outputItem">
-            <div className="traceDetails-outputs-body-outputItem-title">{outputItem.title}</div>
-            <div className="traceDetails-outputs-body-outputItem-content">
-              <span>{outputItem.content}</span>
-              <Button
-                title="Copy Content"
-                displayTitle={false}
-                frame={false}
-                icon={<CopyIcon width={32} height={32} />}
-                imageSize={16}
-                onClick={() => {
-                  navigator.clipboard.writeText(outputItem.content);
-                }}
-              />
-            </div>
-          </div>
+          <table className="markdown-html traceDetails-table">
+            <thead>
+              <tr>
+                <th className={"traceDetails-tableCell"}>Title</th>
+                <th className={"traceDetails-tableCell"}>Content</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className={"traceDetails-tableCell"}>{outputItem.title}</td>
+                <td className={"traceDetails-tableCell"}>
+                  <div className={"traceDetails-outputs-body-content"}>
+                    <Markdown className="markdown-html">{outputItem.content}</Markdown>
+                    <Button
+                      title="Copy Content"
+                      displayTitle={false}
+                      frame={false}
+                      icon={<CopyIcon width={32} height={32} />}
+                      imageSize={16}
+                      onClick={() => {
+                        navigator.clipboard.writeText(outputItem.content);
+                      }}
+                    />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

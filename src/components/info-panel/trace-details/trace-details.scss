@@ -8,6 +8,9 @@
 
   &-table {
     width: 100%;
+    th {
+      font-weight: 700;
+    }
   }
   &-tableCell {
     padding: 5px 15px;

@@ -129,7 +129,7 @@ export const TraceDetails = ({ trace }: Props) => {
       {messageInputItems.length > 0 && (
         <div className="traceDetails-inputs">
           <div className="traceDetails-inputs-header">
-            <span className="traceDetails-inputs-header-text">INPUTS-MESSAGES</span>
+            <span className="traceDetails-inputs-header-text">Messages</span>
           </div>
           <div className="traceDetails-inputs-body">
             <table className="markdown-html traceDetails-table">
@@ -170,7 +170,7 @@ export const TraceDetails = ({ trace }: Props) => {
       {toolInputItems.length > 0 && (
         <div className="traceDetails-inputs">
           <div className="traceDetails-inputs-header">
-            <span className="traceDetails-inputs-header-text">INPUTS-TOOLS</span>
+            <span className="traceDetails-inputs-header-text">Tools</span>
           </div>
           <div className="traceDetails-inputs-body">
             <table className="markdown-html traceDetails-table">
@@ -210,7 +210,7 @@ export const TraceDetails = ({ trace }: Props) => {
       )}
       <div className="traceDetails-outputs">
         <div className="traceDetails-outputs-header">
-          <span className="traceDetails-inputs-header-text">OUTPUTS</span>
+          <span className="traceDetails-inputs-header-text">Outputs</span>
         </div>
         <div className="traceDetails-outputs-body">
           <table className="markdown-html traceDetails-table">

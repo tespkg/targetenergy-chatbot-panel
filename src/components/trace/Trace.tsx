@@ -57,7 +57,7 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId, showTokens, showTi
   /** Renderer */
   return (
     <div className={classNames("trace")}>
-      <div className="trace-header">
+      <div className={classNames("trace-header", { selected: selectedTraceId === id })}>
         <div
           className="trace-header-type"
           onClick={() => {
@@ -67,7 +67,7 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId, showTokens, showTi
           {typeIcon}
         </div>
         <div
-          className={classNames("trace-header-name", { selected: selectedTraceId === id })}
+          className={classNames("trace-header-name")}
           onClick={() => {
             onTraceClick(trace);
           }}

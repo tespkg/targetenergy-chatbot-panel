@@ -15,7 +15,11 @@
     column-gap: 5px;
     width: 100%;
     height: fit-content;
+    padding: 2px 0;
 
+    &.selected {
+      background-color: rgba(0, 50, 250, 0.05);
+    }
     &-name {
       display: flex;
       align-items: center;
@@ -25,10 +29,6 @@
       padding: 1px 5px;
       border-radius: 8px;
       cursor: pointer;
-    }
-    &-name.selected {
-      border: dashed 2px #000000;
-      background-color: rgba(255, 0, 0, 0.5);
     }
     &-duration {
       display: flex;

@@ -84,7 +84,9 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId }: Props) => {
           <span className="trace-header-duration-text">{`${durationSeconds.toFixed(2)} (s)`}</span>
         </div>
         {/*<div className="trace-header-tokens">{`${tokenUsage.promptTokens} → ${tokenUsage.completionTokens} Tokens`}</div>*/}
-        <div className="trace-header-tokens">{`${aggregatedTokenUsage.promptTokens} → ${aggregatedTokenUsage.completionTokens} Tokens`}</div>
+        {(aggregatedTokenUsage.promptTokens > 0 || aggregatedTokenUsage.completionTokens > 0) && (
+          <div className="trace-header-tokens">{`${aggregatedTokenUsage.promptTokens} → ${aggregatedTokenUsage.completionTokens} Tokens`}</div>
+        )}
         <div className={classNames("trace-header-cost", InfoPanelUtils.getPriceOrder(tokenUsage.totalPrice))}>
           <span className="trace-header-cost-text">{`Price ${tokenUsage.totalPrice.toFixed(3)}`}</span>
           <DollarIcon

@@ -1,0 +1,15 @@
+.menuButton {
+  position: relative;
+  padding: 5px;
+  cursor: pointer;
+  background-color: #ffffff;
+
+  &-list {
+    position: absolute;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    row-gap: 5px;
+    padding: 5px;
+  }
+}

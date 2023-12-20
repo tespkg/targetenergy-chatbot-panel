@@ -7,6 +7,8 @@ import { DollarIcon } from "../icons/DollarIcon";
 import { ToolIcon } from "../icons/ToolIcon";
 import { AgentIcon } from "../icons/AgentIcon";
 import { InfoPanelUtils } from "../info-panel/infoPanelUtils";
+import { ChevronDoubleRight } from "../icons/ChevronDoubleRight";
+import { ChevronDoubleBottom } from "../icons/ChevronDoubleBottom";
 
 interface Props {
   trace: LlmTrace;
@@ -36,23 +38,23 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId, showTokens, showTi
       case "agent":
         return (
           <Fragment>
+            {subTraces.length > 0 && (isCollapsed ? <ChevronDoubleRight /> : <ChevronDoubleBottom />)}
             <AgentIcon />
             <span className="trace-header-type-text">Agent</span>
-            {subTraces.length > 0 && <span className="trace-header-type-text">{`(${subTraces.length})`}</span>}
           </Fragment>
         );
       case "tool":
         return (
           <Fragment>
+            {subTraces.length > 0 && (isCollapsed ? <ChevronDoubleRight /> : <ChevronDoubleBottom />)}
             <ToolIcon width={18} height={18} />
             <span className="trace-header-type-text">Tool</span>
-            {subTraces.length > 0 && <span className="trace-header-type-text">{`(${subTraces.length})`}</span>}
           </Fragment>
         );
       default:
         return type;
     }
-  }, [subTraces, type]);
+  }, [type, isCollapsed]);
 
   /** Renderer */
   return (

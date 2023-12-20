@@ -15,7 +15,7 @@ export const TraceDetails = ({ trace }: Props) => {
   const { inputs, outputs, type } = trace;
 
   /** Memos */
-  const inputItems: Array<{ title: string; content: string }> = useMemo(() => {
+  const messageInputItems: Array<{ title: string; content: string }> = useMemo(() => {
     if (inputs) {
       if (type === "agent") {
         const { messages } = inputs;
@@ -54,6 +54,19 @@ export const TraceDetails = ({ trace }: Props) => {
       return [];
     }
   }, [inputs, type]);
+
+  const toolInputItems: Array<{ title: string; content: string }> = useMemo(() => {
+    if (inputs) {
+      const { functions } = inputs;
+      return (functions || []).map((functionItem: any) => {
+        const { name, description } = functionItem;
+        return { title: name, content: description };
+      });
+    } else {
+      return [];
+    }
+  }, [inputs]);
+
   //
   const outputItem = useMemo(() => {
     if (type === "agent") {
@@ -115,41 +128,84 @@ export const TraceDetails = ({ trace }: Props) => {
     <div className="traceDetails">
       <div className="traceDetails-inputs">
         <div className="traceDetails-inputs-header">
-          <span className="traceDetails-inputs-header-text">INPUTS</span>
+          <span className="traceDetails-inputs-header-text">INPUTS-MESSAGES</span>
         </div>
         <div className="traceDetails-inputs-body">
-          <table className="markdown-html traceDetails-table">
-            <thead>
-              <tr>
-                <th className={"traceDetails-tableCell"}>#</th>
-                <th className={"traceDetails-tableCell"}>Title</th>
-                <th className={"traceDetails-tableCell"}>Content</th>
-              </tr>
-            </thead>
-            <tbody>
-              {inputItems.map(({ content, title }, index) => (
-                <tr key={hashString(content)}>
-                  <td className={"traceDetails-tableCell"}>{index + 1}</td>
-                  <td className={"traceDetails-tableCell"}>{title}</td>
-                  <td className={"traceDetails-tableCell"}>
-                    <div className={"traceDetails-inputs-body-content"}>
-                      <Markdown className="markdown-html">{content}</Markdown>
-                      <Button
-                        title="Copy Content"
-                        displayTitle={false}
-                        frame={false}
-                        icon={<CopyIcon width={32} height={32} />}
-                        imageSize={16}
-                        onClick={() => {
-                          navigator.clipboard.writeText(content);
-                        }}
-                      />
-                    </div>
-                  </td>
+          {messageInputItems.length > 0 && (
+            <table className="markdown-html traceDetails-table">
+              <thead>
+                <tr>
+                  <th className={"traceDetails-tableCell"}>#</th>
+                  <th className={"traceDetails-tableCell"}>Title</th>
+                  <th className={"traceDetails-tableCell"}>Content</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {messageInputItems.map(({ content, title }, index) => (
+                  <tr key={hashString(content)}>
+                    <td className={"traceDetails-tableCell"}>{index + 1}</td>
+                    <td className={"traceDetails-tableCell"}>{title}</td>
+                    <td className={"traceDetails-tableCell"}>
+                      <div className={"traceDetails-inputs-body-content"}>
+                        <Markdown className="markdown-html">{content}</Markdown>
+                        <Button
+                          title="Copy Content"
+                          displayTitle={false}
+                          frame={false}
+                          icon={<CopyIcon width={32} height={32} />}
+                          imageSize={16}
+                          onClick={() => {
+                            navigator.clipboard.writeText(content);
+                          }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}{" "}
+        </div>
+      </div>
+      <div className="traceDetails-inputs">
+        <div className="traceDetails-inputs-header">
+          <span className="traceDetails-inputs-header-text">INPUTS-TOOLS</span>
+        </div>
+        <div className="traceDetails-inputs-body">
+          {toolInputItems.length > 0 && (
+            <table className="markdown-html traceDetails-table">
+              <thead>
+                <tr>
+                  <th className={"traceDetails-tableCell"}>#</th>
+                  <th className={"traceDetails-tableCell"}>Name</th>
+                  <th className={"traceDetails-tableCell"}>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                {toolInputItems.map(({ content, title }, index) => (
+                  <tr key={hashString(content)}>
+                    <td className={"traceDetails-tableCell"}>{index + 1}</td>
+                    <td className={"traceDetails-tableCell"}>{title}</td>
+                    <td className={"traceDetails-tableCell"}>
+                      <div className={"traceDetails-inputs-body-content"}>
+                        <Markdown className="markdown-html">{content}</Markdown>
+                        <Button
+                          title="Copy Content"
+                          displayTitle={false}
+                          frame={false}
+                          icon={<CopyIcon width={32} height={32} />}
+                          imageSize={16}
+                          onClick={() => {
+                            navigator.clipboard.writeText(content);
+                          }}
+                        />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
       <div className="traceDetails-outputs">

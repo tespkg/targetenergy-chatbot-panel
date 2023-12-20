@@ -44,7 +44,7 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId, showTokens, showTi
       case "tool":
         return (
           <Fragment>
-            <ToolIcon />
+            <ToolIcon width={18} height={18} />
             <span className="trace-header-type-text">Tool</span>
             {subTraces.length > 0 && <span className="trace-header-type-text">{`(${subTraces.length})`}</span>}
           </Fragment>

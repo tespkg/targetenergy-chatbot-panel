@@ -18,6 +18,24 @@
     border-bottom: solid 1px #eaeaea;
     column-gap: 5px;
 
+    &-rightContainer {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    &-leftContainer {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-start;
+      flex-grow: 1;
+    }
+
+    &-toggleButton {
+      width: 120px;
+    }
+
     &-totalPrice {
       display: flex;
       align-items: center;

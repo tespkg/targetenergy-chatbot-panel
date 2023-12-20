@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import MinimizeIcon from "../../img/icons/chevron-down.svg";
+import MinimizeIcon from "../../img/icons/minimize.svg";
+import SettingsIcon from "../../img/icons/settings.svg";
 import { Button } from "../button/Button";
 import { useSelector } from "react-redux";
 import { getInfoPanelTraces } from "../../store/queries";
@@ -9,6 +10,7 @@ import { TraceDetails } from "./trace-details/TraceDetails";
 import { DollarIcon } from "../icons/DollarIcon";
 import classNames from "classnames";
 import { InfoPanelUtils } from "./infoPanelUtils";
+import { MenuButton } from "../menu-button/MenuButton";
 import "./info-panel.scss";
 
 interface Props {
@@ -39,6 +41,38 @@ export const InfoPanel = ({ onClose }: Props) => {
     });
     return total;
   }, [traces]);
+  //
+  const visibleInfoItems = useMemo(() => {
+    return [
+      <Button
+        className={"infoPanel-header-toggleButton"}
+        title={showPrices ? "Hide Prices" : "Show Prices"}
+        primary={!showPrices}
+        onClick={() => {
+          setShowPrices((prev) => !prev);
+        }}
+        key={"1"}
+      />,
+      <Button
+        className={"infoPanel-header-toggleButton"}
+        title={showTokens ? "Hide Tokens" : "Show Tokens"}
+        primary={!showTokens}
+        onClick={() => {
+          setShowTokens((prev) => !prev);
+        }}
+        key={"2"}
+      />,
+      <Button
+        className={"infoPanel-header-toggleButton"}
+        title={showTimes ? "Hide Times" : "Show Times"}
+        primary={!showTimes}
+        onClick={() => {
+          setShowTimes((prev) => !prev);
+        }}
+        key={"3"}
+      />,
+    ];
+  }, [showPrices, showTimes, showTokens]);
 
   /** Callbacks */
   const onTraceItemClick = (trace: LlmTrace) => {
@@ -48,45 +82,40 @@ export const InfoPanel = ({ onClose }: Props) => {
   return (
     <div className="infoPanel">
       <div className="infoPanel-header">
-        <Button
-          title={showPrices ? "Hide Prices" : "Show Prices"}
-          primary={!showPrices}
-          onClick={() => {
-            setShowPrices((prev) => !prev);
-          }}
-        />
-        <Button
-          title={showTokens ? "Hide Tokens" : "Show Tokens"}
-          primary={!showTokens}
-          onClick={() => {
-            setShowTokens((prev) => !prev);
-          }}
-        />
-        <Button
-          title={showTimes ? "Hide Times" : "Show Times"}
-          primary={!showTimes}
-          onClick={() => {
-            setShowTimes((prev) => !prev);
-          }}
-        />
-        <div
-          className={classNames("infoPanel-header-totalPrice", InfoPanelUtils.getPriceOrder(parseFloat(totalPrice)))}
-        >
-          <span className="infoPanel-header-totalPrice-price">{`Total Price: ${totalPrice}`}</span>
-          <DollarIcon
-            color={
-              InfoPanelUtils.getPriceOrder(parseFloat(totalPrice)) === "low"
-                ? "#50bb50"
-                : InfoPanelUtils.getPriceOrder(parseFloat(totalPrice)) === "normal"
-                ? "#FFC61B"
-                : "#ff0000"
-            }
+        <div className="infoPanel-header-leftContainer">
+          <div
+            className={classNames("infoPanel-header-totalPrice", InfoPanelUtils.getPriceOrder(parseFloat(totalPrice)))}
+          >
+            <span className="infoPanel-header-totalPrice-price">{`Total Price: ${totalPrice}`}</span>
+            <DollarIcon
+              color={
+                InfoPanelUtils.getPriceOrder(parseFloat(totalPrice)) === "low"
+                  ? "#50bb50"
+                  : InfoPanelUtils.getPriceOrder(parseFloat(totalPrice)) === "normal"
+                  ? "#FFC61B"
+                  : "#ff0000"
+              }
+              width={18}
+              height={18}
+            />
+          </div>
+          <div className="infoPanel-header-totalTokens">
+            <span className="infoPanel-header-totalTokens-tokens">{`Total Tokens: ${totalTokenConsumption}`}</span>
+          </div>
+        </div>
+        <div className="infoPanel-header-rightContainer">
+          <MenuButton items={visibleInfoItems}>
+            <img src={SettingsIcon} width={24} height={24} />
+          </MenuButton>
+          <Button
+            title="Minimize"
+            displayTitle={false}
+            frame={false}
+            imageSource={MinimizeIcon}
+            imageSize={24}
+            onClick={onClose}
           />
         </div>
-        <div className="infoPanel-header-totalTokens">
-          <span className="infoPanel-header-totalTokens-tokens">{`Total Tokens: ${totalTokenConsumption}`}</span>
-        </div>
-        <Button title="Minimize" displayTitle={false} imageSource={MinimizeIcon} imageSize={32} onClick={onClose} />
       </div>
       <div className="infoPanel-body">
         {traces.map((trace) => {

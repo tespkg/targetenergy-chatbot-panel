@@ -126,12 +126,12 @@ export const TraceDetails = ({ trace }: Props) => {
   /** Renderer */
   return (
     <div className="traceDetails">
-      <div className="traceDetails-inputs">
-        <div className="traceDetails-inputs-header">
-          <span className="traceDetails-inputs-header-text">INPUTS-MESSAGES</span>
-        </div>
-        <div className="traceDetails-inputs-body">
-          {messageInputItems.length > 0 && (
+      {messageInputItems.length > 0 && (
+        <div className="traceDetails-inputs">
+          <div className="traceDetails-inputs-header">
+            <span className="traceDetails-inputs-header-text">INPUTS-MESSAGES</span>
+          </div>
+          <div className="traceDetails-inputs-body">
             <table className="markdown-html traceDetails-table">
               <thead>
                 <tr>
@@ -164,15 +164,15 @@ export const TraceDetails = ({ trace }: Props) => {
                 ))}
               </tbody>
             </table>
-          )}{" "}
+          </div>
         </div>
-      </div>
-      <div className="traceDetails-inputs">
-        <div className="traceDetails-inputs-header">
-          <span className="traceDetails-inputs-header-text">INPUTS-TOOLS</span>
-        </div>
-        <div className="traceDetails-inputs-body">
-          {toolInputItems.length > 0 && (
+      )}
+      {toolInputItems.length > 0 && (
+        <div className="traceDetails-inputs">
+          <div className="traceDetails-inputs-header">
+            <span className="traceDetails-inputs-header-text">INPUTS-TOOLS</span>
+          </div>
+          <div className="traceDetails-inputs-body">
             <table className="markdown-html traceDetails-table">
               <thead>
                 <tr>
@@ -205,9 +205,9 @@ export const TraceDetails = ({ trace }: Props) => {
                 ))}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-      </div>
+      )}
       <div className="traceDetails-outputs">
         <div className="traceDetails-outputs-header">
           <span className="traceDetails-inputs-header-text">OUTPUTS</span>

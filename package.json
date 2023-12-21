@@ -81,6 +81,7 @@
     "@types/redux-actions": "^2.6.5",
     "@types/sprintf-js": "^1.1.4",
     "classnames": "^2.3.2",
+    "date-fns": "^3.0.3",
     "downsample": "^1.4.0",
     "handlebars": "^4.7.7",
     "immutability-helper": "^3.1.1",

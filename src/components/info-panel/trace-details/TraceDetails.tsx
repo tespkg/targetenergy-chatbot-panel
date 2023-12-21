@@ -144,22 +144,22 @@ export const TraceDetails = ({ trace }: Props) => {
         key: uniqueId("traceInfoDetails-"),
       },
       {
-        title: "Token Usage",
+        title: "Token Usage:",
         description: `${tokenUsage.promptTokens} → ${tokenUsage.completionTokens} Tokens`,
         key: uniqueId("traceInfoDetails-"),
       },
       {
-        title: "Total Token Usage",
+        title: "Total Token Usage:",
         description: `${aggregatedTokenUsage.promptTokens} → ${aggregatedTokenUsage.completionTokens} Tokens`,
         key: uniqueId("traceInfoDetails-"),
       },
       {
-        title: "Price",
+        title: "Price:",
         description: `${aggregatedTokenUsage.totalPrice.toFixed(3)} $`,
         key: uniqueId("traceInfoDetails-"),
       },
       {
-        title: "Number of sub traces",
+        title: "Number of sub traces:",
         description: subTraces.length ? subTraces.length : "None",
         key: uniqueId("traceInfoDetails-"),
       },

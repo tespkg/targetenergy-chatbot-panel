@@ -54,7 +54,7 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId, showTokens, showTi
       default:
         return type;
     }
-  }, [type, isCollapsed]);
+  }, [type, subTraces, isCollapsed]);
 
   /** Renderer */
   return (
@@ -105,6 +105,8 @@ export const Trace = ({ trace, onTraceClick, selectedTraceId, showTokens, showTi
                   ? "#FFC61B"
                   : "#ff0000"
               }
+              width={18}
+              height={18}
             />
           </div>
         )}
